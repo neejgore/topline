@@ -1,0 +1,213 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      String   @default("SUBSCRIBER")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  articles        Article[]
+  metrics         Metric[]
+  newsletterSents NewsletterSent[]
+
+  @@map("users")
+}
+
+model Article {
+  id          String      @id @default(cuid())
+  title       String
+  summary     String?
+  content     String?
+  sourceUrl   String
+  sourceName  String
+  imageUrl    String?
+  whyItMatters String?
+  talkTrack   String?
+  
+  // Categorization
+  category    String      @default("NEWS")
+  vertical    String?
+  priority    String      @default("MEDIUM")
+  
+  // Publishing
+  status      String      @default("DRAFT")
+  publishedAt DateTime?
+  expiresAt   DateTime?
+  
+  // Metadata
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  authorId    String?
+  author      User?       @relation(fields: [authorId], references: [id])
+
+  // Relations
+  newsletterArticles NewsletterArticle[]
+  tags              ArticleTag[]
+
+  @@map("articles")
+}
+
+model Metric {
+  id          String      @id @default(cuid())
+  title       String
+  value       String
+  description String?
+  source      String
+  sourceUrl   String?
+  howToUse    String?
+  talkTrack   String?
+  
+  // Categorization
+  vertical    String?
+  priority    String      @default("MEDIUM")
+  
+  // Publishing
+  status      String      @default("DRAFT")
+  publishedAt DateTime?
+  expiresAt   DateTime?
+  
+  // Metadata
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  authorId    String?
+  author      User?       @relation(fields: [authorId], references: [id])
+
+  // Relations
+  newsletterMetrics NewsletterMetric[]
+  tags             MetricTag[]
+
+  @@map("metrics")
+}
+
+model Newsletter {
+  id           String   @id @default(cuid())
+  title        String
+  subject      String
+  content      String?
+  scheduledFor DateTime
+  sentAt       DateTime?
+  status       String @default("DRAFT")
+  
+  // Metadata
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  articles     NewsletterArticle[]
+  metrics      NewsletterMetric[]
+  sent         NewsletterSent[]
+
+  @@map("newsletters")
+}
+
+model NewsletterArticle {
+  id           String    @id @default(cuid())
+  newsletterId String
+  articleId    String
+  order        Int       @default(0)
+  
+  newsletter   Newsletter @relation(fields: [newsletterId], references: [id], onDelete: Cascade)
+  article      Article    @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@unique([newsletterId, articleId])
+  @@map("newsletter_articles")
+}
+
+model NewsletterMetric {
+  id           String    @id @default(cuid())
+  newsletterId String
+  metricId     String
+  order        Int       @default(0)
+  
+  newsletter   Newsletter @relation(fields: [newsletterId], references: [id], onDelete: Cascade)
+  metric       Metric     @relation(fields: [metricId], references: [id], onDelete: Cascade)
+
+  @@unique([newsletterId, metricId])
+  @@map("newsletter_metrics")
+}
+
+model NewsletterSent {
+  id           String    @id @default(cuid())
+  newsletterId String
+  userId       String
+  sentAt       DateTime  @default(now())
+  opened       Boolean   @default(false)
+  openedAt     DateTime?
+  
+  newsletter   Newsletter @relation(fields: [newsletterId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([newsletterId, userId])
+  @@map("newsletter_sent")
+}
+
+model Tag {
+  id       String @id @default(cuid())
+  name     String @unique
+  color    String @default("#3B82F6")
+  
+  // Relations
+  articles ArticleTag[]
+  metrics  MetricTag[]
+
+  @@map("tags")
+}
+
+model ArticleTag {
+  articleId String
+  tagId     String
+  
+  article   Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([articleId, tagId])
+  @@map("article_tags")
+}
+
+model MetricTag {
+  metricId String
+  tagId    String
+  
+  metric   Metric @relation(fields: [metricId], references: [id], onDelete: Cascade)
+  tag      Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([metricId, tagId])
+  @@map("metric_tags")
+}
+
+model Source {
+  id          String @id @default(cuid())
+  name        String
+  url         String
+  rssUrl      String?
+  isActive    Boolean @default(true)
+  lastChecked DateTime?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("sources")
+}
+
+// Note: Using String types for SQLite compatibility
+// Valid values:
+// Role: "ADMIN", "EDITOR", "SUBSCRIBER"
+// Category: "NEWS", "METRIC"
+// Vertical: "MARTECH", "ADTECH", "SALES_ENABLEMENT", "REVENUE_OPS", "GENERAL"
+// Priority: "HIGH", "MEDIUM", "LOW"
+// Status: "DRAFT", "PUBLISHED", "ARCHIVED"
+// NewsletterStatus: "DRAFT", "SCHEDULED", "SENT", "CANCELLED" 
