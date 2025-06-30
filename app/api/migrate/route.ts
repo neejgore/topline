@@ -135,60 +135,73 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Fix broken topline.platform URLs with real external industry sources
-    const urlMap: { [key: string]: { url: string, source: string } } = {
-      'https://topline.platform/ai-marketing-budgets-2025': {
-        url: 'https://www.adexchanger.com/data-driven-thinking/cmos-double-down-ai-marketing-budgets-2025/',
+    // Fix broken topline.platform URLs with real external industry sources - USE RAW SQL
+    const urlUpdates = [
+      {
+        old: 'https://topline.platform/ai-marketing-budgets-2025',
+        new: 'https://www.adexchanger.com/data-driven-thinking/cmos-double-down-ai-marketing-budgets-2025/',
         source: 'AdExchanger'
       },
-      'https://topline.platform/cookie-deprecation-attribution-gap': {
-        url: 'https://digiday.com/media/cookie-deprecation-creates-attribution-gap-advertisers/',
+      {
+        old: 'https://topline.platform/cookie-deprecation-attribution-gap',
+        new: 'https://digiday.com/media/cookie-deprecation-creates-attribution-gap-advertisers/',
         source: 'Digiday'
       },
-      'https://topline.platform/revops-growth-alignment': {
-        url: 'https://martech.org/revenue-operations-growth-alignment-strategies/',
+      {
+        old: 'https://topline.platform/revops-growth-alignment',
+        new: 'https://martech.org/revenue-operations-growth-alignment-strategies/',
         source: 'MarTech Today'
       },
-      'https://topline.platform/retail-media-networks-60b': {
-        url: 'https://www.retaildive.com/news/retail-media-networks-reach-60-billion-market/',
+      {
+        old: 'https://topline.platform/retail-media-networks-60b',
+        new: 'https://www.retaildive.com/news/retail-media-networks-reach-60-billion-market/',
         source: 'Retail Dive'
       },
-      'https://topline.platform/b2b-revenue-attribution': {
-        url: 'https://www.salesforceben.com/b2b-revenue-attribution-best-practices/',
+      {
+        old: 'https://topline.platform/b2b-revenue-attribution',
+        new: 'https://www.salesforceben.com/b2b-revenue-attribution-best-practices/',
         source: 'SalesforceBen'
       },
-      'https://topline.platform/cpg-ctv-shift': {
-        url: 'https://www.adweek.com/convergent-tv/cpg-brands-shift-budgets-connected-tv/',
+      {
+        old: 'https://topline.platform/cpg-ctv-shift',
+        new: 'https://www.adweek.com/convergent-tv/cpg-brands-shift-budgets-connected-tv/',
         source: 'Adweek'
       },
-      'https://topline.platform/ecommerce-conversion-decline': {
-        url: 'https://www.digitalcommerce360.com/2024/03/ecommerce-conversion-rates-decline/',
+      {
+        old: 'https://topline.platform/ecommerce-conversion-decline',
+        new: 'https://www.digitalcommerce360.com/2024/03/ecommerce-conversion-rates-decline/',
         source: 'Digital Commerce 360'
       },
-      'https://topline.platform/fintech-compliance-costs': {
-        url: 'https://www.americanbanker.com/news/fintech-compliance-costs-rising-regulation/',
+      {
+        old: 'https://topline.platform/fintech-compliance-costs',
+        new: 'https://www.americanbanker.com/news/fintech-compliance-costs-rising-regulation/',
         source: 'American Banker'
       },
-      'https://topline.platform/healthcare-patient-journey': {
-        url: 'https://www.healthcaredive.com/news/healthcare-patient-journey-mapping-digital/',
+      {
+        old: 'https://topline.platform/healthcare-patient-journey',
+        new: 'https://www.healthcaredive.com/news/healthcare-patient-journey-mapping-digital/',
         source: 'Healthcare Dive'
       },
-      'https://topline.platform/programmatic-fraud-84b': {
-        url: 'https://www.adexchanger.com/programmatic/programmatic-ad-fraud-reaches-84-billion/',
+      {
+        old: 'https://topline.platform/programmatic-fraud-84b',
+        new: 'https://www.adexchanger.com/programmatic/programmatic-ad-fraud-reaches-84-billion/',
         source: 'AdExchanger'
       }
-    }
+    ]
 
-    let urlUpdates = 0
-    for (const [oldUrl, newData] of Object.entries(urlMap)) {
-      const result = await prisma.article.updateMany({
-        where: { sourceUrl: oldUrl },
-        data: { 
-          sourceUrl: newData.url,
-          sourceName: newData.source
-        }
-      })
-      urlUpdates += result.count
+    let urlUpdateCount = 0
+    for (const update of urlUpdates) {
+      try {
+        const result = await prisma.$executeRaw`
+          UPDATE articles 
+          SET "sourceUrl" = ${update.new}, "sourceName" = ${update.source}, "updatedAt" = NOW()
+          WHERE "sourceUrl" = ${update.old}
+        `
+        urlUpdateCount += Number(result)
+        console.log(`✅ Updated URL: ${update.old} -> ${update.new} (${result} rows)`)
+      } catch (error) {
+        console.error(`❌ Failed to update URL ${update.old}:`, error)
+      }
     }
 
     // Final verification - count remaining issues
@@ -216,7 +229,7 @@ export async function POST(request: NextRequest) {
       isClean,
       results: {
         verticalUpdates,
-        urlUpdates,
+        urlUpdates: urlUpdateCount,
         remainingIssues: {
           oldVerticals: remainingOldVerticalCount,
           brokenUrls: remainingBrokenUrlCount
