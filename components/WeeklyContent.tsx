@@ -1,12 +1,12 @@
-import { getPublishedArticles, getPublishedMetrics } from '@/lib/content'
+import { getPublishedArticlesDirect, getPublishedMetricsDirect } from '@/lib/content-direct'
 import ArticleCard from './ArticleCard'
 import MetricCard from './MetricCard'
 import { Newspaper, TrendingUp } from 'lucide-react'
 
 export default async function WeeklyContent() {
   const [articles, metrics] = await Promise.all([
-    getPublishedArticles(),
-    getPublishedMetrics()
+    getPublishedArticlesDirect(),
+    getPublishedMetricsDirect()
   ])
 
   return (
@@ -20,7 +20,7 @@ export default async function WeeklyContent() {
         
         <div className="space-y-6">
           {articles.length > 0 ? (
-            articles.map((article) => (
+            articles.map((article: any) => (
               <ArticleCard key={article.id} article={article} />
             ))
           ) : (
@@ -42,7 +42,7 @@ export default async function WeeklyContent() {
         
         <div className="grid md:grid-cols-2 gap-6">
           {metrics.length > 0 ? (
-            metrics.map((metric) => (
+            metrics.map((metric: any) => (
               <MetricCard key={metric.id} metric={metric} />
             ))
           ) : (
