@@ -58,8 +58,8 @@ export default function MetricCard({ metric }: MetricCardProps) {
       {/* Card Content */}
       <div className="p-4">
         {/* Metric Value - Featured prominently */}
-        <div className="text-center mb-4 bg-gradient-to-r from-primary-50 to-accent-50 rounded-lg p-4">
-          <div className="text-2xl font-bold text-primary-600 mb-1">
+        <div className="text-center mb-4 bg-gradient-to-r from-blue-50 to-orange-50 rounded-lg p-4">
+          <div className="text-2xl font-bold text-blue-600 mb-1">
             {metric.value}
           </div>
           <h3 className="text-sm font-semibold text-gray-900">
@@ -107,7 +107,8 @@ export default function MetricCard({ metric }: MetricCardProps) {
               href={metric.sourceUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center text-xs text-primary-600 hover:text-primary-700 font-medium"
+              className="inline-flex items-center text-xs text-blue-600 hover:text-blue-800 font-medium hover:underline relative z-10 cursor-pointer"
+              style={{ pointerEvents: 'all' }}
             >
               View Source
               <ExternalLink className="h-3 w-3 ml-1" />

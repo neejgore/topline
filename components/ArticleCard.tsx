@@ -110,7 +110,8 @@ export default function ArticleCard({ article }: ArticleCardProps) {
             href={article.sourceUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center text-xs text-primary-600 hover:text-primary-700 font-medium"
+            className="inline-flex items-center text-xs text-blue-600 hover:text-blue-800 font-medium hover:underline relative z-10 cursor-pointer"
+            style={{ pointerEvents: 'all' }}
           >
             Read More
             <ExternalLink className="h-3 w-3 ml-1" />
