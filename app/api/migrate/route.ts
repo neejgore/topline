@@ -1,124 +1,58 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
 
-// Create a single Prisma instance with proper error handling
-const prisma = new PrismaClient({
-  log: ['query', 'error', 'warn'],
-})
-
 export async function POST(request: NextRequest) {
+  const prisma = new PrismaClient()
+  
   try {
     console.log('🔄 Starting vertical migration process...')
 
-    // Fix vertical names in production database
+    // Use raw SQL to avoid prepared statement conflicts
     console.log('📰 Updating article verticals...')
     
-    // Update MARTECH to Technology & Media
-    const martechArticles = await prisma.article.updateMany({
-      where: {
-        vertical: 'MARTECH'
-      },
-      data: {
-        vertical: 'Technology & Media'
-      }
-    })
-
-    // Update ADTECH to Technology & Media
-    const adtechArticles = await prisma.article.updateMany({
-      where: {
-        vertical: 'ADTECH'
-      },
-      data: {
-        vertical: 'Technology & Media'
-      }
-    })
-
-    // Update RETAIL to Consumer & Retail
-    const retailArticles = await prisma.article.updateMany({
-      where: {
-        vertical: 'RETAIL'
-      },
-      data: {
-        vertical: 'Consumer & Retail'
-      }
-    })
+    const articleUpdates = await prisma.$executeRawUnsafe(`
+      UPDATE articles 
+      SET vertical = CASE 
+        WHEN vertical = 'MARTECH' THEN 'Technology & Media'
+        WHEN vertical = 'ADTECH' THEN 'Technology & Media'
+        WHEN vertical = 'RETAIL' THEN 'Consumer & Retail'
+        ELSE vertical
+      END
+      WHERE vertical IN ('MARTECH', 'ADTECH', 'RETAIL')
+    `)
 
     console.log('📊 Updating metric verticals...')
     
-    // Update MARTECH to Technology & Media for metrics
-    const martechMetrics = await prisma.metric.updateMany({
-      where: {
-        vertical: 'MARTECH'
-      },
-      data: {
-        vertical: 'Technology & Media'
-      }
-    })
+    const metricUpdates = await prisma.$executeRawUnsafe(`
+      UPDATE metrics 
+      SET vertical = CASE 
+        WHEN vertical = 'MARTECH' THEN 'Technology & Media'
+        WHEN vertical = 'ADTECH' THEN 'Technology & Media'
+        WHEN vertical = 'RETAIL' THEN 'Consumer & Retail'
+        WHEN vertical = 'REVENUE_OPS' THEN 'Services'
+        ELSE vertical
+      END
+      WHERE vertical IN ('MARTECH', 'ADTECH', 'RETAIL', 'REVENUE_OPS')
+    `)
 
-    // Update ADTECH to Technology & Media for metrics
-    const adtechMetrics = await prisma.metric.updateMany({
-      where: {
-        vertical: 'ADTECH'
-      },
-      data: {
-        vertical: 'Technology & Media'
-      }
-    })
+    // Get current verticals after migration using raw SQL
+    const verticals = await prisma.$queryRawUnsafe(`
+      SELECT DISTINCT vertical FROM (
+        SELECT vertical FROM articles WHERE status = 'PUBLISHED' AND vertical IS NOT NULL
+        UNION
+        SELECT vertical FROM metrics WHERE status = 'PUBLISHED' AND vertical IS NOT NULL
+      ) AS combined_verticals
+      ORDER BY vertical
+    `) as Array<{ vertical: string }>
 
-    // Update RETAIL to Consumer & Retail for metrics
-    const retailMetrics = await prisma.metric.updateMany({
-      where: {
-        vertical: 'RETAIL'
-      },
-      data: {
-        vertical: 'Consumer & Retail'
-      }
-    })
-
-    // Update REVENUE_OPS to Services for metrics
-    const revenueOpsMetrics = await prisma.metric.updateMany({
-      where: {
-        vertical: 'REVENUE_OPS'
-      },
-      data: {
-        vertical: 'Services'
-      }
-    })
-
-    // Get current verticals after migration
-    const [currentArticleVerticals, currentMetricVerticals] = await Promise.all([
-      prisma.article.findMany({
-        where: { status: 'PUBLISHED' },
-        select: { vertical: true },
-        distinct: ['vertical']
-      }),
-      prisma.metric.findMany({
-        where: { status: 'PUBLISHED' },
-        select: { vertical: true },
-        distinct: ['vertical']
-      })
-    ])
-
-    const uniqueVerticals = Array.from(new Set([
-      ...currentArticleVerticals.map(a => a.vertical),
-      ...currentMetricVerticals.map(m => m.vertical)
-    ])).filter(Boolean).sort()
+    const uniqueVerticals = verticals.map(v => v.vertical).filter(Boolean)
 
     return NextResponse.json({
       success: true,
       message: 'Vertical migration completed successfully',
       details: {
-        articlesUpdated: {
-          martech: martechArticles.count,
-          adtech: adtechArticles.count,
-          retail: retailArticles.count
-        },
-        metricsUpdated: {
-          martech: martechMetrics.count,
-          adtech: adtechMetrics.count,
-          retail: retailMetrics.count,
-          revenueOps: revenueOpsMetrics.count
-        },
+        articlesUpdated: articleUpdates,
+        metricsUpdated: metricUpdates,
         currentVerticals: uniqueVerticals
       }
     })
@@ -130,8 +64,9 @@ export async function POST(request: NextRequest) {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
+  } finally {
+    await prisma.$disconnect()
   }
-  // Don't call $disconnect here to avoid connection issues
 }
 
 export async function GET() {
