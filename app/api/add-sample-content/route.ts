@@ -1,282 +1,221 @@
 import { NextResponse } from 'next/server'
 
 export async function POST() {
+  let pool: any = null
+  
   try {
-    console.log('🔄 Resetting and adding expanded content using direct SQL...')
-
-    // Using node-postgres directly to bypass Prisma prepared statement issues
-    const { Pool } = require('pg')
+    console.log('🔄 Adding sample content to maximize articles and metrics...')
     
-    const pool = new Pool({
+    const { Pool } = require('pg')
+    pool = new Pool({
       connectionString: process.env.DATABASE_URL,
     })
+    
+    const now = new Date()
+    const thisWeek = new Date()
+    thisWeek.setDate(thisWeek.getDate() - 2) // 2 days ago to ensure it's within the week
 
-    // Clear existing content first
-    console.log('🗑️ Clearing existing content...')
-    await pool.query('DELETE FROM articles')
-    await pool.query('DELETE FROM metrics')
-
-    // Insert sample articles - expanded to 10 articles across verticals
-    const articles = [
+    // Add 7 more articles to reach 10 total (we already have 3)
+    const newArticles = [
       {
-        id: 'art1',
-        title: 'CMOs Double Down on AI Marketing Budgets for 2025',
-        summary: 'Marketing leaders are significantly increasing AI investments, with 73% planning to expand AI budgets by 30% or more next year. Focus areas include personalization, attribution, and customer journey optimization.',
-        sourceUrl: 'https://topline.platform/ai-marketing-budgets-2025',
+        id: 'art-new-1',
+        title: 'Retail Media Networks Capture $45B as Brands Shift from Walled Gardens',
+        summary: 'Amazon, Walmart, and Target are capturing massive ad dollars as brands seek first-party data alternatives to declining social media targeting capabilities.',
+        sourceUrl: 'https://topline.platform/retail-media-45b-shift',
         sourceName: 'Topline Intelligence',
-        whyItMatters: 'AI adoption is accelerating across marketing teams. Companies that don\'t adapt risk falling behind competitors who are leveraging AI for efficiency and better customer targeting.',
-        talkTrack: 'Ask: "How is your team currently using AI in your marketing operations?" Position AI solutions as competitive necessities, not experimental tools.',
-        category: 'NEWS',
-        vertical: 'MARTECH',
-        priority: 'HIGH',
-        status: 'PUBLISHED'
-      },
-      {
-        id: 'art2', 
-        title: 'Third-Party Cookie Deprecation Creates $15B Attribution Gap',
-        summary: 'As Chrome phases out third-party cookies, marketing attribution becomes significantly more challenging. Brands are scrambling to implement first-party data strategies and server-side tracking.',
-        sourceUrl: 'https://topline.platform/cookie-deprecation-attribution-gap',
-        sourceName: 'Topline Intelligence',
-        whyItMatters: 'Privacy regulations and cookie deprecation are reshaping digital marketing. Brands need first-party data strategies to maintain targeting effectiveness and measurement accuracy.',
-        talkTrack: 'Lead with: "What\'s your plan for reaching customers as third-party data becomes unavailable?" Focus on first-party data collection and identity resolution solutions.',
-        category: 'NEWS',
-        vertical: 'ADTECH',
-        priority: 'HIGH',
-        status: 'PUBLISHED'
-      },
-      {
-        id: 'art3',
-        title: 'Revenue Operations Teams Grow 40% as Sales-Marketing Alignment Becomes Critical',
-        summary: 'Companies are rapidly expanding RevOps teams to bridge sales and marketing gaps. Focus is on unified data, shared metrics, and coordinated customer journey management.',
-        sourceUrl: 'https://topline.platform/revops-growth-alignment',
-        sourceName: 'Topline Intelligence',
-        whyItMatters: 'Revenue operations is becoming a critical function as companies demand better alignment between sales and marketing for improved conversion rates and customer experience.',
-        talkTrack: 'Ask: "How aligned are your sales and marketing teams on lead definitions and handoff processes?" Position RevOps tools as essential for growth.',
-        category: 'NEWS',
-        vertical: 'REVENUE_OPS',
-        priority: 'MEDIUM',
-        status: 'PUBLISHED'
-      },
-      {
-        id: 'art4',
-        title: 'Retail Media Networks Hit $60B as Brands Shift Budgets from Social',
-        summary: 'Retailers like Amazon, Walmart, and Target are capturing massive ad spend as brands seek first-party data alternatives. Retail media now represents 18% of total digital ad spending.',
-        sourceUrl: 'https://topline.platform/retail-media-networks-60b',
-        sourceName: 'Topline Intelligence',
-        whyItMatters: 'Retail media offers unprecedented targeting precision and closed-loop attribution that traditional social platforms can no longer provide due to privacy changes.',
-        talkTrack: 'Ask: "What percentage of your media budget is allocated to retail media networks?" Position retail media as essential for reaching purchase-ready consumers.',
+        whyItMatters: 'Retail media offers closed-loop attribution and purchase data that traditional platforms can no longer provide due to privacy regulations.',
+        talkTrack: 'Ask: "What percentage of your media budget goes to retail media networks?" Position as essential for reaching purchase-ready audiences.',
         category: 'NEWS',
         vertical: 'RETAIL',
         priority: 'HIGH',
         status: 'PUBLISHED'
       },
       {
-        id: 'art5',
-        title: 'E-commerce Conversion Rates Drop 23% as Economic Pressures Mount',
-        summary: 'Online retailers are seeing significant conversion rate declines as consumers become more price-sensitive. Companies are investing heavily in personalization and dynamic pricing strategies.',
-        sourceUrl: 'https://topline.platform/ecommerce-conversion-decline',
+        id: 'art-new-2',
+        title: 'Connected TV Ad Fraud Surges 340% as Programmatic Scales',
+        summary: 'CTV advertising fraud is exploding as more budgets shift to streaming platforms, with sophisticated bot networks targeting high-value inventory.',
+        sourceUrl: 'https://topline.platform/ctv-fraud-surge-340',
         sourceName: 'Topline Intelligence',
-        whyItMatters: 'Economic headwinds are forcing e-commerce brands to optimize every touchpoint. Conversion rate optimization is becoming a survival strategy, not just growth tactic.',
-        talkTrack: 'Lead with: "How has your conversion rate changed over the past 6 months?" Focus on personalization and pricing optimization solutions.',
+        whyItMatters: 'CTV fraud threatens the credibility of the fastest-growing advertising channel. Brands need fraud detection as budgets scale.',
+        talkTrack: 'Lead with: "How much of your CTV spend do you think is being lost to fraud?" Focus on verification and fraud prevention tools.',
         category: 'NEWS',
-        vertical: 'ECOMMERCE',
+        vertical: 'ADTECH',
         priority: 'HIGH',
         status: 'PUBLISHED'
       },
       {
-        id: 'art6',
-        title: 'CPG Brands Slash Traditional TV Spend by 35% for Connected TV',
-        summary: 'Consumer packaged goods companies are rapidly shifting from linear TV to streaming platforms, citing better targeting and measurement capabilities.',
-        sourceUrl: 'https://topline.platform/cpg-ctv-shift',
+        id: 'art-new-3',
+        title: 'B2B Marketers Abandon MQLs for Pipeline Velocity Metrics',
+        summary: 'Marketing teams are ditching traditional lead qualification metrics in favor of pipeline velocity and deal acceleration measurements.',
+        sourceUrl: 'https://topline.platform/b2b-pipeline-velocity-metrics',
         sourceName: 'Topline Intelligence',
-        whyItMatters: 'The shift to CTV represents a fundamental change in how CPG brands reach consumers. Traditional TV measurement is becoming obsolete.',
-        talkTrack: 'Ask: "What percentage of your video budget is allocated to connected TV?" Position CTV as essential for modern brand building.',
+        whyItMatters: 'Pipeline velocity metrics better align marketing with revenue outcomes, showing real impact on sales cycles and deal closure.',
+        talkTrack: 'Ask: "How do you currently measure marketing\'s impact on deal velocity?" Position advanced attribution platforms.',
         category: 'NEWS',
-        vertical: 'CPG',
+        vertical: 'MARTECH',
+        priority: 'HIGH',
+        status: 'PUBLISHED'
+      },
+      {
+        id: 'art-new-4',
+        title: 'E-commerce Personalization Drives 19% Revenue Lift Across Verticals',
+        summary: 'Advanced personalization engines are delivering significant revenue improvements across retail categories, with AI-driven recommendations leading gains.',
+        sourceUrl: 'https://topline.platform/ecommerce-personalization-19-lift',
+        sourceName: 'Topline Intelligence',
+        whyItMatters: 'Personalization is moving from nice-to-have to competitive necessity as customers expect tailored experiences across all touchpoints.',
+        talkTrack: 'Ask: "What\'s your current personalization ROI?" Highlight the 19% revenue lift as the competitive benchmark.',
+        category: 'NEWS',
+        vertical: 'ECOMMERCE',
         priority: 'MEDIUM',
         status: 'PUBLISHED'
       },
       {
-        id: 'art7',
-        title: 'Fintech Marketing Compliance Costs Rise 180% Amid New Regulations',
-        summary: 'Financial services companies are facing exponentially higher marketing compliance costs as regulators crack down on digital advertising practices and data usage.',
-        sourceUrl: 'https://topline.platform/fintech-compliance-costs',
+        id: 'art-new-5',
+        title: 'Fintech Compliance Automation Reduces Review Time by 67%',
+        summary: 'Financial services companies are deploying AI-powered compliance systems to accelerate marketing approval workflows and reduce regulatory risk.',
+        sourceUrl: 'https://topline.platform/fintech-compliance-automation-67',
         sourceName: 'Topline Intelligence',
-        whyItMatters: 'Regulatory compliance is becoming a major cost center for fintech marketing teams. Non-compliance risks are forcing complete strategy overhauls.',
-        talkTrack: 'Ask: "How are new regulations affecting your marketing operations and budget allocation?" Focus on compliant marketing automation solutions.',
+        whyItMatters: 'Regulatory compliance is becoming a competitive advantage for fintech companies that can move faster while maintaining compliance.',
+        talkTrack: 'Ask: "How long does your current marketing compliance review process take?" Position automation as speed and risk reduction.',
         category: 'NEWS',
         vertical: 'FINTECH',
         priority: 'MEDIUM',
         status: 'PUBLISHED'
       },
       {
-        id: 'art8',
-        title: 'Healthcare Marketing Pivots to Patient Journey Orchestration',
-        summary: 'Healthcare organizations are moving beyond demographic targeting to focus on patient journey stages, leveraging health data for more precise marketing.',
-        sourceUrl: 'https://topline.platform/healthcare-patient-journey',
+        id: 'art-new-6',
+        title: 'Healthcare Marketing Shifts to Patient Journey Orchestration',
+        summary: 'Healthcare organizations are moving beyond demographics to focus on patient journey stages, using health data for precision marketing.',
+        sourceUrl: 'https://topline.platform/healthcare-patient-journey-orchestration',
         sourceName: 'Topline Intelligence',
-        whyItMatters: 'Patient-centric marketing is becoming a competitive advantage in healthcare. Traditional demographic targeting is insufficient for complex health decisions.',
-        talkTrack: 'Ask: "How are you currently mapping and targeting different patient journey stages?" Position journey orchestration platforms as essential.',
+        whyItMatters: 'Patient journey orchestration enables healthcare marketers to deliver relevant messaging at critical decision points in care.',
+        talkTrack: 'Ask: "How do you currently target patients at different stages of their health journey?" Focus on journey mapping platforms.',
         category: 'NEWS',
         vertical: 'HEALTHTECH',
         priority: 'MEDIUM',
         status: 'PUBLISHED'
       },
       {
-        id: 'art9',
-        title: 'B2B Marketers Abandon Lead Generation for Revenue Attribution',
-        summary: 'B2B marketing teams are shifting from lead volume metrics to revenue attribution, demanding better integration between marketing and sales systems.',
-        sourceUrl: 'https://topline.platform/b2b-revenue-attribution',
+        id: 'art-new-7',
+        title: 'Revenue Operations Teams Demand Unified Customer Data Platforms',
+        summary: 'RevOps teams are consolidating customer data across sales, marketing, and success teams to enable better forecasting and attribution.',
+        sourceUrl: 'https://topline.platform/revops-unified-customer-data-platforms',
         sourceName: 'Topline Intelligence',
-        whyItMatters: 'The focus on revenue attribution reflects increased scrutiny on marketing ROI. Lead generation without revenue correlation is becoming obsolete.',
-        talkTrack: 'Ask: "What percentage of your marketing budget can you directly attribute to closed revenue?" Focus on attribution and revenue operations platforms.',
+        whyItMatters: 'Unified customer data is essential for accurate revenue attribution and forecasting as businesses demand better predictability.',
+        talkTrack: 'Ask: "How fragmented is your customer data across sales and marketing systems?" Position CDP as revenue operations infrastructure.',
         category: 'NEWS',
-        vertical: 'MARTECH',
-        priority: 'HIGH',
-        status: 'PUBLISHED'
-      },
-      {
-        id: 'art10',
-        title: 'Programmatic Advertising Fraud Hits $84B as AI Detection Scales',
-        summary: 'Ad fraud is reaching unprecedented levels while AI-powered detection systems are becoming more sophisticated. The arms race between fraudsters and detection is intensifying.',
-        sourceUrl: 'https://topline.platform/programmatic-fraud-84b',
-        sourceName: 'Topline Intelligence',
-        whyItMatters: 'Ad fraud represents a massive tax on digital advertising efficiency. Brands are demanding better fraud protection as budgets tighten.',
-        talkTrack: 'Lead with: "What percentage of your programmatic spend do you estimate is lost to fraud?" Position fraud detection as essential infrastructure.',
-        category: 'NEWS',
-        vertical: 'ADTECH',
-        priority: 'HIGH',
+        vertical: 'REVENUE_OPS',
+        priority: 'MEDIUM',
         status: 'PUBLISHED'
       }
     ]
 
-    // Insert sample metrics - expanded to 5 metrics across verticals
-    const metrics = [
+    // Add 2 more metrics to reach 5 total (we already have 3)
+    const newMetrics = [
       {
-        id: 'met1',
-        title: '78% of B2B Marketers Using AI Daily',
-        value: '78%',
-        description: 'Daily AI usage among B2B marketing professionals has increased 45% year-over-year, with content creation and lead scoring being the top use cases.',
-        source: 'Marketing AI Institute 2024',
-        howToUse: 'Use this stat to demonstrate AI adoption urgency in sales conversations.',
-        talkTrack: 'Frame it as: "78% of your competitors are already using AI daily for marketing. How is your team staying competitive?"',
-        vertical: 'MARTECH',
-        priority: 'HIGH',
-        status: 'PUBLISHED'
-      },
-      {
-        id: 'met2',
-        title: '$2.3T Global Digital Ad Spend',
-        value: '$2.3T',
-        description: 'Global digital advertising spend is projected to reach $2.3 trillion by 2025, with programmatic representing 88% of all digital display advertising.',
-        source: 'eMarketer 2024',
-        howToUse: 'Highlight the scale of digital advertising investment and automation trends.',
-        talkTrack: 'Position with: "With $2.3T in digital ad spend, programmatic efficiency is critical. How are you optimizing your programmatic operations?"',
-        vertical: 'ADTECH',
-        priority: 'HIGH',
-        status: 'PUBLISHED'
-      },
-      {
-        id: 'met3',
-        title: '45% Increase in Customer Acquisition Costs',
-        value: '45%',
-        description: 'Customer acquisition costs have increased 45% across B2B companies due to increased competition and privacy regulations affecting targeting.',
-        source: 'SaaS Benchmarks 2024',
-        howToUse: 'Emphasize the need for more efficient customer acquisition and retention strategies.',
-        talkTrack: 'Ask: "With CAC increasing 45% industry-wide, what strategies are you using to improve acquisition efficiency?"',
-        vertical: 'REVENUE_OPS',
-        priority: 'MEDIUM',
-        status: 'PUBLISHED'
-      },
-      {
-        id: 'met4',
-        title: '67% of Retail Media Budgets Shift to In-Store',
-        value: '67%',
-        description: 'Retailers are moving beyond online advertising to in-store digital experiences, with 67% of retail media budgets now allocated to physical location activation.',
-        source: 'Retail Media Report 2024',
-        howToUse: 'Highlight the evolution of retail media beyond digital-only strategies.',
+        id: 'met-new-1',
+        title: '89% of Retail Media Budgets Shift to In-Store',
+        value: '89%',
+        description: 'Retailers are moving beyond online advertising to in-store digital experiences, with 89% of retail media budgets now including physical location activation.',
+        source: 'Retail Media Insights 2024',
+        howToUse: 'Demonstrate the evolution of retail media beyond digital-only strategies.',
         talkTrack: 'Ask: "How are you leveraging in-store digital experiences to complement your online retail media strategy?"',
         vertical: 'RETAIL',
         priority: 'HIGH',
         status: 'PUBLISHED'
       },
       {
-        id: 'met5',
-        title: '92% of E-commerce Sites Use Dynamic Pricing',
-        value: '92%',
-        description: 'Dynamic pricing adoption has reached 92% among top e-commerce retailers, with AI-driven price optimization becoming standard competitive practice.',
-        source: 'E-commerce Technology Survey 2024',
-        howToUse: 'Demonstrate the critical importance of pricing automation in competitive e-commerce.',
-        talkTrack: 'Position with: "92% of your competitors are using dynamic pricing. How are you ensuring price competitiveness while maintaining margins?"',
-        vertical: 'ECOMMERCE',
+        id: 'met-new-2',
+        title: '156% Increase in Marketing Compliance Costs',
+        value: '156%',
+        description: 'Marketing compliance costs have increased 156% as companies invest in systems and processes to meet evolving privacy and financial regulations.',
+        source: 'Compliance Cost Study 2024',
+        howToUse: 'Highlight the growing importance of compliance automation and efficient review processes.',
+        talkTrack: 'Ask: "How have your marketing compliance costs changed over the past year?" Position automation as cost control.',
+        vertical: 'FINTECH',
         priority: 'HIGH',
         status: 'PUBLISHED'
       }
     ]
 
-    // Set publishedAt to today to ensure content shows up
-    const today = new Date()
-    const publishedAt = today.toISOString()
-
-    console.log('📝 Inserting 10 articles across verticals...')
-    for (const article of articles) {
+    console.log('📝 Adding 7 new articles...')
+    for (const article of newArticles) {
       await pool.query(`
         INSERT INTO articles (
           id, title, summary, "sourceUrl", "sourceName", "whyItMatters", "talkTrack",
           category, vertical, priority, status, "publishedAt", "createdAt", "updatedAt"
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $12, $12)
-        ON CONFLICT (id) DO UPDATE SET
-          "publishedAt" = $12, "updatedAt" = $12
       `, [
         article.id, article.title, article.summary, article.sourceUrl, article.sourceName,
         article.whyItMatters, article.talkTrack, article.category, article.vertical,
-        article.priority, article.status, publishedAt
+        article.priority, article.status, thisWeek
       ])
     }
 
-    console.log('📊 Inserting 5 metrics across verticals...')
-    for (const metric of metrics) {
+    console.log('📊 Adding 2 new metrics...')
+    for (const metric of newMetrics) {
       await pool.query(`
         INSERT INTO metrics (
           id, title, value, description, source, "howToUse", "talkTrack",
           vertical, priority, status, "publishedAt", "createdAt", "updatedAt"  
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $11, $11)
-        ON CONFLICT (id) DO UPDATE SET
-          "publishedAt" = $11, "updatedAt" = $11
       `, [
         metric.id, metric.title, metric.value, metric.description, metric.source,
-        metric.howToUse, metric.talkTrack, metric.vertical, metric.priority, metric.status, publishedAt
+        metric.howToUse, metric.talkTrack, metric.vertical, metric.priority, metric.status, thisWeek
       ])
     }
 
-    // Get counts
-    const articleCount = await pool.query('SELECT COUNT(*) FROM articles WHERE status = $1', ['PUBLISHED'])
-    const metricCount = await pool.query('SELECT COUNT(*) FROM metrics WHERE status = $1', ['PUBLISHED'])
+    // Get final counts
+    const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    
+    const [articleCount, metricCount] = await Promise.all([
+      pool.query(`
+        SELECT COUNT(*) as count FROM articles 
+        WHERE status = 'PUBLISHED' AND "publishedAt" >= $1
+      `, [oneWeekAgo]),
+      pool.query(`
+        SELECT COUNT(*) as count FROM metrics 
+        WHERE status = 'PUBLISHED' AND "publishedAt" >= $1
+      `, [oneWeekAgo])
+    ])
+
+    const totalArticles = parseInt(articleCount.rows[0].count)
+    const totalMetrics = parseInt(metricCount.rows[0].count)
 
     await pool.end()
 
-    const response = {
+    return NextResponse.json({
       success: true,
-      message: 'Content reset with expanded dataset (10 articles, 5 metrics)!',
-      results: {
-        articlesAdded: articles.length,
-        metricsAdded: metrics.length,
-        totalArticles: parseInt(articleCount.rows[0].count),
-        totalMetrics: parseInt(metricCount.rows[0].count)
-      },
-      timestamp: new Date().toISOString()
-    }
-
-    console.log('🎉 Content insertion completed:', response)
-    return NextResponse.json(response)
+      message: 'Sample content added successfully! Now maximized for 10 articles + 5 metrics.',
+      details: {
+        articlesAdded: newArticles.length,
+        metricsAdded: newMetrics.length,
+        totalNowVisible: {
+          articles: totalArticles,
+          metrics: totalMetrics
+        },
+        verticalDistribution: {
+          RETAIL: 'Articles + Metrics',
+          ADTECH: 'Articles',
+          MARTECH: 'Articles + Metrics',
+          ECOMMERCE: 'Articles + Metrics',
+          FINTECH: 'Articles + Metrics',
+          HEALTHTECH: 'Articles',
+          REVENUE_OPS: 'Articles + Metrics'
+        }
+      }
+    })
 
   } catch (error) {
-    console.error('❌ Content insertion failed:', error)
+    console.error('❌ Add content failed:', error)
+    
+    if (pool) {
+      try { await pool.end() } catch {}
+    }
     
     return NextResponse.json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString()
+      error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
   }
 }
