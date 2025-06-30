@@ -1,0 +1,160 @@
+import { NextResponse } from 'next/server'
+
+export async function POST() {
+  try {
+    console.log('🔄 Adding sample content using direct SQL...')
+
+    // Using node-postgres directly to bypass Prisma prepared statement issues
+    const { Pool } = require('pg')
+    
+    const pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+    })
+
+    // Insert sample articles
+    const articles = [
+      {
+        id: 'art1',
+        title: 'CMOs Double Down on AI Marketing Budgets for 2025',
+        summary: 'Marketing leaders are significantly increasing AI investments, with 73% planning to expand AI budgets by 30% or more next year. Focus areas include personalization, attribution, and customer journey optimization.',
+        sourceUrl: 'https://topline.platform/ai-marketing-budgets-2025',
+        sourceName: 'Topline Intelligence',
+        whyItMatters: 'AI adoption is accelerating across marketing teams. Companies that don\'t adapt risk falling behind competitors who are leveraging AI for efficiency and better customer targeting.',
+        talkTrack: 'Ask: "How is your team currently using AI in your marketing operations?" Position AI solutions as competitive necessities, not experimental tools.',
+        category: 'NEWS',
+        vertical: 'MARTECH',
+        priority: 'HIGH',
+        status: 'PUBLISHED'
+      },
+      {
+        id: 'art2', 
+        title: 'Third-Party Cookie Deprecation Creates $15B Attribution Gap',
+        summary: 'As Chrome phases out third-party cookies, marketing attribution becomes significantly more challenging. Brands are scrambling to implement first-party data strategies and server-side tracking.',
+        sourceUrl: 'https://topline.platform/cookie-deprecation-attribution-gap',
+        sourceName: 'Topline Intelligence',
+        whyItMatters: 'Privacy regulations and cookie deprecation are reshaping digital marketing. Brands need first-party data strategies to maintain targeting effectiveness and measurement accuracy.',
+        talkTrack: 'Lead with: "What\'s your plan for reaching customers as third-party data becomes unavailable?" Focus on first-party data collection and identity resolution solutions.',
+        category: 'NEWS',
+        vertical: 'ADTECH',
+        priority: 'HIGH',
+        status: 'PUBLISHED'
+      },
+      {
+        id: 'art3',
+        title: 'Revenue Operations Teams Grow 40% as Sales-Marketing Alignment Becomes Critical',
+        summary: 'Companies are rapidly expanding RevOps teams to bridge sales and marketing gaps. Focus is on unified data, shared metrics, and coordinated customer journey management.',
+        sourceUrl: 'https://topline.platform/revops-growth-alignment',
+        sourceName: 'Topline Intelligence',
+        whyItMatters: 'Revenue operations is becoming a critical function as companies demand better alignment between sales and marketing for improved conversion rates and customer experience.',
+        talkTrack: 'Ask: "How aligned are your sales and marketing teams on lead definitions and handoff processes?" Position RevOps tools as essential for growth.',
+        category: 'NEWS',
+        vertical: 'REVENUE_OPS',
+        priority: 'MEDIUM',
+        status: 'PUBLISHED'
+      }
+    ]
+
+    // Insert sample metrics
+    const metrics = [
+      {
+        id: 'met1',
+        title: '78% of B2B Marketers Using AI Daily',
+        value: '78%',
+        description: 'Daily AI usage among B2B marketing professionals has increased 45% year-over-year, with content creation and lead scoring being the top use cases.',
+        source: 'Marketing AI Institute 2024',
+        howToUse: 'Use this stat to demonstrate AI adoption urgency in sales conversations.',
+        talkTrack: 'Frame it as: "78% of your competitors are already using AI daily for marketing. How is your team staying competitive?"',
+        vertical: 'MARTECH',
+        priority: 'HIGH',
+        status: 'PUBLISHED'
+      },
+      {
+        id: 'met2',
+        title: '$2.3T Global Digital Ad Spend',
+        value: '$2.3T',
+        description: 'Global digital advertising spend is projected to reach $2.3 trillion by 2025, with programmatic representing 88% of all digital display advertising.',
+        source: 'eMarketer 2024',
+        howToUse: 'Highlight the scale of digital advertising investment and automation trends.',
+        talkTrack: 'Position with: "With $2.3T in digital ad spend, programmatic efficiency is critical. How are you optimizing your programmatic operations?"',
+        vertical: 'ADTECH',
+        priority: 'HIGH',
+        status: 'PUBLISHED'
+      },
+      {
+        id: 'met3',
+        title: '45% Increase in Customer Acquisition Costs',
+        value: '45%',
+        description: 'Customer acquisition costs have increased 45% across B2B companies due to increased competition and privacy regulations affecting targeting.',
+        source: 'SaaS Benchmarks 2024',
+        howToUse: 'Emphasize the need for more efficient customer acquisition and retention strategies.',
+        talkTrack: 'Ask: "With CAC increasing 45% industry-wide, what strategies are you using to improve acquisition efficiency?"',
+        vertical: 'REVENUE_OPS',
+        priority: 'MEDIUM',
+        status: 'PUBLISHED'
+      }
+    ]
+
+    console.log('📝 Inserting articles...')
+    for (const article of articles) {
+      await pool.query(`
+        INSERT INTO articles (
+          id, title, summary, "sourceUrl", "sourceName", "whyItMatters", "talkTrack",
+          category, vertical, priority, status, "publishedAt", "createdAt", "updatedAt"
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW(), NOW())
+        ON CONFLICT (id) DO NOTHING
+      `, [
+        article.id, article.title, article.summary, article.sourceUrl, article.sourceName,
+        article.whyItMatters, article.talkTrack, article.category, article.vertical,
+        article.priority, article.status
+      ])
+    }
+
+    console.log('📊 Inserting metrics...')
+    for (const metric of metrics) {
+      await pool.query(`
+        INSERT INTO metrics (
+          id, title, value, description, source, "howToUse", "talkTrack",
+          vertical, priority, status, "publishedAt", "createdAt", "updatedAt"  
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW(), NOW())
+        ON CONFLICT (id) DO NOTHING
+      `, [
+        metric.id, metric.title, metric.value, metric.description, metric.source,
+        metric.howToUse, metric.talkTrack, metric.vertical, metric.priority, metric.status
+      ])
+    }
+
+    // Get counts
+    const articleCount = await pool.query('SELECT COUNT(*) FROM articles WHERE status = $1', ['PUBLISHED'])
+    const metricCount = await pool.query('SELECT COUNT(*) FROM metrics WHERE status = $1', ['PUBLISHED'])
+
+    await pool.end()
+
+    const response = {
+      success: true,
+      message: 'Sample content added successfully!',
+      results: {
+        articlesAdded: articles.length,
+        metricsAdded: metrics.length,
+        totalArticles: parseInt(articleCount.rows[0].count),
+        totalMetrics: parseInt(metricCount.rows[0].count)
+      },
+      timestamp: new Date().toISOString()
+    }
+
+    console.log('🎉 Content insertion completed:', response)
+    return NextResponse.json(response)
+
+  } catch (error) {
+    console.error('❌ Content insertion failed:', error)
+    
+    return NextResponse.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString()
+    }, { status: 500 })
+  }
+}
+
+export async function GET() {
+  return POST()
+} 
