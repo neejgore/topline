@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
 
-const prisma = new PrismaClient()
+// Create a single Prisma instance with proper error handling
+const prisma = new PrismaClient({
+  log: ['query', 'error', 'warn'],
+})
 
 export async function POST(request: NextRequest) {
   try {
@@ -96,10 +99,10 @@ export async function POST(request: NextRequest) {
       })
     ])
 
-         const uniqueVerticals = Array.from(new Set([
-       ...currentArticleVerticals.map(a => a.vertical),
-       ...currentMetricVerticals.map(m => m.vertical)
-     ])).filter(Boolean).sort()
+    const uniqueVerticals = Array.from(new Set([
+      ...currentArticleVerticals.map(a => a.vertical),
+      ...currentMetricVerticals.map(m => m.vertical)
+    ])).filter(Boolean).sort()
 
     return NextResponse.json({
       success: true,
@@ -127,9 +130,8 @@ export async function POST(request: NextRequest) {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
-  } finally {
-    await prisma.$disconnect()
   }
+  // Don't call $disconnect here to avoid connection issues
 }
 
 export async function GET() {
