@@ -62,14 +62,14 @@ export default function MetricCard({ metric }: MetricCardProps) {
           <div className="text-2xl font-bold text-primary-600 mb-1">
             {metric.value}
           </div>
-          <h3 className="text-sm font-semibold text-gray-900 line-clamp-2">
+          <h3 className="text-sm font-semibold text-gray-900">
             {metric.title}
           </h3>
         </div>
 
         {/* Description */}
         {metric.description && (
-          <p className="text-gray-600 text-xs mb-3 leading-relaxed line-clamp-3">
+          <p className="text-gray-600 text-xs mb-3 leading-relaxed">
             {metric.description}
           </p>
         )}
@@ -78,7 +78,7 @@ export default function MetricCard({ metric }: MetricCardProps) {
         {metric.howToUse && (
           <div className="bg-blue-50 border-l-4 border-blue-400 p-3 mb-3 rounded-r">
             <h4 className="font-semibold text-blue-800 mb-1 text-sm">How to Use This:</h4>
-            <p className="text-blue-700 text-xs leading-relaxed line-clamp-2">
+            <p className="text-blue-700 text-xs leading-relaxed">
               {metric.howToUse}
             </p>
           </div>
@@ -90,7 +90,7 @@ export default function MetricCard({ metric }: MetricCardProps) {
             <h4 className="font-semibold text-green-800 mb-1 text-sm flex items-center">
               <span className="mr-1">💬</span> Talk Track
             </h4>
-            <p className="text-green-700 text-xs leading-relaxed line-clamp-2">
+            <p className="text-green-700 text-xs leading-relaxed">
               {metric.talkTrack}
             </p>
           </div>

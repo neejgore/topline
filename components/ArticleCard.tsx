@@ -65,13 +65,13 @@ export default function ArticleCard({ article }: ArticleCardProps) {
 
       {/* Card Content */}
       <div className="p-4">
-        <h3 className="text-lg font-semibold text-gray-900 leading-tight mb-3 line-clamp-2">
+        <h3 className="text-lg font-semibold text-gray-900 leading-tight mb-3">
           {article.title}
         </h3>
 
         {/* Summary */}
         {article.summary && (
-          <p className="text-gray-600 text-sm mb-4 line-clamp-3 leading-relaxed">
+          <p className="text-gray-600 text-sm mb-4 leading-relaxed">
             {article.summary}
           </p>
         )}
@@ -82,7 +82,7 @@ export default function ArticleCard({ article }: ArticleCardProps) {
             <h4 className="font-semibold text-blue-800 mb-1 text-sm flex items-center">
               <span className="mr-1">➡️</span> Why it matters
             </h4>
-            <p className="text-blue-700 text-xs leading-relaxed line-clamp-3">
+            <p className="text-blue-700 text-xs leading-relaxed">
               {article.whyItMatters}
             </p>
           </div>
@@ -94,7 +94,7 @@ export default function ArticleCard({ article }: ArticleCardProps) {
             <h4 className="font-semibold text-green-800 mb-1 text-sm flex items-center">
               <span className="mr-1">💬</span> Talk Track
             </h4>
-            <p className="text-green-700 text-xs leading-relaxed line-clamp-3">
+            <p className="text-green-700 text-xs leading-relaxed">
               {article.talkTrack}
             </p>
           </div>

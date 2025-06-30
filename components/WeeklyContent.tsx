@@ -3,22 +3,8 @@ import ArticleCard from './ArticleCard'
 import MetricCard from './MetricCard'
 import { Newspaper, TrendingUp } from 'lucide-react'
 
-// Define the verticals
-export const VERTICALS = [
-  'Consumer & Retail',
-  'Insurance', 
-  'Telecom',
-  'Financial Services',
-  'Political Candidate & Advocacy',
-  'Services',
-  'Education',
-  'Travel & Hospitality',
-  'Technology & Media',
-  'Healthcare',
-  'Automotive',
-  'All',
-  'Other'
-] as const
+// Import verticals from VerticalFilter to ensure consistency
+import { VERTICALS } from './VerticalFilter'
 
 export default async function WeeklyContent() {
   const [articles, metrics] = await Promise.all([
