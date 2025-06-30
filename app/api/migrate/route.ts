@@ -5,79 +5,123 @@ const prisma = new PrismaClient()
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('🔄 Starting migration process...')
+    console.log('🔄 Starting vertical migration process...')
 
-    const now = new Date()
-    const thisWeek = new Date()
-    thisWeek.setDate(thisWeek.getDate() - 3) // 3 days ago to ensure it's within the week
-
-    // Update articles to have current week dates
-    console.log('📰 Updating article publication dates...')
-    const articleUpdates = await prisma.article.updateMany({
+    // Fix vertical names in production database
+    console.log('📰 Updating article verticals...')
+    
+    // Update MARTECH to Technology & Media
+    const martechArticles = await prisma.article.updateMany({
       where: {
-        status: 'PUBLISHED'
+        vertical: 'MARTECH'
       },
       data: {
-        publishedAt: thisWeek,
-        updatedAt: now
+        vertical: 'Technology & Media'
       }
     })
 
-    // Update metrics to have current week dates
-    console.log('📊 Updating metric publication dates...')
-    const metricUpdates = await prisma.metric.updateMany({
+    // Update ADTECH to Technology & Media
+    const adtechArticles = await prisma.article.updateMany({
       where: {
-        status: 'PUBLISHED'
+        vertical: 'ADTECH'
       },
       data: {
-        publishedAt: thisWeek,
-        updatedAt: now
+        vertical: 'Technology & Media'
       }
     })
 
-    // Get updated content counts
-    const [articles, metrics] = await Promise.all([
+    // Update RETAIL to Consumer & Retail
+    const retailArticles = await prisma.article.updateMany({
+      where: {
+        vertical: 'RETAIL'
+      },
+      data: {
+        vertical: 'Consumer & Retail'
+      }
+    })
+
+    console.log('📊 Updating metric verticals...')
+    
+    // Update MARTECH to Technology & Media for metrics
+    const martechMetrics = await prisma.metric.updateMany({
+      where: {
+        vertical: 'MARTECH'
+      },
+      data: {
+        vertical: 'Technology & Media'
+      }
+    })
+
+    // Update ADTECH to Technology & Media for metrics
+    const adtechMetrics = await prisma.metric.updateMany({
+      where: {
+        vertical: 'ADTECH'
+      },
+      data: {
+        vertical: 'Technology & Media'
+      }
+    })
+
+    // Update RETAIL to Consumer & Retail for metrics
+    const retailMetrics = await prisma.metric.updateMany({
+      where: {
+        vertical: 'RETAIL'
+      },
+      data: {
+        vertical: 'Consumer & Retail'
+      }
+    })
+
+    // Update REVENUE_OPS to Services for metrics
+    const revenueOpsMetrics = await prisma.metric.updateMany({
+      where: {
+        vertical: 'REVENUE_OPS'
+      },
+      data: {
+        vertical: 'Services'
+      }
+    })
+
+    // Get current verticals after migration
+    const [currentArticleVerticals, currentMetricVerticals] = await Promise.all([
       prisma.article.findMany({
-        where: { 
-          status: 'PUBLISHED',
-          publishedAt: {
-            gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // Last 7 days
-          }
-        },
-        select: { id: true, title: true, publishedAt: true },
-        orderBy: { publishedAt: 'desc' }
+        where: { status: 'PUBLISHED' },
+        select: { vertical: true },
+        distinct: ['vertical']
       }),
       prisma.metric.findMany({
-        where: { 
-          status: 'PUBLISHED',
-          publishedAt: {
-            gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // Last 7 days
-          }
-        },
-        select: { id: true, title: true, publishedAt: true },
-        orderBy: { publishedAt: 'desc' }
+        where: { status: 'PUBLISHED' },
+        select: { vertical: true },
+        distinct: ['vertical']
       })
     ])
 
+         const uniqueVerticals = Array.from(new Set([
+       ...currentArticleVerticals.map(a => a.vertical),
+       ...currentMetricVerticals.map(m => m.vertical)
+     ])).filter(Boolean).sort()
+
     return NextResponse.json({
       success: true,
-      message: 'Migration completed successfully',
+      message: 'Vertical migration completed successfully',
       details: {
-        articlesUpdated: articleUpdates.count,
-        metricsUpdated: metricUpdates.count,
-        currentlyVisible: {
-          articles: articles.length,
-          metrics: metrics.length
+        articlesUpdated: {
+          martech: martechArticles.count,
+          adtech: adtechArticles.count,
+          retail: retailArticles.count
         },
-        updatedContent: {
-          articles: articles.map(a => ({ title: a.title, publishedAt: a.publishedAt })),
-          metrics: metrics.map(m => ({ title: m.title, publishedAt: m.publishedAt }))
-        }
+        metricsUpdated: {
+          martech: martechMetrics.count,
+          adtech: adtechMetrics.count,
+          retail: retailMetrics.count,
+          revenueOps: revenueOpsMetrics.count
+        },
+        currentVerticals: uniqueVerticals
       }
     })
 
   } catch (error) {
-    console.error('❌ Migration failed:', error)
+    console.error('❌ Vertical migration failed:', error)
     
     return NextResponse.json({
       success: false,
@@ -89,7 +133,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET() {
-  // Allow GET for easy testing - create a mock request
+  // Allow GET for easy testing
   const mockRequest = new Request('https://example.com', { method: 'POST' }) as NextRequest
   return POST(mockRequest)
 } 
