@@ -1,9 +1,8 @@
 import Parser from 'rss-parser'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/db'
 import { CONTENT_SOURCES, CONTENT_SCHEDULE } from './content-sources'
 
 const parser = new Parser()
-const prisma = new PrismaClient()
 
 interface ParsedArticle {
   title: string

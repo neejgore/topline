@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/db'
 
 export async function POST(request: NextRequest) {
-  let prisma: PrismaClient | null = null
-  
   try {
-    prisma = new PrismaClient()
     console.log('🔄 Starting simple vertical cleanup...')
 
     // Step 1: Fix articles - map everything to approved verticals
@@ -129,10 +126,6 @@ export async function POST(request: NextRequest) {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
-  } finally {
-    if (prisma) {
-      await prisma.$disconnect()
-    }
   }
 }
 

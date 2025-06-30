@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/db'
 import { z } from 'zod'
-
-const prisma = new PrismaClient()
 
 const subscribeSchema = z.object({
   email: z.string().email('Invalid email address'),

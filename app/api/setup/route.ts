@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/db'
 import { ContentIngestionService } from '@/lib/content-ingestion'
 
 export async function POST() {
-  // Create fresh Prisma instance to avoid prepared statement conflicts
-  const prisma = new PrismaClient()
   
   try {
     console.log('🔄 Starting production database setup...')
@@ -110,8 +108,6 @@ export async function POST() {
     }
     
     return NextResponse.json(errorResponse, { status: 500 })
-  } finally {
-    await prisma.$disconnect()
   }
 }
 

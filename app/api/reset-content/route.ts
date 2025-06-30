@@ -1,13 +1,9 @@
 import { NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/db'
 
 export async function POST() {
-  let prisma: PrismaClient | null = null
-  
   try {
     console.log('🔄 Updating content dates to current week...')
-    
-    prisma = new PrismaClient()
     
     const now = new Date()
     const thisWeek = new Date()
@@ -63,10 +59,6 @@ export async function POST() {
       details: 'Failed to update content dates'
     }, { status: 500 })
     
-  } finally {
-    if (prisma) {
-      await prisma.$disconnect()
-    }
   }
 }
 
