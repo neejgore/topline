@@ -94,18 +94,23 @@ export async function POST() {
       }
     ]
 
+    // Set publishedAt to today to ensure content shows up
+    const today = new Date()
+    const publishedAt = today.toISOString()
+
     console.log('📝 Inserting articles...')
     for (const article of articles) {
       await pool.query(`
         INSERT INTO articles (
           id, title, summary, "sourceUrl", "sourceName", "whyItMatters", "talkTrack",
           category, vertical, priority, status, "publishedAt", "createdAt", "updatedAt"
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW(), NOW())
-        ON CONFLICT (id) DO NOTHING
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $12, $12)
+        ON CONFLICT (id) DO UPDATE SET
+          "publishedAt" = $12, "updatedAt" = $12
       `, [
         article.id, article.title, article.summary, article.sourceUrl, article.sourceName,
         article.whyItMatters, article.talkTrack, article.category, article.vertical,
-        article.priority, article.status
+        article.priority, article.status, publishedAt
       ])
     }
 
@@ -115,11 +120,12 @@ export async function POST() {
         INSERT INTO metrics (
           id, title, value, description, source, "howToUse", "talkTrack",
           vertical, priority, status, "publishedAt", "createdAt", "updatedAt"  
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW(), NOW())
-        ON CONFLICT (id) DO NOTHING
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $11, $11)
+        ON CONFLICT (id) DO UPDATE SET
+          "publishedAt" = $11, "updatedAt" = $11
       `, [
         metric.id, metric.title, metric.value, metric.description, metric.source,
-        metric.howToUse, metric.talkTrack, metric.vertical, metric.priority, metric.status
+        metric.howToUse, metric.talkTrack, metric.vertical, metric.priority, metric.status, publishedAt
       ])
     }
 
