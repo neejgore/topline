@@ -3,122 +3,107 @@ import { prisma } from '@/lib/db'
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('🔄 Starting simple vertical cleanup with raw SQL...')
+    console.log('🔄 Starting simplified vertical cleanup...')
 
-    // Step 1: Fix articles using raw SQL to avoid prepared statement conflicts
-    console.log('📰 Cleaning article verticals...')
+    // Get current state first
+    console.log('📊 Checking current verticals...')
+    const currentArticles = await prisma.article.findMany({
+      where: { status: 'PUBLISHED' },
+      select: { vertical: true, id: true }
+    })
     
-    // Technology & Media
-    await prisma.$executeRaw`
-      UPDATE articles 
-      SET vertical = 'Technology & Media', "updatedAt" = NOW()
-      WHERE vertical IN ('MARTECH', 'ADTECH')
-    `
-    
-    // Consumer & Retail  
-    await prisma.$executeRaw`
-      UPDATE articles 
-      SET vertical = 'Consumer & Retail', "updatedAt" = NOW()
-      WHERE vertical IN ('RETAIL', 'ECOMMERCE', 'CPG')
-    `
-    
-    // Services
-    await prisma.$executeRaw`
-      UPDATE articles 
-      SET vertical = 'Services', "updatedAt" = NOW()
-      WHERE vertical IN ('REVENUE_OPS', 'CONSULTING')
-    `
-    
-    // Financial Services
-    await prisma.$executeRaw`
-      UPDATE articles 
-      SET vertical = 'Financial Services', "updatedAt" = NOW()
-      WHERE vertical IN ('FINTECH', 'BANKING')
-    `
-    
-    // Healthcare
-    await prisma.$executeRaw`
-      UPDATE articles 
-      SET vertical = 'Healthcare', "updatedAt" = NOW()
-      WHERE vertical IN ('HEALTHTECH', 'MEDTECH')
-    `
-    
-    // Map any remaining unknowns to Other
-    await prisma.$executeRaw`
-      UPDATE articles 
-      SET vertical = 'Other', "updatedAt" = NOW()
-      WHERE vertical NOT IN ('Consumer & Retail', 'Insurance', 'Telecom', 'Financial Services',
-                            'Political Candidate & Advocacy', 'Services', 'Education', 
-                            'Travel & Hospitality', 'Technology & Media', 'Healthcare', 
-                            'Automotive', 'Other')
-    `
+    const currentMetrics = await prisma.metric.findMany({
+      where: { status: 'PUBLISHED' },
+      select: { vertical: true, id: true }
+    })
 
-    // Step 2: Fix metrics using raw SQL
-    console.log('📊 Cleaning metric verticals...')
+    // Count what needs to be updated
+    const articlesToUpdate = currentArticles.filter(a => 
+      a.vertical && ['MARTECH', 'ADTECH', 'RETAIL', 'ECOMMERCE', 'CPG', 'REVENUE_OPS', 'CONSULTING', 'FINTECH', 'BANKING', 'HEALTHTECH', 'MEDTECH'].includes(a.vertical)
+    )
     
-    // Technology & Media
-    await prisma.$executeRaw`
-      UPDATE metrics 
-      SET vertical = 'Technology & Media', "updatedAt" = NOW()
-      WHERE vertical IN ('MARTECH', 'ADTECH')
-    `
-    
-    // Consumer & Retail  
-    await prisma.$executeRaw`
-      UPDATE metrics 
-      SET vertical = 'Consumer & Retail', "updatedAt" = NOW()
-      WHERE vertical IN ('RETAIL', 'ECOMMERCE', 'CPG')
-    `
-    
-    // Services
-    await prisma.$executeRaw`
-      UPDATE metrics 
-      SET vertical = 'Services', "updatedAt" = NOW()
-      WHERE vertical IN ('REVENUE_OPS', 'CONSULTING')
-    `
-    
-    // Financial Services
-    await prisma.$executeRaw`
-      UPDATE metrics 
-      SET vertical = 'Financial Services', "updatedAt" = NOW()
-      WHERE vertical IN ('FINTECH', 'BANKING')
-    `
-    
-    // Healthcare
-    await prisma.$executeRaw`
-      UPDATE metrics 
-      SET vertical = 'Healthcare', "updatedAt" = NOW()
-      WHERE vertical IN ('HEALTHTECH', 'MEDTECH')
-    `
-    
-    // Map any remaining unknowns to Other
-    await prisma.$executeRaw`
-      UPDATE metrics 
-      SET vertical = 'Other', "updatedAt" = NOW()
-      WHERE vertical NOT IN ('Consumer & Retail', 'Insurance', 'Telecom', 'Financial Services',
-                            'Political Candidate & Advocacy', 'Services', 'Education', 
-                            'Travel & Hospitality', 'Technology & Media', 'Healthcare', 
-                            'Automotive', 'Other')
-    `
+    const metricsToUpdate = currentMetrics.filter(m => 
+      m.vertical && ['MARTECH', 'ADTECH', 'RETAIL', 'ECOMMERCE', 'CPG', 'REVENUE_OPS', 'CONSULTING', 'FINTECH', 'BANKING', 'HEALTHTECH', 'MEDTECH'].includes(m.vertical)
+    )
 
-    // Step 3: Get current state using raw SQL
-    const articleVerticals = await prisma.$queryRaw<Array<{vertical: string}>>`
-      SELECT DISTINCT vertical FROM articles WHERE status = 'PUBLISHED' ORDER BY vertical
-    `
-    
-    const metricVerticals = await prisma.$queryRaw<Array<{vertical: string}>>`
-      SELECT DISTINCT vertical FROM metrics WHERE status = 'PUBLISHED' ORDER BY vertical
-    `
+    console.log(`📰 Found ${articlesToUpdate.length} articles to update`)
+    console.log(`📊 Found ${metricsToUpdate.length} metrics to update`)
 
-    const verticals = Array.from(new Set([
-      ...articleVerticals.map(a => a.vertical),
-      ...metricVerticals.map(m => m.vertical)
+    let updatedArticles = 0
+    let updatedMetrics = 0
+
+    // Update articles one by one to avoid prepared statement conflicts
+    for (const article of articlesToUpdate) {
+      let newVertical = 'Other'
+      
+      if (article.vertical && ['MARTECH', 'ADTECH'].includes(article.vertical)) {
+        newVertical = 'Technology & Media'
+      } else if (article.vertical && ['RETAIL', 'ECOMMERCE', 'CPG'].includes(article.vertical)) {
+        newVertical = 'Consumer & Retail'
+      } else if (article.vertical && ['REVENUE_OPS', 'CONSULTING'].includes(article.vertical)) {
+        newVertical = 'Services'
+      } else if (article.vertical && ['FINTECH', 'BANKING'].includes(article.vertical)) {
+        newVertical = 'Financial Services'
+      } else if (article.vertical && ['HEALTHTECH', 'MEDTECH'].includes(article.vertical)) {
+        newVertical = 'Healthcare'
+      }
+
+      await prisma.article.update({
+        where: { id: article.id },
+        data: { vertical: newVertical }
+      })
+      updatedArticles++
+    }
+
+    // Update metrics one by one
+    for (const metric of metricsToUpdate) {
+      let newVertical = 'Other'
+      
+      if (metric.vertical && ['MARTECH', 'ADTECH'].includes(metric.vertical)) {
+        newVertical = 'Technology & Media'
+      } else if (metric.vertical && ['RETAIL', 'ECOMMERCE', 'CPG'].includes(metric.vertical)) {
+        newVertical = 'Consumer & Retail'
+      } else if (metric.vertical && ['REVENUE_OPS', 'CONSULTING'].includes(metric.vertical)) {
+        newVertical = 'Services'
+      } else if (metric.vertical && ['FINTECH', 'BANKING'].includes(metric.vertical)) {
+        newVertical = 'Financial Services'
+      } else if (metric.vertical && ['HEALTHTECH', 'MEDTECH'].includes(metric.vertical)) {
+        newVertical = 'Healthcare'
+      }
+
+      await prisma.metric.update({
+        where: { id: metric.id },
+        data: { vertical: newVertical }
+      })
+      updatedMetrics++
+    }
+
+    // Get final state
+    const finalArticles = await prisma.article.findMany({
+      where: { status: 'PUBLISHED' },
+      select: { vertical: true },
+      distinct: ['vertical']
+    })
+    
+    const finalMetrics = await prisma.metric.findMany({
+      where: { status: 'PUBLISHED' },
+      select: { vertical: true },
+      distinct: ['vertical']
+    })
+
+    const finalVerticals = Array.from(new Set([
+      ...finalArticles.map(a => a.vertical),
+      ...finalMetrics.map(m => m.vertical)
     ])).filter(Boolean).sort()
 
     return NextResponse.json({
       success: true,
-      message: 'Vertical cleanup completed using raw SQL',
-      currentVerticals: verticals,
+      message: 'Vertical cleanup completed with individual updates',
+      updated: {
+        articles: updatedArticles,
+        metrics: updatedMetrics
+      },
+      currentVerticals: finalVerticals,
       approvedVerticals: [
         'Consumer & Retail', 'Insurance', 'Telecom', 'Financial Services',
         'Political Candidate & Advocacy', 'Services', 'Education', 
