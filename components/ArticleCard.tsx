@@ -10,7 +10,7 @@ type Article = {
   sourceName: string
   whyItMatters?: string | null
   talkTrack?: string | null
-  publishedAt?: Date | null
+  publishedAt?: Date | string | null
   vertical?: string | null
 }
 
