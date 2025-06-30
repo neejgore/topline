@@ -21,16 +21,36 @@ export async function GET() {
       orderBy: { publishedAt: 'desc' }
     })
 
+    // Count articles with problematic URLs  
+    const urlIssues = await prisma.article.count({ 
+      where: { 
+        status: 'PUBLISHED', 
+        sourceUrl: { contains: 'topline.platform' } 
+      } 
+    })
+
     return NextResponse.json({
       success: true,
       articles: articles,
-      urlCheck: articles.map(article => ({
-        title: article.title,
-        hasUrl: !!article.sourceUrl,
-        urlValid: article.sourceUrl && !article.sourceUrl.includes('example.com'),
-        url: article.sourceUrl,
-        vertical: article.vertical
-      }))
+      urlAnalysis: {
+        totalArticles: articles.length,
+        articlesWithUrlIssues: urlIssues,
+        urlCheck: articles.map(article => ({
+          title: article.title,
+          url: article.sourceUrl,
+          hasUrl: !!article.sourceUrl,
+          isValidExternalUrl: article.sourceUrl && 
+            !article.sourceUrl.includes('example.com') && 
+            !article.sourceUrl.includes('topline.platform') &&
+            (article.sourceUrl.startsWith('http://') || article.sourceUrl.startsWith('https://')),
+          vertical: article.vertical,
+          sourceName: article.sourceName,
+          issue: !article.sourceUrl ? 'No URL' :
+                 article.sourceUrl.includes('topline.platform') ? 'Internal URL' :
+                 article.sourceUrl.includes('example.com') ? 'Example URL' :
+                 (!article.sourceUrl.startsWith('http')) ? 'Invalid format' : 'OK'
+        }))
+      }
     })
 
   } catch (error) {

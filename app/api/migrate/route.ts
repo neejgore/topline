@@ -2,97 +2,137 @@ import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
 
 export async function POST(request: NextRequest) {
-  const prisma = new PrismaClient()
+  let prisma: PrismaClient | null = null
   
   try {
-    console.log('🔄 Starting comprehensive vertical migration...')
+    prisma = new PrismaClient()
+    console.log('🔄 Starting simple vertical cleanup...')
 
-    // Map ALL existing verticals to the 13 approved verticals only
-    console.log('📰 Updating ALL article verticals to approved list...')
+    // Step 1: Fix articles - map everything to approved verticals
+    console.log('📰 Cleaning article verticals...')
     
-    const articleUpdates = await prisma.$executeRawUnsafe(`
-      UPDATE articles 
-      SET vertical = CASE 
-        WHEN vertical IN ('MARTECH', 'ADTECH') THEN 'Technology & Media'
-        WHEN vertical IN ('RETAIL', 'ECOMMERCE', 'CPG') THEN 'Consumer & Retail'
-        WHEN vertical IN ('REVENUE_OPS', 'CONSULTING') THEN 'Services'
-        WHEN vertical IN ('FINTECH', 'BANKING') THEN 'Financial Services'
-        WHEN vertical IN ('HEALTHTECH', 'PHARMA', 'MEDICAL') THEN 'Healthcare'
-        WHEN vertical IN ('AUTOMOTIVE', 'AUTO') THEN 'Automotive'
-        WHEN vertical IN ('EDTECH', 'EDUCATION') THEN 'Education'
-        WHEN vertical IN ('TRAVEL', 'HOSPITALITY') THEN 'Travel & Hospitality'
-        WHEN vertical IN ('TELECOM', 'WIRELESS') THEN 'Telecom'
-        WHEN vertical IN ('INSURANCE', 'INSURER') THEN 'Insurance'
-        WHEN vertical IN ('POLITICAL', 'ADVOCACY', 'GOVERNMENT') THEN 'Political Candidate & Advocacy'
-        ELSE 'Other'
-      END
-    `)
+    await prisma.$transaction(async (tx) => {
+      // Technology & Media
+      await tx.article.updateMany({
+        where: { vertical: { in: ['MARTECH', 'ADTECH'] } },
+        data: { vertical: 'Technology & Media' }
+      })
+      
+      // Consumer & Retail  
+      await tx.article.updateMany({
+        where: { vertical: { in: ['RETAIL', 'ECOMMERCE', 'CPG'] } },
+        data: { vertical: 'Consumer & Retail' }
+      })
+      
+      // Services
+      await tx.article.updateMany({
+        where: { vertical: { in: ['REVENUE_OPS', 'CONSULTING'] } },
+        data: { vertical: 'Services' }
+      })
+      
+      // Financial Services
+      await tx.article.updateMany({
+        where: { vertical: { in: ['FINTECH', 'BANKING'] } },
+        data: { vertical: 'Financial Services' }
+      })
+      
+      // Map any remaining unknowns to Other
+      await tx.article.updateMany({
+        where: { 
+          vertical: { 
+            notIn: [
+              'Consumer & Retail', 'Insurance', 'Telecom', 'Financial Services',
+              'Political Candidate & Advocacy', 'Services', 'Education', 
+              'Travel & Hospitality', 'Technology & Media', 'Healthcare', 
+              'Automotive', 'Other'
+            ]
+          }
+        },
+        data: { vertical: 'Other' }
+      })
+    })
 
-    console.log('📊 Updating ALL metric verticals to approved list...')
+    // Step 2: Fix metrics the same way
+    console.log('📊 Cleaning metric verticals...')
     
-    const metricUpdates = await prisma.$executeRawUnsafe(`
-      UPDATE metrics 
-      SET vertical = CASE 
-        WHEN vertical IN ('MARTECH', 'ADTECH') THEN 'Technology & Media'
-        WHEN vertical IN ('RETAIL', 'ECOMMERCE', 'CPG') THEN 'Consumer & Retail'
-        WHEN vertical IN ('REVENUE_OPS', 'CONSULTING') THEN 'Services'
-        WHEN vertical IN ('FINTECH', 'BANKING') THEN 'Financial Services'
-        WHEN vertical IN ('HEALTHTECH', 'PHARMA', 'MEDICAL') THEN 'Healthcare'
-        WHEN vertical IN ('AUTOMOTIVE', 'AUTO') THEN 'Automotive'
-        WHEN vertical IN ('EDTECH', 'EDUCATION') THEN 'Education'
-        WHEN vertical IN ('TRAVEL', 'HOSPITALITY') THEN 'Travel & Hospitality'
-        WHEN vertical IN ('TELECOM', 'WIRELESS') THEN 'Telecom'
-        WHEN vertical IN ('INSURANCE', 'INSURER') THEN 'Insurance'
-        WHEN vertical IN ('POLITICAL', 'ADVOCACY', 'GOVERNMENT') THEN 'Political Candidate & Advocacy'
-        ELSE 'Other'
-      END
-    `)
+    await prisma.$transaction(async (tx) => {
+      await tx.metric.updateMany({
+        where: { vertical: { in: ['MARTECH', 'ADTECH'] } },
+        data: { vertical: 'Technology & Media' }
+      })
+      
+      await tx.metric.updateMany({
+        where: { vertical: { in: ['RETAIL', 'ECOMMERCE', 'CPG'] } },
+        data: { vertical: 'Consumer & Retail' }
+      })
+      
+      await tx.metric.updateMany({
+        where: { vertical: { in: ['REVENUE_OPS', 'CONSULTING'] } },
+        data: { vertical: 'Services' }
+      })
+      
+      await tx.metric.updateMany({
+        where: { vertical: { in: ['FINTECH', 'BANKING'] } },
+        data: { vertical: 'Financial Services' }
+      })
+      
+      await tx.metric.updateMany({
+        where: { 
+          vertical: { 
+            notIn: [
+              'Consumer & Retail', 'Insurance', 'Telecom', 'Financial Services',
+              'Political Candidate & Advocacy', 'Services', 'Education', 
+              'Travel & Hospitality', 'Technology & Media', 'Healthcare', 
+              'Automotive', 'Other'
+            ]
+          }
+        },
+        data: { vertical: 'Other' }
+      })
+    })
 
-    // Get current verticals after migration - should only be the 13 approved ones
-    const verticals = await prisma.$queryRawUnsafe(`
-      SELECT DISTINCT vertical FROM (
-        SELECT vertical FROM articles WHERE status = 'PUBLISHED' AND vertical IS NOT NULL
-        UNION
-        SELECT vertical FROM metrics WHERE status = 'PUBLISHED' AND vertical IS NOT NULL
-      ) AS combined_verticals
-      ORDER BY vertical
-    `) as Array<{ vertical: string }>
+    // Step 3: Check current state
+    const [articles, metrics] = await Promise.all([
+      prisma.article.findMany({
+        where: { status: 'PUBLISHED' },
+        select: { vertical: true },
+        distinct: ['vertical']
+      }),
+      prisma.metric.findMany({
+        where: { status: 'PUBLISHED' },
+        select: { vertical: true },
+        distinct: ['vertical']
+      })
+    ])
 
-    const uniqueVerticals = verticals.map(v => v.vertical).filter(Boolean)
-
-    // Check for any links that might be broken
-    const brokenLinks = await prisma.$queryRawUnsafe(`
-      SELECT COUNT(*) as count FROM articles 
-      WHERE status = 'PUBLISHED' 
-      AND (sourceUrl IS NULL OR sourceUrl = '' OR sourceUrl LIKE '%example.com%')
-    `) as Array<{ count: number }>
+    const verticals = Array.from(new Set([
+      ...articles.map(a => a.vertical),
+      ...metrics.map(m => m.vertical)
+    ])).filter(Boolean).sort()
 
     return NextResponse.json({
       success: true,
-      message: 'Comprehensive vertical migration completed successfully',
-      details: {
-        articlesUpdated: articleUpdates,
-        metricsUpdated: metricUpdates,
-        currentVerticals: uniqueVerticals,
-        brokenLinksFound: brokenLinks[0]?.count || 0,
-        approvedVerticals: [
-          'Consumer & Retail', 'Insurance', 'Telecom', 'Financial Services',
-          'Political Candidate & Advocacy', 'Services', 'Education', 
-          'Travel & Hospitality', 'Technology & Media', 'Healthcare', 
-          'Automotive', 'Other'
-        ]
-      }
+      message: 'Vertical cleanup completed',
+      currentVerticals: verticals,
+      approvedVerticals: [
+        'Consumer & Retail', 'Insurance', 'Telecom', 'Financial Services',
+        'Political Candidate & Advocacy', 'Services', 'Education', 
+        'Travel & Hospitality', 'Technology & Media', 'Healthcare', 
+        'Automotive', 'Other'
+      ]
     })
 
   } catch (error) {
-    console.error('❌ Comprehensive migration failed:', error)
+    console.error('❌ Migration failed:', error)
     
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
   } finally {
-    await prisma.$disconnect()
+    if (prisma) {
+      await prisma.$disconnect()
+    }
   }
 }
 
