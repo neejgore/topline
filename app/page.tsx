@@ -3,7 +3,6 @@ import { Metadata } from 'next'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import WeeklyContentWithFilter from '@/components/WeeklyContentWithFilter'
-import NewsletterSignup from '@/components/NewsletterSignup'
 import LoadingSpinner from '@/components/LoadingSpinner'
 
 export const metadata: Metadata = {
@@ -28,10 +27,7 @@ export default function HomePage() {
           </p>
         </div>
 
-        {/* Newsletter Signup */}
-        <div className="mb-6">
-          <NewsletterSignup />
-        </div>
+
 
         {/* Weekly Content */}
         <Suspense fallback={<LoadingSpinner />}>
