@@ -13,6 +13,7 @@ interface ParsedArticle {
   publishedAt: Date
   category: string
   priority: string
+  vertical: string
 }
 
 export class ContentIngestionService {
@@ -74,6 +75,82 @@ export class ContentIngestionService {
     return hasRelevant
   }
   
+  private determineVertical(title: string, content: string): string {
+    const text = `${title} ${content}`.toLowerCase()
+    
+    // Define keywords for each vertical
+    const verticalKeywords = {
+      'Healthcare': [
+        'healthcare', 'health care', 'medical', 'hospital', 'pharma', 'pharmaceutical', 
+        'biotech', 'telemedicine', 'patient', 'clinical', 'medicare', 'medicaid'
+      ],
+      'Financial Services': [
+        'bank', 'banking', 'fintech', 'finance', 'financial services', 'credit card', 
+        'loan', 'mortgage', 'investment', 'wealth management', 'trading', 'crypto'
+      ],
+      'Insurance': [
+        'insurance', 'insurer', 'auto insurance', 'health insurance', 'life insurance',
+        'claims', 'underwriting', 'actuarial', 'policy', 'premium'
+      ],
+      'Consumer & Retail': [
+        'retail', 'e-commerce', 'ecommerce', 'shopping', 'consumer goods', 'brand',
+        'cpg', 'fashion', 'grocery', 'marketplace', 'amazon', 'walmart'
+      ],
+      'Automotive': [
+        'automotive', 'auto', 'car', 'vehicle', 'tesla', 'ford', 'gm', 'toyota',
+        'electric vehicle', 'ev', 'dealership', 'auto industry'
+      ],
+      'Travel & Hospitality': [
+        'travel', 'hotel', 'airline', 'hospitality', 'booking', 'vacation',
+        'tourism', 'restaurant', 'airbnb', 'uber', 'lyft'
+      ],
+      'Education': [
+        'education', 'university', 'college', 'school', 'learning', 'edtech',
+        'student', 'online learning', 'courseware', 'academic'
+      ],
+      'Telecom': [
+        'telecom', 'telecommunication', 'wireless', 'mobile', 'cellular', '5g',
+        'verizon', 'att', 'spectrum', 'broadband', 'internet provider'
+      ],
+      'Technology & Media': [
+        'martech', 'adtech', 'saas', 'software', 'technology', 'AI', 'artificial intelligence',
+        'machine learning', 'programmatic', 'media', 'advertising', 'marketing technology'
+      ],
+      'Political Candidate & Advocacy': [
+        'political', 'campaign', 'election', 'candidate', 'advocacy', 'lobbying',
+        'government', 'policy', 'regulation'
+      ],
+      'Services': [
+        'consulting', 'professional services', 'agency', 'marketing services',
+        'revenue operations', 'sales enablement', 'outsourcing'
+      ]
+    }
+    
+    // Score each vertical based on keyword matches
+    const scores: { [key: string]: number } = {}
+    
+    for (const [vertical, keywords] of Object.entries(verticalKeywords)) {
+      scores[vertical] = keywords.reduce((score, keyword) => {
+        const matches = (text.match(new RegExp(keyword, 'gi')) || []).length
+        return score + matches
+      }, 0)
+    }
+    
+    // Find the vertical with the highest score
+    const bestMatch = Object.entries(scores).reduce((best, [vertical, score]) => {
+      return score > best.score ? { vertical, score } : best
+    }, { vertical: 'Technology & Media', score: 0 }) // Default to Technology & Media
+    
+    // If no clear match found, default based on source patterns
+    if (bestMatch.score === 0) {
+      if (text.includes('adtech') || text.includes('martech') || text.includes('programmatic')) {
+        return 'Technology & Media'
+      }
+    }
+    
+    return bestMatch.vertical
+  }
+  
   private async processRSSItem(item: any, source: any): Promise<ParsedArticle | null> {
     if (!item.title || !item.link) return null
     
@@ -87,6 +164,9 @@ export class ContentIngestionService {
     const summary = await this.generateSummary(item.title, item.contentSnippet || '')
     const insights = await this.generateInsights(item.title, summary)
     
+    // Determine vertical based on content analysis
+    const vertical = this.determineVertical(item.title, item.contentSnippet || '')
+    
     return {
       title: item.title,
       summary,
@@ -94,7 +174,8 @@ export class ContentIngestionService {
       sourceName: source.name,
       publishedAt: item.pubDate ? new Date(item.pubDate) : new Date(),
       category: source.category,
-      priority: source.priority
+      priority: source.priority,
+      vertical
     }
   }
   
@@ -150,7 +231,7 @@ export class ContentIngestionService {
         whyItMatters: insights.whyItMatters,
         talkTrack: insights.talkTrack,
         category: articleData.category,
-        vertical: articleData.category,
+        vertical: articleData.vertical,
         priority: articleData.priority,
         status: 'PUBLISHED',
         publishedAt: articleData.publishedAt,
