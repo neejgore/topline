@@ -16,20 +16,20 @@ export default function HomePage() {
     <div className="min-h-screen bg-gray-50">
       <Header />
       
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {/* Hero Section */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">
+        <div className="text-center mb-6">
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
             This Week's <span className="text-primary-600">Topline</span>
           </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-lg text-gray-600 max-w-3xl mx-auto">
             Curated sales intelligence for enterprise professionals in marketing, media, and technology. 
             Sharp insights, strategic interpretation, ready for customer conversations.
           </p>
         </div>
 
         {/* Newsletter Signup */}
-        <div className="mb-12">
+        <div className="mb-6">
           <NewsletterSignup />
         </div>
 
@@ -39,8 +39,8 @@ export default function HomePage() {
         </Suspense>
 
         {/* Use Cases Section */}
-        <section className="mt-16 mb-12">
-          <h2 className="section-title text-center">How Sales Professionals Use Topline</h2>
+        <section className="mt-8 mb-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-4 text-center">How Sales Professionals Use Topline</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="card">
               <div className="text-primary-600 text-lg font-semibold mb-2">Account Executives</div>

@@ -13,6 +13,21 @@
 }
 
 @layer components {
+  /* Line clamp utilities for Pinterest-style cards */
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
   .btn {
     @apply inline-flex items-center justify-center px-4 py-2 text-sm font-medium border border-transparent rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors;
   }
@@ -30,7 +45,7 @@
   }
   
   .card {
-    @apply bg-white rounded-lg shadow-sm border border-gray-200 p-6;
+    @apply bg-white rounded-lg shadow-sm border border-gray-200 p-4;
   }
   
   .input {
@@ -38,7 +53,7 @@
   }
   
   .section-title {
-    @apply text-2xl font-bold text-gray-900 mb-6;
+    @apply text-xl font-bold text-gray-900 mb-4;
   }
   
   .article-summary {
@@ -58,6 +73,6 @@
   }
   
   .newsletter-section {
-    @apply mb-8 pb-6 border-b border-gray-200 last:border-b-0;
+    @apply mb-6 pb-4 border-b border-gray-200 last:border-b-0;
   }
 } 
