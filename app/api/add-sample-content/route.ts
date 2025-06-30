@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 
 export async function POST() {
   try {
-    console.log('🔄 Adding sample content using direct SQL...')
+    console.log('🔄 Resetting and adding expanded content using direct SQL...')
 
     // Using node-postgres directly to bypass Prisma prepared statement issues
     const { Pool } = require('pg')
@@ -10,6 +10,11 @@ export async function POST() {
     const pool = new Pool({
       connectionString: process.env.DATABASE_URL,
     })
+
+    // Clear existing content first
+    console.log('🗑️ Clearing existing content...')
+    await pool.query('DELETE FROM articles')
+    await pool.query('DELETE FROM metrics')
 
     // Insert sample articles - expanded to 10 articles across verticals
     const articles = [
@@ -252,7 +257,7 @@ export async function POST() {
 
     const response = {
       success: true,
-      message: 'Sample content added successfully!',
+      message: 'Content reset with expanded dataset (10 articles, 5 metrics)!',
       results: {
         articlesAdded: articles.length,
         metricsAdded: metrics.length,
