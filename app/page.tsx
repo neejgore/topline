@@ -2,7 +2,7 @@ import { Suspense } from 'react'
 import { Metadata } from 'next'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
-import WeeklyContent from '@/components/WeeklyContent'
+import WeeklyContentWithFilter from '@/components/WeeklyContentWithFilter'
 import NewsletterSignup from '@/components/NewsletterSignup'
 import LoadingSpinner from '@/components/LoadingSpinner'
 
@@ -35,7 +35,7 @@ export default function HomePage() {
 
         {/* Weekly Content */}
         <Suspense fallback={<LoadingSpinner />}>
-          <WeeklyContent />
+          <WeeklyContentWithFilter />
         </Suspense>
 
         {/* Use Cases Section */}

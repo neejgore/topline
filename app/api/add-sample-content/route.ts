@@ -11,7 +11,7 @@ export async function POST() {
       connectionString: process.env.DATABASE_URL,
     })
 
-    // Insert sample articles
+    // Insert sample articles - expanded to 10 articles across verticals
     const articles = [
       {
         id: 'art1',
@@ -51,10 +51,101 @@ export async function POST() {
         vertical: 'REVENUE_OPS',
         priority: 'MEDIUM',
         status: 'PUBLISHED'
+      },
+      {
+        id: 'art4',
+        title: 'Retail Media Networks Hit $60B as Brands Shift Budgets from Social',
+        summary: 'Retailers like Amazon, Walmart, and Target are capturing massive ad spend as brands seek first-party data alternatives. Retail media now represents 18% of total digital ad spending.',
+        sourceUrl: 'https://topline.platform/retail-media-networks-60b',
+        sourceName: 'Topline Intelligence',
+        whyItMatters: 'Retail media offers unprecedented targeting precision and closed-loop attribution that traditional social platforms can no longer provide due to privacy changes.',
+        talkTrack: 'Ask: "What percentage of your media budget is allocated to retail media networks?" Position retail media as essential for reaching purchase-ready consumers.',
+        category: 'NEWS',
+        vertical: 'RETAIL',
+        priority: 'HIGH',
+        status: 'PUBLISHED'
+      },
+      {
+        id: 'art5',
+        title: 'E-commerce Conversion Rates Drop 23% as Economic Pressures Mount',
+        summary: 'Online retailers are seeing significant conversion rate declines as consumers become more price-sensitive. Companies are investing heavily in personalization and dynamic pricing strategies.',
+        sourceUrl: 'https://topline.platform/ecommerce-conversion-decline',
+        sourceName: 'Topline Intelligence',
+        whyItMatters: 'Economic headwinds are forcing e-commerce brands to optimize every touchpoint. Conversion rate optimization is becoming a survival strategy, not just growth tactic.',
+        talkTrack: 'Lead with: "How has your conversion rate changed over the past 6 months?" Focus on personalization and pricing optimization solutions.',
+        category: 'NEWS',
+        vertical: 'ECOMMERCE',
+        priority: 'HIGH',
+        status: 'PUBLISHED'
+      },
+      {
+        id: 'art6',
+        title: 'CPG Brands Slash Traditional TV Spend by 35% for Connected TV',
+        summary: 'Consumer packaged goods companies are rapidly shifting from linear TV to streaming platforms, citing better targeting and measurement capabilities.',
+        sourceUrl: 'https://topline.platform/cpg-ctv-shift',
+        sourceName: 'Topline Intelligence',
+        whyItMatters: 'The shift to CTV represents a fundamental change in how CPG brands reach consumers. Traditional TV measurement is becoming obsolete.',
+        talkTrack: 'Ask: "What percentage of your video budget is allocated to connected TV?" Position CTV as essential for modern brand building.',
+        category: 'NEWS',
+        vertical: 'CPG',
+        priority: 'MEDIUM',
+        status: 'PUBLISHED'
+      },
+      {
+        id: 'art7',
+        title: 'Fintech Marketing Compliance Costs Rise 180% Amid New Regulations',
+        summary: 'Financial services companies are facing exponentially higher marketing compliance costs as regulators crack down on digital advertising practices and data usage.',
+        sourceUrl: 'https://topline.platform/fintech-compliance-costs',
+        sourceName: 'Topline Intelligence',
+        whyItMatters: 'Regulatory compliance is becoming a major cost center for fintech marketing teams. Non-compliance risks are forcing complete strategy overhauls.',
+        talkTrack: 'Ask: "How are new regulations affecting your marketing operations and budget allocation?" Focus on compliant marketing automation solutions.',
+        category: 'NEWS',
+        vertical: 'FINTECH',
+        priority: 'MEDIUM',
+        status: 'PUBLISHED'
+      },
+      {
+        id: 'art8',
+        title: 'Healthcare Marketing Pivots to Patient Journey Orchestration',
+        summary: 'Healthcare organizations are moving beyond demographic targeting to focus on patient journey stages, leveraging health data for more precise marketing.',
+        sourceUrl: 'https://topline.platform/healthcare-patient-journey',
+        sourceName: 'Topline Intelligence',
+        whyItMatters: 'Patient-centric marketing is becoming a competitive advantage in healthcare. Traditional demographic targeting is insufficient for complex health decisions.',
+        talkTrack: 'Ask: "How are you currently mapping and targeting different patient journey stages?" Position journey orchestration platforms as essential.',
+        category: 'NEWS',
+        vertical: 'HEALTHTECH',
+        priority: 'MEDIUM',
+        status: 'PUBLISHED'
+      },
+      {
+        id: 'art9',
+        title: 'B2B Marketers Abandon Lead Generation for Revenue Attribution',
+        summary: 'B2B marketing teams are shifting from lead volume metrics to revenue attribution, demanding better integration between marketing and sales systems.',
+        sourceUrl: 'https://topline.platform/b2b-revenue-attribution',
+        sourceName: 'Topline Intelligence',
+        whyItMatters: 'The focus on revenue attribution reflects increased scrutiny on marketing ROI. Lead generation without revenue correlation is becoming obsolete.',
+        talkTrack: 'Ask: "What percentage of your marketing budget can you directly attribute to closed revenue?" Focus on attribution and revenue operations platforms.',
+        category: 'NEWS',
+        vertical: 'MARTECH',
+        priority: 'HIGH',
+        status: 'PUBLISHED'
+      },
+      {
+        id: 'art10',
+        title: 'Programmatic Advertising Fraud Hits $84B as AI Detection Scales',
+        summary: 'Ad fraud is reaching unprecedented levels while AI-powered detection systems are becoming more sophisticated. The arms race between fraudsters and detection is intensifying.',
+        sourceUrl: 'https://topline.platform/programmatic-fraud-84b',
+        sourceName: 'Topline Intelligence',
+        whyItMatters: 'Ad fraud represents a massive tax on digital advertising efficiency. Brands are demanding better fraud protection as budgets tighten.',
+        talkTrack: 'Lead with: "What percentage of your programmatic spend do you estimate is lost to fraud?" Position fraud detection as essential infrastructure.',
+        category: 'NEWS',
+        vertical: 'ADTECH',
+        priority: 'HIGH',
+        status: 'PUBLISHED'
       }
     ]
 
-    // Insert sample metrics
+    // Insert sample metrics - expanded to 5 metrics across verticals
     const metrics = [
       {
         id: 'met1',
@@ -91,6 +182,30 @@ export async function POST() {
         vertical: 'REVENUE_OPS',
         priority: 'MEDIUM',
         status: 'PUBLISHED'
+      },
+      {
+        id: 'met4',
+        title: '67% of Retail Media Budgets Shift to In-Store',
+        value: '67%',
+        description: 'Retailers are moving beyond online advertising to in-store digital experiences, with 67% of retail media budgets now allocated to physical location activation.',
+        source: 'Retail Media Report 2024',
+        howToUse: 'Highlight the evolution of retail media beyond digital-only strategies.',
+        talkTrack: 'Ask: "How are you leveraging in-store digital experiences to complement your online retail media strategy?"',
+        vertical: 'RETAIL',
+        priority: 'HIGH',
+        status: 'PUBLISHED'
+      },
+      {
+        id: 'met5',
+        title: '92% of E-commerce Sites Use Dynamic Pricing',
+        value: '92%',
+        description: 'Dynamic pricing adoption has reached 92% among top e-commerce retailers, with AI-driven price optimization becoming standard competitive practice.',
+        source: 'E-commerce Technology Survey 2024',
+        howToUse: 'Demonstrate the critical importance of pricing automation in competitive e-commerce.',
+        talkTrack: 'Position with: "92% of your competitors are using dynamic pricing. How are you ensuring price competitiveness while maintaining margins?"',
+        vertical: 'ECOMMERCE',
+        priority: 'HIGH',
+        status: 'PUBLISHED'
       }
     ]
 
@@ -98,7 +213,7 @@ export async function POST() {
     const today = new Date()
     const publishedAt = today.toISOString()
 
-    console.log('📝 Inserting articles...')
+    console.log('📝 Inserting 10 articles across verticals...')
     for (const article of articles) {
       await pool.query(`
         INSERT INTO articles (
@@ -114,7 +229,7 @@ export async function POST() {
       ])
     }
 
-    console.log('📊 Inserting metrics...')
+    console.log('📊 Inserting 5 metrics across verticals...')
     for (const metric of metrics) {
       await pool.query(`
         INSERT INTO metrics (

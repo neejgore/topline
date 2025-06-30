@@ -1,6 +1,6 @@
 // Direct SQL version of content functions to bypass Prisma issues
 
-export async function getPublishedArticlesDirect() {
+export async function getPublishedArticlesDirect(vertical?: string) {
   try {
     const { Pool } = require('pg')
     const pool = new Pool({
@@ -10,7 +10,7 @@ export async function getPublishedArticlesDirect() {
     const oneWeekAgo = new Date()
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
 
-    const result = await pool.query(`
+    let query = `
       SELECT 
         id, title, summary, "sourceUrl", "sourceName", 
         "whyItMatters", "talkTrack", category, vertical, 
@@ -19,6 +19,17 @@ export async function getPublishedArticlesDirect() {
       WHERE status = 'PUBLISHED' 
         AND "publishedAt" >= $1
         AND ("expiresAt" IS NULL OR "expiresAt" > NOW())
+    `
+    
+    const params: any[] = [oneWeekAgo]
+    
+    // Add vertical filter if specified and not 'ALL'
+    if (vertical && vertical !== 'ALL') {
+      query += ` AND vertical = $2`
+      params.push(vertical)
+    }
+    
+    query += `
       ORDER BY 
         CASE priority 
           WHEN 'HIGH' THEN 3 
@@ -27,8 +38,9 @@ export async function getPublishedArticlesDirect() {
         END DESC,
         "publishedAt" DESC
       LIMIT 10
-    `, [oneWeekAgo])
+    `
 
+    const result = await pool.query(query, params)
     await pool.end()
     
     // Transform the results to match Prisma format
