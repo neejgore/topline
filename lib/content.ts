@@ -118,14 +118,18 @@ export async function getArchivedContent() {
 
 export async function searchContent(query: string) {
   try {
+    // Handle case-insensitive search for both SQLite and PostgreSQL
+    const searchQuery = query.toLowerCase()
+    
     const [articles, metrics] = await Promise.all([
       prisma.article.findMany({
         where: {
           status: 'PUBLISHED',
           OR: [
-            { title: { contains: query, mode: 'insensitive' } },
-            { summary: { contains: query, mode: 'insensitive' } },
-            { content: { contains: query, mode: 'insensitive' } }
+            { title: { contains: searchQuery } },
+            { summary: { contains: searchQuery } },
+            { whyItMatters: { contains: searchQuery } },
+            { talkTrack: { contains: searchQuery } }
           ]
         },
         orderBy: { publishedAt: 'desc' },
@@ -142,8 +146,10 @@ export async function searchContent(query: string) {
         where: {
           status: 'PUBLISHED',
           OR: [
-            { title: { contains: query, mode: 'insensitive' } },
-            { description: { contains: query, mode: 'insensitive' } }
+            { title: { contains: searchQuery } },
+            { description: { contains: searchQuery } },
+            { howToUse: { contains: searchQuery } },
+            { talkTrack: { contains: searchQuery } }
           ]
         },
         orderBy: { publishedAt: 'desc' },
