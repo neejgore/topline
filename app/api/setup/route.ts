@@ -2,9 +2,10 @@ import { NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
 import { ContentIngestionService } from '@/lib/content-ingestion'
 
-const prisma = new PrismaClient()
-
 export async function POST() {
+  // Create fresh Prisma instance to avoid prepared statement conflicts
+  const prisma = new PrismaClient()
+  
   try {
     console.log('🔄 Starting production database setup...')
 
