@@ -3,107 +3,119 @@ import { prisma } from '@/lib/db'
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('🔄 Starting simplified vertical cleanup...')
+    console.log('🔄 Starting comprehensive vertical cleanup...')
 
-    // Get current state first
-    console.log('📊 Checking current verticals...')
-    const currentArticles = await prisma.article.findMany({
-      where: { status: 'PUBLISHED' },
-      select: { vertical: true, id: true }
+    // Step 1: Get ALL articles and metrics (not just PUBLISHED)
+    console.log('📊 Checking ALL verticals...')
+    const allArticles = await prisma.article.findMany({
+      select: { vertical: true, id: true, status: true }
     })
     
-    const currentMetrics = await prisma.metric.findMany({
-      where: { status: 'PUBLISHED' },
-      select: { vertical: true, id: true }
+    const allMetrics = await prisma.metric.findMany({
+      select: { vertical: true, id: true, status: true }
     })
 
-    // Count what needs to be updated
-    const articlesToUpdate = currentArticles.filter(a => 
-      a.vertical && ['MARTECH', 'ADTECH', 'RETAIL', 'ECOMMERCE', 'CPG', 'REVENUE_OPS', 'CONSULTING', 'FINTECH', 'BANKING', 'HEALTHTECH', 'MEDTECH'].includes(a.vertical)
+    // Find ALL articles with old verticals (any status)
+    const articlesToUpdate = allArticles.filter(a => 
+      a.vertical && [
+        'MARTECH', 'ADTECH', 'RETAIL', 'ECOMMERCE', 'CPG', 
+        'REVENUE_OPS', 'CONSULTING', 'FINTECH', 'BANKING', 
+        'HEALTHTECH', 'MEDTECH'
+      ].includes(a.vertical)
     )
     
-    const metricsToUpdate = currentMetrics.filter(m => 
-      m.vertical && ['MARTECH', 'ADTECH', 'RETAIL', 'ECOMMERCE', 'CPG', 'REVENUE_OPS', 'CONSULTING', 'FINTECH', 'BANKING', 'HEALTHTECH', 'MEDTECH'].includes(m.vertical)
+    // Find ALL metrics with old verticals (any status)
+    const metricsToUpdate = allMetrics.filter(m => 
+      m.vertical && [
+        'MARTECH', 'ADTECH', 'RETAIL', 'ECOMMERCE', 'CPG', 
+        'REVENUE_OPS', 'CONSULTING', 'FINTECH', 'BANKING', 
+        'HEALTHTECH', 'MEDTECH'
+      ].includes(m.vertical)
     )
 
-    console.log(`📰 Found ${articlesToUpdate.length} articles to update`)
-    console.log(`📊 Found ${metricsToUpdate.length} metrics to update`)
+    console.log(`📰 Found ${articlesToUpdate.length} articles to update (all statuses)`)
+    console.log(`📊 Found ${metricsToUpdate.length} metrics to update (all statuses)`)
 
     let updatedArticles = 0
     let updatedMetrics = 0
 
-    // Update articles one by one to avoid prepared statement conflicts
-    for (const article of articlesToUpdate) {
-      let newVertical = 'Other'
-      
-      if (article.vertical && ['MARTECH', 'ADTECH'].includes(article.vertical)) {
-        newVertical = 'Technology & Media'
-      } else if (article.vertical && ['RETAIL', 'ECOMMERCE', 'CPG'].includes(article.vertical)) {
-        newVertical = 'Consumer & Retail'
-      } else if (article.vertical && ['REVENUE_OPS', 'CONSULTING'].includes(article.vertical)) {
-        newVertical = 'Services'
-      } else if (article.vertical && ['FINTECH', 'BANKING'].includes(article.vertical)) {
-        newVertical = 'Financial Services'
-      } else if (article.vertical && ['HEALTHTECH', 'MEDTECH'].includes(article.vertical)) {
-        newVertical = 'Healthcare'
+    // Helper function to map old vertical to new
+    const mapVertical = (oldVertical: string): string => {
+      if (['MARTECH', 'ADTECH'].includes(oldVertical)) {
+        return 'Technology & Media'
+      } else if (['RETAIL', 'ECOMMERCE', 'CPG'].includes(oldVertical)) {
+        return 'Consumer & Retail'
+      } else if (['REVENUE_OPS', 'CONSULTING'].includes(oldVertical)) {
+        return 'Services'
+      } else if (['FINTECH', 'BANKING'].includes(oldVertical)) {
+        return 'Financial Services'
+      } else if (['HEALTHTECH', 'MEDTECH'].includes(oldVertical)) {
+        return 'Healthcare'
       }
+      return 'Other'
+    }
 
-      await prisma.article.update({
-        where: { id: article.id },
-        data: { vertical: newVertical }
-      })
-      updatedArticles++
+    // Update articles one by one
+    for (const article of articlesToUpdate) {
+      if (article.vertical) {
+        const newVertical = mapVertical(article.vertical)
+        
+        await prisma.article.update({
+          where: { id: article.id },
+          data: { vertical: newVertical }
+        })
+        updatedArticles++
+        console.log(`Updated article ${article.id}: ${article.vertical} → ${newVertical}`)
+      }
     }
 
     // Update metrics one by one
     for (const metric of metricsToUpdate) {
-      let newVertical = 'Other'
-      
-      if (metric.vertical && ['MARTECH', 'ADTECH'].includes(metric.vertical)) {
-        newVertical = 'Technology & Media'
-      } else if (metric.vertical && ['RETAIL', 'ECOMMERCE', 'CPG'].includes(metric.vertical)) {
-        newVertical = 'Consumer & Retail'
-      } else if (metric.vertical && ['REVENUE_OPS', 'CONSULTING'].includes(metric.vertical)) {
-        newVertical = 'Services'
-      } else if (metric.vertical && ['FINTECH', 'BANKING'].includes(metric.vertical)) {
-        newVertical = 'Financial Services'
-      } else if (metric.vertical && ['HEALTHTECH', 'MEDTECH'].includes(metric.vertical)) {
-        newVertical = 'Healthcare'
+      if (metric.vertical) {
+        const newVertical = mapVertical(metric.vertical)
+        
+        await prisma.metric.update({
+          where: { id: metric.id },
+          data: { vertical: newVertical }
+        })
+        updatedMetrics++
+        console.log(`Updated metric ${metric.id}: ${metric.vertical} → ${newVertical}`)
       }
-
-      await prisma.metric.update({
-        where: { id: metric.id },
-        data: { vertical: newVertical }
-      })
-      updatedMetrics++
     }
 
-    // Get final state
-    const finalArticles = await prisma.article.findMany({
-      where: { status: 'PUBLISHED' },
+    // Step 2: Final verification - get ALL verticals (not just published)
+    const allFinalArticles = await prisma.article.findMany({
       select: { vertical: true },
       distinct: ['vertical']
     })
     
-    const finalMetrics = await prisma.metric.findMany({
-      where: { status: 'PUBLISHED' },
+    const allFinalMetrics = await prisma.metric.findMany({
       select: { vertical: true },
       distinct: ['vertical']
     })
 
-    const finalVerticals = Array.from(new Set([
-      ...finalArticles.map(a => a.vertical),
-      ...finalMetrics.map(m => m.vertical)
+    const allVerticals = Array.from(new Set([
+      ...allFinalArticles.map(a => a.vertical),
+      ...allFinalMetrics.map(m => m.vertical)
     ])).filter(Boolean).sort()
+
+    // Check for any remaining old verticals
+    const remainingOldVerticals = allVerticals.filter(v => 
+      ['MARTECH', 'ADTECH', 'RETAIL', 'ECOMMERCE', 'CPG', 'REVENUE_OPS', 'CONSULTING', 'FINTECH', 'BANKING', 'HEALTHTECH', 'MEDTECH'].includes(v || '')
+    )
 
     return NextResponse.json({
       success: true,
-      message: 'Vertical cleanup completed with individual updates',
+      message: 'Comprehensive vertical cleanup completed',
       updated: {
         articles: updatedArticles,
         metrics: updatedMetrics
       },
-      currentVerticals: finalVerticals,
+      verification: {
+        allVerticals: allVerticals,
+        remainingOldVerticals: remainingOldVerticals,
+        isClean: remainingOldVerticals.length === 0
+      },
       approvedVerticals: [
         'Consumer & Retail', 'Insurance', 'Telecom', 'Financial Services',
         'Political Candidate & Advocacy', 'Services', 'Education', 
