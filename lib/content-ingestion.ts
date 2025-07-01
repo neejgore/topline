@@ -44,7 +44,7 @@ export class ContentIngestionService {
         
         const feed = await parser.parseURL(source.url)
         let sourceArticleCount = 0
-        const maxPerSource = 5 // Limit per source for good distribution
+        const maxPerSource = 8 // Increase limit per source for more variety
         
         for (const item of feed.items) {
           // Stop if we've reached the limit for this source
@@ -67,15 +67,23 @@ export class ContentIngestionService {
               // Evaluate article importance
               const evaluation = await this.evaluateArticleWithAI(articleData)
               
-              // Only save articles scoring 6+ or metrics articles scoring 4+
-              const minScore = isMetricsArticle ? 4 : 6
+              // Only save articles scoring 5+ or metrics articles scoring 4+
+              const minScore = isMetricsArticle ? 4 : 5
               if (evaluation.importanceScore >= minScore) {
+                // Force proper vertical based on source
+                let finalVertical = evaluation.vertical
+                if (source.name === 'AdExchanger' || source.name === 'Digiday' || source.name === 'Ad Age' || source.name === 'Marketing Land') {
+                  finalVertical = 'Technology & Media'
+                } else if (source.name === 'Retail Dive') {
+                  finalVertical = 'Consumer & Retail'
+                }
+                
                 await this.saveArticle({
                   ...articleData,
                   ...evaluation,
-                  // Override category for metrics articles
-                  category: isMetricsArticle ? 'METRICS' : evaluation.vertical,
-                  vertical: isMetricsArticle ? 'METRICS' : evaluation.vertical,
+                  // Override category for metrics articles, otherwise use proper vertical
+                  category: isMetricsArticle ? 'METRICS' : finalVertical,
+                  vertical: isMetricsArticle ? 'METRICS' : finalVertical,
                   priority: isMetricsArticle ? 'HIGH' : evaluation.priority
                 })
                 totalArticles++
@@ -326,7 +334,7 @@ Respond in JSON format:
       sourceUrl: item.link,
       sourceName: source.name,
       publishedAt: item.pubDate ? new Date(item.pubDate) : new Date(),
-      category: source.category,
+      category: source.category, // This will be overridden by AI evaluation
       priority: source.priority,
       vertical
     }
