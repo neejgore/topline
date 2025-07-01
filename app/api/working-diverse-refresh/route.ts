@@ -16,8 +16,7 @@ async function generateRelevantMetrics(verticals: string[]) {
     metrics.push(
       {
         title: 'AI Marketing Spend Growth',
-        value: '47%',
-        unit: 'YoY Growth',
+        value: '47% YoY Growth',
         context: 'Enterprise marketing teams are rapidly adopting AI-powered solutions',
         source: 'MarTech Outlook 2025',
         sourceUrl: 'https://martech-outlook.com/ai-marketing-2025',
@@ -30,8 +29,7 @@ async function generateRelevantMetrics(verticals: string[]) {
       },
       {
         title: 'Programmatic Ad Spend',
-        value: '$147B',
-        unit: 'Global Market Size',
+        value: '$147B Global Market',
         context: 'Programmatic advertising continues to dominate digital ad spending',
         source: 'eMarketer Digital Ad Report',
         sourceUrl: 'https://emarketer.com/programmatic-advertising-2025',
@@ -50,8 +48,7 @@ async function generateRelevantMetrics(verticals: string[]) {
     metrics.push(
       {
         title: 'Retail Media Growth Rate',
-        value: '28%',
-        unit: 'YoY Growth',
+        value: '28% YoY Growth',
         context: 'Retail media networks are becoming major advertising channels',
         source: 'IAB Retail Media Report',
         sourceUrl: 'https://iab.com/retail-media-network-growth-2025',
@@ -64,8 +61,7 @@ async function generateRelevantMetrics(verticals: string[]) {
       },
       {
         title: 'First-Party Data Usage',
-        value: '73%',
-        unit: 'of Retailers',
+        value: '73% of Retailers',
         context: 'Retailers are prioritizing first-party data strategies',
         source: 'Retail Data Strategy Survey',
         sourceUrl: 'https://retail-insights.com/first-party-data-2025',
@@ -84,8 +80,7 @@ async function generateRelevantMetrics(verticals: string[]) {
     metrics.push(
       {
         title: 'Digital Banking Adoption',
-        value: '89%',
-        unit: 'of US Consumers',
+        value: '89% of US Consumers',
         context: 'Digital-first banking is now the norm across all demographics',
         source: 'Federal Reserve Bank Study',
         sourceUrl: 'https://federalreserve.gov/digital-banking-adoption-2025',
@@ -98,8 +93,7 @@ async function generateRelevantMetrics(verticals: string[]) {
       },
       {
         title: 'Financial Services Ad Fraud',
-        value: '$2.3B',
-        unit: 'Annual Losses',
+        value: '$2.3B Annual Losses',
         context: 'Ad fraud continues to impact financial services advertising significantly',
         source: 'Financial Services Marketing Report',
         sourceUrl: 'https://financial-marketing.com/ad-fraud-losses-2025',
@@ -118,8 +112,7 @@ async function generateRelevantMetrics(verticals: string[]) {
     metrics.push(
       {
         title: 'Healthcare Digital Ad Spend',
-        value: '$15.6B',
-        unit: 'Market Size 2025',
+        value: '$15.6B Market Size',
         context: 'Healthcare organizations are increasing digital marketing investments',
         source: 'Healthcare Marketing Association',
         sourceUrl: 'https://healthcare-marketing.com/digital-spend-2025',
@@ -138,8 +131,7 @@ async function generateRelevantMetrics(verticals: string[]) {
     metrics.push(
       {
         title: 'B2B Marketing Automation ROI',
-        value: '435%',
-        unit: 'Average ROI',
+        value: '435% Average ROI',
         context: 'B2B companies see significant returns from marketing automation investments',
         source: 'B2B Marketing Automation Study',
         sourceUrl: 'https://b2b-marketing.com/automation-roi-2025',
@@ -157,8 +149,7 @@ async function generateRelevantMetrics(verticals: string[]) {
   metrics.push(
     {
       title: 'Third-Party Cookie Deprecation Impact',
-      value: '68%',
-      unit: 'of Marketers Concerned',
+      value: '68% of Marketers Concerned',
       context: 'Cookie deprecation continues to be top concern for digital marketers',
       source: 'Digital Marketing Trends Report',
       sourceUrl: 'https://digital-trends.com/cookie-deprecation-2025',
@@ -171,8 +162,7 @@ async function generateRelevantMetrics(verticals: string[]) {
     },
     {
       title: 'Customer Data Platform Adoption',
-      value: '78%',
-      unit: 'of Enterprise Brands',
+      value: '78% of Enterprise Brands',
       context: 'CDPs have become essential infrastructure for enterprise marketing',
       source: 'Enterprise Marketing Technology Survey',
       sourceUrl: 'https://enterprise-martech.com/cdp-adoption-2025',
