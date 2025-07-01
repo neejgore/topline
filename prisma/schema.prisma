@@ -59,6 +59,10 @@ model Article {
   newsletterArticles NewsletterArticle[]
   tags              ArticleTag[]
 
+  // Prevent duplicates by URL
+  @@unique([sourceUrl])
+  // Prevent duplicates by title + source combination
+  @@unique([title, sourceName])
   @@map("articles")
 }
 
@@ -86,6 +90,10 @@ model Metric {
   newsletterMetrics NewsletterMetric[]
   tags             MetricTag[]
 
+  // Prevent duplicate metrics by title + source
+  @@unique([title, source])
+  // Prevent duplicate metrics by source URL if present
+  @@unique([sourceUrl])
   @@map("metrics")
 }
 

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import Parser from 'rss-parser'
+import { duplicatePreventionService } from '@/lib/duplicate-prevention'
 
 interface RSSItem {
   title?: string
@@ -52,28 +53,28 @@ export async function POST() {
           const articleId = `rss-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 
           try {
-            const article = await prisma.article.create({
-              data: {
-                id: articleId,
-                title: title,
-                summary: summary || `Latest news from ${source.name}: ${title}`,
-                sourceUrl: item.link,
-                sourceName: source.name,
-                whyItMatters: `This ${source.name} article covers important industry developments that could impact your business strategy and competitive positioning.`,
-                talkTrack: `Ask: "Are you seeing similar trends in your industry?" Use this as conversation starter about market dynamics and competitive intelligence.`,
-                vertical: source.vertical,
-                priority: 'MEDIUM',
-                status: 'PUBLISHED',
-                publishedAt: item.pubDate ? new Date(item.pubDate) : new Date()
-              }
+            const result = await duplicatePreventionService.createArticleSafely({
+              title: title,
+              summary: summary || `Latest news from ${source.name}: ${title}`,
+              sourceUrl: item.link,
+              sourceName: source.name,
+              whyItMatters: `This ${source.name} article covers important industry developments that could impact your business strategy and competitive positioning.`,
+              talkTrack: `Ask: "Are you seeing similar trends in your industry?" Use this as conversation starter about market dynamics and competitive intelligence.`,
+              vertical: source.vertical,
+              priority: 'MEDIUM',
+              publishedAt: item.pubDate ? new Date(item.pubDate) : new Date()
             })
             
-            sourceAdded++
-            totalAdded++
-            console.log(`✅ Added: ${title.slice(0, 60)}...`)
+            if (result.success) {
+              sourceAdded++
+              totalAdded++
+              console.log(`✅ Added: ${title.slice(0, 60)}...`)
+            } else {
+              console.log(`⏭️  Skipped: ${title.slice(0, 60)}... (${result.reason})`)
+            }
             
           } catch (createError) {
-            console.log(`⚠️  Skipped duplicate: ${title.slice(0, 60)}...`)
+            console.log(`❌ Error: ${title.slice(0, 60)}... (${createError})`)
           }
         }
 

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { ContentIngestionService } from '@/lib/content-ingestion'
+import { duplicatePreventionService } from '@/lib/duplicate-prevention'
 
 export async function POST() {
   try {
@@ -14,21 +15,19 @@ export async function POST() {
     const sevenDaysAgo = new Date()
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
     
-    const [deletedArticles, deletedMetrics] = await Promise.all([
-      prisma.article.deleteMany({
-        where: {
-          publishedAt: {
-            lt: sevenDaysAgo
-          }
+    // Step 1: Clear old articles only (keep metrics to prevent duplicates)
+    const deletedArticles = await prisma.article.deleteMany({
+      where: {
+        publishedAt: {
+          lt: sevenDaysAgo
         }
-      }),
-      prisma.metric.deleteMany({})
-    ])
+      }
+    })
 
-    console.log(`🗑️ Deleted ${deletedArticles.count} old articles and ${deletedMetrics.count} metrics`)
+    console.log(`🗑️ Deleted ${deletedArticles.count} old articles`)
 
-    // Step 2: Add fresh metrics data
-    console.log('📊 Adding metrics data...')
+    // Step 2: Add fresh metrics data with duplicate prevention
+    console.log('📊 Adding metrics data with duplicate prevention...')
     const metrics = [
       {
         title: 'Global Digital Ad Spend Growth',
@@ -98,21 +97,29 @@ export async function POST() {
     ]
 
     let metricsCreated = 0
+    let metricsSkipped = 0
+    
     for (const metricData of metrics) {
       try {
-        await prisma.metric.create({
-          data: {
-            ...metricData,
-            publishedAt: new Date()
-          }
+        const result = await duplicatePreventionService.createMetricSafely({
+          ...metricData,
+          publishedAt: new Date()
         })
-        metricsCreated++
+        
+        if (result.success) {
+          metricsCreated++
+          console.log(`✅ Created metric: ${metricData.title}`)
+        } else {
+          metricsSkipped++
+          console.log(`⏭️  Skipped metric: ${metricData.title} (${result.reason})`)
+        }
       } catch (error) {
-        console.error(`Failed to create metric: ${metricData.title}`, error)
+        console.error(`❌ Failed to create metric: ${metricData.title}`, error)
+        metricsSkipped++
       }
     }
 
-    console.log(`✅ Created ${metricsCreated} metrics`)
+    console.log(`📊 Metrics summary: ${metricsCreated} created, ${metricsSkipped} skipped`)
 
     // Step 3: Fetch content from all RSS sources with optimized settings
     console.log('🔄 Fetching from all RSS sources...')
@@ -140,8 +147,8 @@ export async function POST() {
       message: 'Comprehensive content refresh completed successfully',
       results: {
         deletedArticles: deletedArticles.count,
-        deletedMetrics: deletedMetrics.count,
         metricsCreated,
+        metricsSkipped,
         rssArticlesAdded: rssResults.articles,
         rssArticlesSkipped: rssResults.skipped,
         finalStats: {

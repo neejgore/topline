@@ -1,6 +1,7 @@
 import Parser from 'rss-parser'
 import { prisma } from '@/lib/db'
 import { CONTENT_SOURCES, CONTENT_SCHEDULE } from './content-sources'
+import { duplicatePreventionService } from './duplicate-prevention'
 
 const parser = new Parser()
 
@@ -452,11 +453,18 @@ Respond in JSON format:
   private async processRSSItem(item: any, source: any): Promise<ParsedArticle | null> {
     if (!item.title || !item.link) return null
     
-    // Check if article already exists
-    const existing = await prisma.article.findFirst({
-      where: { sourceUrl: item.link }
+    // Enhanced duplicate checking using our comprehensive service
+    const duplicateCheck = await duplicatePreventionService.checkArticleDuplicate({
+      title: item.title,
+      sourceUrl: item.link,
+      sourceName: source.name,
+      summary: item.contentSnippet || ''
     })
-    if (existing) return null
+    
+    if (duplicateCheck.isDuplicate) {
+      console.log(`⏭️  Skipping duplicate: ${item.title} (${duplicateCheck.reason})`)
+      return null
+    }
     
     // Generate AI-powered summary and insights
     const summary = await this.generateSummary(item.title, item.contentSnippet || '')
@@ -536,21 +544,27 @@ Respond in JSON format:
   
   private async saveArticle(articleData: ParsedArticle): Promise<void> {
     try {
-      await prisma.article.create({
-        data: {
-          title: articleData.title,
-          summary: articleData.summary,
-          sourceUrl: articleData.sourceUrl,
-          sourceName: articleData.sourceName,
-          publishedAt: articleData.publishedAt,
-          category: articleData.category,
-          vertical: articleData.vertical,
-          priority: articleData.priority,
-          whyItMatters: articleData.whyItMatters || 'Industry development with potential business impact.',
-          talkTrack: articleData.talkTrack || 'Use as conversation starter about recent industry developments.',
-          status: 'PUBLISHED'
-        }
+      const result = await duplicatePreventionService.createArticleSafely({
+        title: articleData.title,
+        summary: articleData.summary,
+        sourceUrl: articleData.sourceUrl,
+        sourceName: articleData.sourceName,
+        publishedAt: articleData.publishedAt,
+        category: articleData.category,
+        vertical: articleData.vertical,
+        priority: articleData.priority,
+        whyItMatters: articleData.whyItMatters || 'Industry development with potential business impact.',
+        talkTrack: articleData.talkTrack || 'Use as conversation starter about recent industry developments.',
+        importanceScore: articleData.importanceScore || 5
       })
+      
+      if (!result.success) {
+        console.log(`⚠️ Article not saved: ${result.reason}`)
+        // Don't throw error for duplicates - just log and continue
+        return
+      }
+      
+      console.log(`✅ Article saved successfully: ${articleData.title}`)
     } catch (error) {
       console.error('Error saving article:', error)
       throw error
