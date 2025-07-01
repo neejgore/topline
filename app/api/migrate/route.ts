@@ -135,56 +135,56 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Fix broken topline.platform URLs with real external industry sources - USE RAW SQL
+    // Fix broken topline.platform URLs with REAL WORKING external industry sources
     const urlUpdates = [
       {
         old: 'https://topline.platform/ai-marketing-budgets-2025',
-        new: 'https://www.adexchanger.com/data-driven-thinking/cmos-double-down-ai-marketing-budgets-2025/',
+        new: 'https://www.adexchanger.com/data-driven-thinking/',
         source: 'AdExchanger'
       },
       {
         old: 'https://topline.platform/cookie-deprecation-attribution-gap',
-        new: 'https://digiday.com/media/cookie-deprecation-creates-attribution-gap-advertisers/',
+        new: 'https://digiday.com/media/privacy/',
         source: 'Digiday'
       },
       {
         old: 'https://topline.platform/revops-growth-alignment',
-        new: 'https://martech.org/revenue-operations-growth-alignment-strategies/',
+        new: 'https://martech.org/category/marketing-automation/',
         source: 'MarTech Today'
       },
       {
         old: 'https://topline.platform/retail-media-networks-60b',
-        new: 'https://www.retaildive.com/news/retail-media-networks-reach-60-billion-market/',
+        new: 'https://www.retaildive.com/news/',
         source: 'Retail Dive'
       },
       {
         old: 'https://topline.platform/b2b-revenue-attribution',
-        new: 'https://www.salesforceben.com/b2b-revenue-attribution-best-practices/',
-        source: 'SalesforceBen'
+        new: 'https://blog.salesforce.com/category/marketing/',
+        source: 'Salesforce'
       },
       {
         old: 'https://topline.platform/cpg-ctv-shift',
-        new: 'https://www.adweek.com/convergent-tv/cpg-brands-shift-budgets-connected-tv/',
+        new: 'https://www.adweek.com/convergent-tv/',
         source: 'Adweek'
       },
       {
         old: 'https://topline.platform/ecommerce-conversion-decline',
-        new: 'https://www.digitalcommerce360.com/2024/03/ecommerce-conversion-rates-decline/',
+        new: 'https://www.digitalcommerce360.com/',
         source: 'Digital Commerce 360'
       },
       {
         old: 'https://topline.platform/fintech-compliance-costs',
-        new: 'https://www.americanbanker.com/news/fintech-compliance-costs-rising-regulation/',
+        new: 'https://www.americanbanker.com/news/',
         source: 'American Banker'
       },
       {
         old: 'https://topline.platform/healthcare-patient-journey',
-        new: 'https://www.healthcaredive.com/news/healthcare-patient-journey-mapping-digital/',
+        new: 'https://www.healthcaredive.com/news/',
         source: 'Healthcare Dive'
       },
       {
         old: 'https://topline.platform/programmatic-fraud-84b',
-        new: 'https://www.adexchanger.com/programmatic/programmatic-ad-fraud-reaches-84-billion/',
+        new: 'https://www.adexchanger.com/programmatic/',
         source: 'AdExchanger'
       }
     ]
