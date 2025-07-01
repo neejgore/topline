@@ -318,14 +318,68 @@ export class ContentAnalysisService {
   
   private generateGeneralInsights(title: string, summary: string, sourceName: string, topics: string[]) {
     const mainTopic = topics[0] || 'Industry Development'
-    const shortSummary = summary.length > 80 ? summary.substring(0, 80) + '...' : summary
+    const contentAnalysis = this.extractSpecificDetails(title, summary)
+    
+    // Extract key elements for more specific insights
+    const companies = contentAnalysis.companies.slice(0, 2)
+    const numbers = contentAnalysis.numbers.slice(0, 2)  
+    const percentages = contentAnalysis.percentages.slice(0, 2)
+    
+    // Generate more specific insights based on actual content
+    let whyItMatters = ''
+    let talkTrack = ''
+    let businessImpact = ''
+    
+    if (companies.length > 0 && (numbers.length > 0 || percentages.length > 0)) {
+      // Company + metrics
+      const metric = percentages[0] || numbers[0]
+      whyItMatters = `${companies[0]} developments with ${metric} impact signal significant market shifts. This affects competitive positioning and strategic planning across the ${sourceName.includes('Tech') || sourceName.includes('Mar') ? 'technology' : 'industry'} landscape.`
+      talkTrack = `"Have you seen the ${companies[0]} news about ${metric}? This could impact your competitive strategy." Use this to discuss market positioning and timing advantages.`
+      businessImpact = `Competitive intelligence for ${companies[0]}-related strategy decisions`
+    } else if (percentages.length > 0 || numbers.length > 0) {
+      // Just metrics
+      const metric = percentages[0] || numbers[0]
+      whyItMatters = `Market data showing ${metric} indicates shifting industry dynamics. Companies need to understand these trends to maintain competitive positioning and budget allocation effectiveness.`
+      talkTrack = `"The latest data shows ${metric} - how does this align with what you're seeing?" Connect to their planning cycles and budget decisions.`
+      businessImpact = `Data-driven insights for strategic planning based on ${metric} benchmark`
+    } else if (companies.length > 0) {
+      // Just companies
+      const company = companies[0]
+      whyItMatters = `${company} developments reflect broader industry trends that affect market dynamics. Understanding these changes helps anticipate customer needs and competitive pressures.`
+      talkTrack = `"What's your take on the ${company} situation?" Connect to how industry changes affect their business priorities and vendor relationships.`
+      businessImpact = `Industry intelligence for navigating ${company}-related market changes`
+    } else {
+      // Extract key themes from title/summary for more specific insights
+      const titleWords = title.toLowerCase().split(' ')
+      let keyTheme = 'market developments'
+      
+      if (titleWords.some(word => ['ad', 'ads', 'advertising', 'marketing'].includes(word))) {
+        keyTheme = 'advertising strategy'
+        whyItMatters = `Advertising landscape changes require proactive strategy adjustments. Companies that adapt quickly gain competitive advantages in targeting, measurement, and efficiency.`
+        talkTrack = `"How is your advertising strategy adapting to these market changes?" Focus on measurement, targeting, and competitive positioning opportunities.`
+        businessImpact = 'Advertising effectiveness and competitive positioning'
+      } else if (titleWords.some(word => ['data', 'privacy', 'tracking'].includes(word))) {
+        keyTheme = 'data strategy'
+        whyItMatters = `Data and privacy developments directly impact marketing effectiveness and compliance requirements. Companies need updated strategies to maintain targeting capabilities.`
+        talkTrack = `"How are these data changes affecting your marketing approach?" Discuss first-party data strategies and compliance positioning.`
+        businessImpact = 'Data strategy and privacy compliance optimization'
+      } else if (titleWords.some(word => ['ai', 'artificial', 'automation', 'intelligence'].includes(word))) {
+        keyTheme = 'technology adoption'
+        whyItMatters = `AI and automation developments indicate accelerating technology adoption across marketing operations. Early adopters gain significant efficiency and personalization advantages.`
+        talkTrack = `"What's your current approach to AI in marketing?" Position technology adoption as competitive necessity rather than experimental.`
+        businessImpact = 'Technology strategy and competitive positioning through automation'
+      } else {
+        // Final fallback with more specific language
+        whyItMatters = `Industry developments from ${sourceName} indicate market shifts requiring strategic attention. Companies that stay informed about these changes maintain competitive positioning and strategic alignment.`
+        talkTrack = `"Have you been following the recent ${sourceName} coverage on ${keyTheme}?" Connect to their specific challenges and strategic priorities in this area.`
+        businessImpact = `Strategic intelligence for ${keyTheme} decision-making`
+      }
+    }
     
     return {
-      whyItMatters: `This ${sourceName} report on ${mainTopic.toLowerCase()} highlights key market developments. Understanding these shifts helps maintain competitive positioning and strategic alignment.`,
-      
-      talkTrack: `Ask: "Have you seen the recent ${sourceName} coverage on ${mainTopic.toLowerCase()}?" Connect to their specific business challenges in this area.`,
-      
-      businessImpact: `Market intelligence for ${mainTopic.toLowerCase()} strategy`
+      whyItMatters,
+      talkTrack,
+      businessImpact
     }
   }
 }
