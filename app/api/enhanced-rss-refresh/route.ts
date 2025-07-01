@@ -30,8 +30,40 @@ export async function POST() {
       }
     })
 
-    // Use all 22 sources from configuration
-    const sources = CONTENT_SOURCES.rssFeeds.map(feed => ({
+    // Use all 22 sources from configuration with fallback
+    const rssFeeds = CONTENT_SOURCES?.rssFeeds || []
+    console.log(`Found ${rssFeeds.length} RSS feeds in configuration`)
+    
+    // Fallback sources if import fails
+    const fallbackSources = [
+      { name: 'AdExchanger', url: 'https://www.adexchanger.com/feed/', category: 'Technology & Media', priority: 'HIGH' },
+      { name: 'Digiday', url: 'https://digiday.com/feed/', category: 'Technology & Media', priority: 'HIGH' },
+      { name: 'Ad Age', url: 'https://adage.com/rss.xml', category: 'Technology & Media', priority: 'HIGH' },
+      { name: 'Marketing Land', url: 'https://marketingland.com/feed', category: 'Technology & Media', priority: 'HIGH' },
+      { name: 'MarTech Today', url: 'https://martech.org/feed/', category: 'Technology & Media', priority: 'HIGH' },
+      { name: 'Adweek', url: 'https://www.adweek.com/feed/', category: 'Technology & Media', priority: 'HIGH' },
+      { name: 'Marketing Brew', url: 'https://www.marketingbrew.com/feed', category: 'Technology & Media', priority: 'HIGH' },
+      { name: 'Retail Dive', url: 'https://www.retaildive.com/feeds/news/', category: 'Consumer & Retail', priority: 'MEDIUM' },
+      { name: 'American Banker', url: 'https://www.americanbanker.com/feed', category: 'Financial Services', priority: 'MEDIUM' },
+      { name: 'Modern Healthcare', url: 'https://www.modernhealthcare.com/rss.xml', category: 'Healthcare', priority: 'MEDIUM' },
+      { name: 'TechCrunch Marketing', url: 'https://techcrunch.com/category/marketing/feed/', category: 'Technology & Media', priority: 'MEDIUM' },
+      { name: 'VentureBeat Marketing', url: 'https://venturebeat.com/category/marketing/feed/', category: 'Technology & Media', priority: 'MEDIUM' },
+      { name: 'Chief Marketer', url: 'https://www.chiefmarketer.com/feed/', category: 'Technology & Media', priority: 'MEDIUM' },
+      { name: 'Mobile Marketer', url: 'https://www.mobilemarketer.com/rss.xml', category: 'Technology & Media', priority: 'MEDIUM' },
+      { name: 'MediaPost', url: 'https://www.mediapost.com/rss/', category: 'Technology & Media', priority: 'MEDIUM' },
+      { name: 'Campaign US', url: 'https://www.campaignlive.com/rss', category: 'Technology & Media', priority: 'HIGH' },
+      { name: 'eMarketer', url: 'https://www.emarketer.com/rss/all/', category: 'Technology & Media', priority: 'HIGH' },
+      { name: 'WSJ CMO', url: 'https://feeds.wsj.com/WSJ-com/RSS/WSJCOM-marketing', category: 'Technology & Media', priority: 'HIGH' },
+      { name: 'Forbes CMO', url: 'https://www.forbes.com/cmo-network/feed/', category: 'Technology & Media', priority: 'MEDIUM' },
+      { name: 'HBR Marketing', url: 'https://feeds.hbr.org/harvardbusiness/marketing', category: 'Technology & Media', priority: 'HIGH' },
+      { name: 'Automotive News', url: 'https://www.autonews.com/rss.xml', category: 'Consumer & Retail', priority: 'MEDIUM' },
+      { name: 'Advertising Age Marketing', url: 'https://adage.com/section/marketing/rss', category: 'Technology & Media', priority: 'HIGH' }
+    ]
+    
+    const sourcesToUse = rssFeeds.length > 0 ? rssFeeds : fallbackSources
+    console.log(`Using ${sourcesToUse.length} sources (${rssFeeds.length > 0 ? 'from config' : 'fallback'})`)
+    
+    const sources = sourcesToUse.map(feed => ({
       name: feed.name,
       url: feed.url,
       vertical: feed.category,
