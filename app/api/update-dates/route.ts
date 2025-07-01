@@ -1,82 +1,84 @@
 import { NextResponse } from 'next/server'
+import { prisma } from '@/lib/db'
 
 export async function POST() {
-  let pool: any = null
-  
   try {
-    console.log('🔄 Updating content dates to current week...')
-    
-    const { Pool } = require('pg')
-    pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
+    console.log('📅 Starting bulk date update for old articles...')
+
+    const cutoffDate = new Date()
+    cutoffDate.setFullYear(cutoffDate.getFullYear() - 1) // Articles older than 1 year
+
+    // Find articles with old publication dates
+    const oldArticles = await prisma.article.findMany({
+      where: {
+        publishedAt: { lt: cutoffDate }
+      },
+      select: { id: true, title: true, publishedAt: true }
     })
-    
-    const now = new Date()
-    const thisWeek = new Date()
-    thisWeek.setDate(thisWeek.getDate() - 3) // 3 days ago to ensure it's within the week
 
-    // Update articles to have current week dates
-    console.log('📰 Updating article publication dates...')
-    const articleResult = await pool.query(`
-      UPDATE articles 
-      SET "publishedAt" = $1, "updatedAt" = $2
-      WHERE status = 'PUBLISHED'
-      RETURNING id
-    `, [thisWeek, now])
+    console.log(`📊 Found ${oldArticles.length} articles with old dates`)
 
-    // Update metrics to have current week dates  
-    console.log('📊 Updating metric publication dates...')
-    const metricResult = await pool.query(`
-      UPDATE metrics 
-      SET "publishedAt" = $1, "updatedAt" = $2
-      WHERE status = 'PUBLISHED'
-      RETURNING id
-    `, [thisWeek, now])
+    if (oldArticles.length === 0) {
+      return NextResponse.json({
+        success: true,
+        message: 'No articles with old dates found',
+        updated: 0
+      })
+    }
 
-    // Get current visible counts
-    const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-    
-    const [articleCount, metricCount] = await Promise.all([
-      pool.query(`
-        SELECT COUNT(*) as count FROM articles 
-        WHERE status = 'PUBLISHED' AND "publishedAt" >= $1
-      `, [oneWeekAgo]),
-      pool.query(`
-        SELECT COUNT(*) as count FROM metrics 
-        WHERE status = 'PUBLISHED' AND "publishedAt" >= $1
-      `, [oneWeekAgo])
-    ])
-
-    const articlesVisible = parseInt(articleCount.rows[0].count)
-    const metricsVisible = parseInt(metricCount.rows[0].count)
-
-    await pool.end()
-
-    return NextResponse.json({
-      success: true,
-      message: 'Content dates updated successfully! 🎉',
-      details: {
-        updateDate: thisWeek.toISOString().split('T')[0],
-        articlesUpdated: articleResult.rowCount,
-        metricsUpdated: metricResult.rowCount,
-        nowVisible: {
-          articles: articlesVisible,
-          metrics: metricsVisible
-        }
+    // Generate new dates for each article (within last 6 days)
+    const updates = oldArticles.map(article => {
+      const newDate = new Date()
+      const daysBack = Math.floor(Math.random() * 6) // 0-5 days back
+      const hoursBack = Math.floor(Math.random() * 24) // Random hour
+      newDate.setDate(newDate.getDate() - daysBack)
+      newDate.setHours(hoursBack)
+      
+      return {
+        id: article.id,
+        newDate,
+        oldDate: article.publishedAt
       }
     })
 
-  } catch (error) {
-    console.error('❌ Update failed:', error)
-    
-    if (pool) {
-      try { await pool.end() } catch {}
+    // Update articles in batches
+    const batchSize = 50
+    let updated = 0
+
+    for (let i = 0; i < updates.length; i += batchSize) {
+      const batch = updates.slice(i, i + batchSize)
+      
+      const updatePromises = batch.map(update =>
+        prisma.article.update({
+          where: { id: update.id },
+          data: { publishedAt: update.newDate }
+        })
+      )
+
+      await Promise.all(updatePromises)
+      updated += batch.length
+      
+      console.log(`✅ Updated batch ${Math.floor(i / batchSize) + 1}, ${updated}/${oldArticles.length} articles`)
     }
-    
+
+    console.log(`🎉 Successfully updated ${updated} article dates`)
+
+    return NextResponse.json({
+      success: true,
+      message: `Updated ${updated} articles with new publication dates`,
+      updated,
+      sampleUpdates: updates.slice(0, 5).map(u => ({
+        id: u.id,
+        oldDate: u.oldDate?.toISOString(),
+        newDate: u.newDate.toISOString()
+      }))
+    })
+
+  } catch (error) {
+    console.error('❌ Date update failed:', error)
     return NextResponse.json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      details: 'Failed to update content dates'
+      error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
   }
 }

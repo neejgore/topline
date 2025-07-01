@@ -1,114 +1,93 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/db'
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
+    const searchParams = request.nextUrl.searchParams
     const vertical = searchParams.get('vertical') || 'ALL'
-    const type = searchParams.get('type') || 'articles'
+    const limit = parseInt(searchParams.get('limit') || '15')
+    const search = searchParams.get('search') || ''
 
-    const { Pool } = require('pg')
-    const pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-    })
+    console.log(`🔍 Filtering content: vertical=${vertical}, limit=${limit}, search=${search}`)
 
-    const oneWeekAgo = new Date()
-    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
-
-    if (type === 'articles') {
-      let query = `
-        SELECT 
-          id, title, summary, "sourceUrl", "sourceName", 
-          "whyItMatters", "talkTrack", category, vertical, 
-          priority, status, "publishedAt", "createdAt", "updatedAt"
-        FROM articles 
-        WHERE status = 'PUBLISHED' 
-          AND "publishedAt" >= $1
-          AND ("expiresAt" IS NULL OR "expiresAt" > NOW())
-          AND category != 'METRICS'
-      `
-      
-      const params: any[] = [oneWeekAgo]
-      
-      if (vertical && vertical !== 'ALL') {
-        query += ` AND vertical = $2`
-        params.push(vertical)
-      }
-      
-      query += `
-        ORDER BY 
-          CASE priority 
-            WHEN 'HIGH' THEN 3 
-            WHEN 'MEDIUM' THEN 2 
-            ELSE 1 
-          END DESC,
-          "publishedAt" DESC
-        LIMIT 15
-      `
-
-      const result = await pool.query(query, params)
-      await pool.end()
-
-      return NextResponse.json({
-        success: true,
-        articles: result.rows.map((article: any) => ({
-          ...article,
-          tags: []
-        }))
-      })
-
-    } else if (type === 'metrics') {
-      let query = `
-        SELECT 
-          id, title, summary as description, "sourceUrl", "sourceName" as source, 
-          "whyItMatters" as "howToUse", "talkTrack", vertical, 
-          priority, status, "publishedAt", "createdAt", "updatedAt"
-        FROM articles 
-        WHERE status = 'PUBLISHED' 
-          AND "publishedAt" >= $1
-          AND ("expiresAt" IS NULL OR "expiresAt" > NOW())
-          AND category = 'METRICS'
-      `
-      
-      const params: any[] = [oneWeekAgo]
-      
-      if (vertical && vertical !== 'ALL') {
-        query += ` AND vertical = $2`
-        params.push(vertical)
-      }
-      
-      query += `
-        ORDER BY 
-          CASE priority 
-            WHEN 'HIGH' THEN 3 
-            WHEN 'MEDIUM' THEN 2 
-            ELSE 1 
-          END DESC,
-          "publishedAt" DESC
-        LIMIT 5
-      `
-
-      const result = await pool.query(query, params)
-      await pool.end()
-
-      return NextResponse.json({
-        success: true,
-        metrics: result.rows.map((metric: any) => ({
-          ...metric,
-          tags: []
-        }))
-      })
+    // Build where conditions for articles
+    const articleWhere: any = {
+      status: 'PUBLISHED',
+      category: { not: 'METRICS' }
     }
 
-    return NextResponse.json({ 
-      success: false, 
-      error: 'Invalid type parameter' 
-    }, { status: 400 })
+    if (vertical && vertical !== 'ALL') {
+      articleWhere.vertical = vertical
+    }
+
+    if (search) {
+      articleWhere.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { summary: { contains: search, mode: 'insensitive' } },
+        { sourceName: { contains: search, mode: 'insensitive' } }
+      ]
+    }
+
+    // Build where conditions for metrics
+    const metricWhere: any = {
+      status: 'PUBLISHED',
+      category: 'METRICS'
+    }
+
+    if (vertical && vertical !== 'ALL') {
+      metricWhere.vertical = vertical
+    }
+
+    if (search) {
+      metricWhere.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { context: { contains: search, mode: 'insensitive' } },
+        { source: { contains: search, mode: 'insensitive' } }
+      ]
+    }
+
+    // Fetch articles and metrics in parallel
+    const [articles, metrics] = await Promise.all([
+      prisma.article.findMany({
+        where: articleWhere,
+        orderBy: [
+          { priority: 'desc' },
+          { publishedAt: 'desc' }
+        ],
+        take: limit
+      }),
+      prisma.metric.findMany({
+        where: metricWhere,
+        orderBy: [
+          { priority: 'desc' },
+          { publishedAt: 'desc' }
+        ],
+        take: Math.floor(limit / 3) // Roughly 1/3 metrics to 2/3 articles
+      })
+    ])
+
+    console.log(`✅ Found ${articles.length} articles and ${metrics.length} metrics`)
+
+    return NextResponse.json({
+      success: true,
+      articles,
+      metrics,
+      totalArticles: articles.length,
+      totalMetrics: metrics.length,
+      filters: {
+        vertical,
+        search,
+        limit
+      }
+    })
 
   } catch (error) {
-    console.error('Error fetching filtered content:', error)
+    console.error('❌ Content filtering failed:', error)
     return NextResponse.json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
+      articles: [],
+      metrics: []
     }, { status: 500 })
   }
 } 

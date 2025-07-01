@@ -1,53 +1,132 @@
 // Direct SQL version of content functions to bypass Prisma issues
 
-export async function getPublishedArticlesDirect(vertical?: string) {
-  try {
-    const { Pool } = require('pg')
-    const pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-    })
+import { prisma } from '@/lib/db'
 
+export async function getFilteredContent(
+  vertical: string = 'ALL',
+  contentType: 'articles' | 'metrics' | 'all' = 'all',
+  limit: number = 15
+) {
+  try {
+    console.log(`🔍 Getting ${contentType} for vertical: ${vertical}`)
+    
     const oneWeekAgo = new Date()
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
 
-    let query = `
-      SELECT 
-        id, title, summary, "sourceUrl", "sourceName", 
-        "whyItMatters", "talkTrack", category, vertical, 
-        priority, status, "publishedAt", "createdAt", "updatedAt"
-      FROM articles 
-      WHERE status = 'PUBLISHED' 
-        AND "publishedAt" >= $1
-        AND ("expiresAt" IS NULL OR "expiresAt" > NOW())
-    `
-    
-    const params: any[] = [oneWeekAgo]
-    
-    // Add vertical filter if specified and not 'ALL'
-    if (vertical && vertical !== 'ALL') {
-      query += ` AND vertical = $2`
-      params.push(vertical)
+    if (contentType === 'articles' || contentType === 'all') {
+      const articleWhere: any = {
+        status: 'PUBLISHED',
+        publishedAt: { gte: oneWeekAgo },
+        category: { not: 'METRICS' }
+      }
+
+      if (vertical && vertical !== 'ALL') {
+        articleWhere.vertical = vertical
+      }
+
+      const articles = await prisma.article.findMany({
+        where: articleWhere,
+        orderBy: [
+          { priority: 'desc' },
+          { publishedAt: 'desc' }
+        ],
+        take: limit
+      })
+
+      if (contentType === 'articles') {
+        return articles
+      }
+    }
+
+    if (contentType === 'metrics' || contentType === 'all') {
+      const metricWhere: any = {
+        status: 'PUBLISHED',
+        publishedAt: { gte: oneWeekAgo }
+      }
+
+      if (vertical && vertical !== 'ALL') {
+        metricWhere.vertical = vertical
+      }
+
+      const metrics = await prisma.metric.findMany({
+        where: metricWhere,
+        orderBy: [
+          { priority: 'desc' },
+          { publishedAt: 'desc' }
+        ],
+        take: Math.floor(limit / 3)
+      })
+
+      if (contentType === 'metrics') {
+        return metrics
+      }
+    }
+
+    if (contentType === 'all') {
+      const [articles, metrics] = await Promise.all([
+        prisma.article.findMany({
+          where: {
+            status: 'PUBLISHED',
+            publishedAt: { gte: oneWeekAgo },
+            category: { not: 'METRICS' },
+            ...(vertical && vertical !== 'ALL' ? { vertical } : {})
+          },
+          orderBy: [
+            { priority: 'desc' },
+            { publishedAt: 'desc' }
+          ],
+          take: limit
+        }),
+        prisma.metric.findMany({
+          where: {
+            status: 'PUBLISHED',
+            publishedAt: { gte: oneWeekAgo },
+            ...(vertical && vertical !== 'ALL' ? { vertical } : {})
+          },
+          orderBy: [
+            { priority: 'desc' },
+            { publishedAt: 'desc' }
+          ],
+          take: Math.floor(limit / 3)
+        })
+      ])
+
+      return { articles, metrics }
+    }
+
+    return []
+
+  } catch (error) {
+    console.error('❌ Error getting filtered content:', error)
+    throw error
+  }
+}
+
+export async function getPublishedArticlesDirect(vertical?: string) {
+  try {
+    const oneWeekAgo = new Date()
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
+
+    const where: any = {
+      status: 'PUBLISHED',
+      publishedAt: { gte: oneWeekAgo },
+      category: { not: 'METRICS' }
     }
     
-    query += `
-      ORDER BY 
-        CASE priority 
-          WHEN 'HIGH' THEN 3 
-          WHEN 'MEDIUM' THEN 2 
-          ELSE 1 
-        END DESC,
-        "publishedAt" DESC
-      LIMIT 10
-    `
+    if (vertical && vertical !== 'ALL') {
+      where.vertical = vertical
+    }
 
-    const result = await pool.query(query, params)
-    await pool.end()
+    const articles = await prisma.article.findMany({
+      where,
+      orderBy: [
+        { priority: 'desc' },
+        { publishedAt: 'desc' }
+      ],
+      take: 10
+    })
     
-    // Transform the results to match Prisma format
-    return result.rows.map((article: any) => ({
-      ...article,
-      tags: [] // We'll add tags later if needed
-    }))
+    return articles
 
   } catch (error) {
     console.error('Error fetching articles (direct):', error)
@@ -57,40 +136,22 @@ export async function getPublishedArticlesDirect(vertical?: string) {
 
 export async function getPublishedMetricsDirect() {
   try {
-    const { Pool } = require('pg')
-    const pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-    })
-
     const oneWeekAgo = new Date()
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
 
-    const result = await pool.query(`
-      SELECT 
-        id, title, value, description, source, 
-        "howToUse", "talkTrack", vertical, 
-        priority, status, "publishedAt", "createdAt", "updatedAt"
-      FROM metrics 
-      WHERE status = 'PUBLISHED' 
-        AND "publishedAt" >= $1
-        AND ("expiresAt" IS NULL OR "expiresAt" > NOW())
-      ORDER BY 
-        CASE priority 
-          WHEN 'HIGH' THEN 3 
-          WHEN 'MEDIUM' THEN 2 
-          ELSE 1 
-        END DESC,
-        "publishedAt" DESC
-      LIMIT 10
-    `, [oneWeekAgo])
-
-    await pool.end()
+    const metrics = await prisma.metric.findMany({
+      where: {
+        status: 'PUBLISHED',
+        publishedAt: { gte: oneWeekAgo }
+      },
+      orderBy: [
+        { priority: 'desc' },
+        { publishedAt: 'desc' }
+      ],
+      take: 10
+    })
     
-    // Transform the results to match Prisma format
-    return result.rows.map((metric: any) => ({
-      ...metric,
-      tags: [] // We'll add tags later if needed
-    }))
+    return metrics
 
   } catch (error) {
     console.error('Error fetching metrics (direct):', error)
