@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { getArticlesByVertical } from '@/lib/content'
 
 export async function GET(request: NextRequest) {
   try {
@@ -45,25 +46,21 @@ export async function GET(request: NextRequest) {
       ]
     }
 
-    // Fetch articles and metrics in parallel
-    const [articles, metrics] = await Promise.all([
-      prisma.article.findMany({
-        where: articleWhere,
-        orderBy: [
-          { priority: 'desc' },
-          { publishedAt: 'desc' }
-        ],
-        take: limit
-      }),
-      prisma.metric.findMany({
-        where: metricWhere,
-        orderBy: [
-          { priority: 'desc' },
-          { publishedAt: 'desc' }
-        ],
-        take: Math.floor(limit / 3) // Roughly 1/3 metrics to 2/3 articles
-      })
-    ])
+    // Use new diverse content system for articles
+    const articles = await getArticlesByVertical(
+      vertical === 'ALL' ? 'All' : vertical,
+      limit
+    )
+
+    // Keep existing metrics logic for now (fewer metrics than articles)
+    const metrics = await prisma.metric.findMany({
+      where: metricWhere,
+      orderBy: [
+        { priority: 'desc' },
+        { publishedAt: 'desc' }
+      ],
+      take: Math.floor(limit / 3) // Roughly 1/3 metrics to 2/3 articles
+    })
 
     console.log(`✅ Found ${articles.length} articles and ${metrics.length} metrics`)
 
