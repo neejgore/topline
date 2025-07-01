@@ -3,24 +3,23 @@ import { prisma } from '@/lib/db'
 
 export async function POST() {
   try {
-    console.log('🔧 Starting metrics fix...')
+    console.log('🧹 Starting metrics cleanup...')
+    
+    // Clear all existing metrics
+    const deleted = await prisma.metric.deleteMany()
+    console.log(`🗑️ Deleted ${deleted.count} existing metrics`)
     
     // Simple metrics array with unique title + source combinations
     const metrics = [
       {
-        title: 'AI Marketing Spend Growth 2025',
-        value: '47% YoY Growth',
-        source: 'MarTech Outlook Report'
+        title: 'Test Metric One',
+        value: '123',
+        source: 'Test Source One'
       },
       {
-        title: 'Retail Media Network Growth 2025',
-        value: '28% YoY Growth',
-        source: 'IAB Industry Analysis'
-      },
-      {
-        title: 'Cookie Deprecation Impact 2025',
-        value: '68% of Marketers Concerned',
-        source: 'Digital Trends Survey'
+        title: 'Test Metric Two',
+        value: '456',
+        source: 'Test Source Two'
       }
     ]
     
@@ -50,11 +49,10 @@ export async function POST() {
     console.log(`📊 Final metrics count: ${finalCount}`)
     
     return NextResponse.json({
-      success: totalCreated > 0,
-      message: totalCreated > 0 
-        ? `Successfully created ${totalCreated} metrics` 
-        : 'Failed to create any metrics',
+      success: true,
+      message: `Deleted ${deleted.count} metrics and created ${totalCreated} new ones`,
       results: {
+        metricsDeleted: deleted.count,
         metricsAttempted: metrics.length,
         metricsCreated: totalCreated,
         finalDatabaseCount: finalCount,
@@ -64,7 +62,7 @@ export async function POST() {
     })
     
   } catch (error) {
-    console.error('❌ Fix metrics failed:', error)
+    console.error('❌ Metrics cleanup failed:', error)
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
