@@ -42,17 +42,24 @@ export default function WeeklyContentWithFilter() {
   const fetchContent = async () => {
     setLoading(true)
     try {
-      // Fetch all articles and metrics, then filter client-side
-      const [articlesRes, metricsRes] = await Promise.all([
-        fetch('/api/content/filtered?type=articles&status=published'),
-        fetch('/api/content/filtered?type=metrics&status=published')
-      ])
-
-      if (articlesRes.ok && metricsRes.ok) {
-        const articlesData = await articlesRes.json()
-        const metricsData = await metricsRes.json()
-        setArticles(articlesData.articles || [])
-        setMetrics(metricsData.metrics || [])
+      // Use our optimized filtered API endpoint
+      const response = await fetch('/api/content/filtered?limit=25&vertical=ALL')
+      
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success) {
+          setArticles(data.articles || [])
+          setMetrics(data.metrics || [])
+          console.log(`📊 Loaded ${data.articles?.length || 0} articles, ${data.metrics?.length || 0} metrics`)
+        } else {
+          console.error('API returned error:', data.error)
+          setArticles([])
+          setMetrics([])
+        }
+      } else {
+        console.error('Failed to fetch content:', response.status)
+        setArticles([])
+        setMetrics([])
       }
     } catch (error) {
       console.error('Error fetching content:', error)
