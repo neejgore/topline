@@ -34,7 +34,7 @@ export class ContentIngestionService {
     let totalArticles = 0
     let skippedArticles = 0
     
-    // Get cutoff date - only articles from last 4 days
+    // Get cutoff date - only articles from last 6 days
     const cutoffDate = new Date()
     cutoffDate.setHours(cutoffDate.getHours() - CONTENT_SCHEDULE.maxAgeHours)
     
@@ -43,8 +43,12 @@ export class ContentIngestionService {
         console.log(`📡 Fetching from ${source.name}...`)
         
         const feed = await parser.parseURL(source.url)
+        let sourceArticleCount = 0
+        const maxPerSource = 5 // Limit per source for good distribution
         
         for (const item of feed.items) {
+          // Stop if we've reached the limit for this source
+          if (sourceArticleCount >= maxPerSource) break
           try {
             // Skip old articles
             const publishDate = item.pubDate ? new Date(item.pubDate) : new Date()
@@ -75,6 +79,7 @@ export class ContentIngestionService {
                   priority: isMetricsArticle ? 'HIGH' : evaluation.priority
                 })
                 totalArticles++
+                sourceArticleCount++
                 console.log(`✅ Saved: ${articleData.title} (Score: ${evaluation.importanceScore}${isMetricsArticle ? ', METRICS' : ''})`)
               } else {
                 skippedArticles++

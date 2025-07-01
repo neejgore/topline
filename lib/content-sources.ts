@@ -72,6 +72,66 @@ export const CONTENT_SOURCES = {
       url: 'https://www.retaildive.com/feeds/news/',
       category: 'Consumer & Retail',
       priority: 'MEDIUM'
+    },
+    {
+      name: 'Marketing Brew',
+      url: 'https://www.marketingbrew.com/feed',
+      category: 'Technology & Media',
+      priority: 'HIGH'
+    },
+    {
+      name: 'Adweek',
+      url: 'https://www.adweek.com/feed/',
+      category: 'Technology & Media',
+      priority: 'HIGH'
+    },
+    {
+      name: 'eMarketer',
+      url: 'https://www.emarketer.com/rss/all/',
+      category: 'Technology & Media',
+      priority: 'HIGH'
+    },
+    {
+      name: 'TechCrunch Marketing',
+      url: 'https://techcrunch.com/category/marketing/feed/',
+      category: 'Technology & Media',
+      priority: 'MEDIUM'
+    },
+    {
+      name: 'Wall Street Journal CMO',
+      url: 'https://feeds.wsj.com/WSJ-com/RSS/WSJCOM-marketing',
+      category: 'Technology & Media',
+      priority: 'HIGH'
+    },
+    {
+      name: 'Forbes CMO Network',
+      url: 'https://www.forbes.com/cmo-network/feed/',
+      category: 'Services',
+      priority: 'MEDIUM'
+    },
+    {
+      name: 'Harvard Business Review Marketing',
+      url: 'https://feeds.hbr.org/harvardbusiness/marketing',
+      category: 'Services',
+      priority: 'HIGH'
+    },
+    {
+      name: 'Modern Healthcare',
+      url: 'https://www.modernhealthcare.com/rss.xml',
+      category: 'Healthcare',
+      priority: 'MEDIUM'
+    },
+    {
+      name: 'American Banker',
+      url: 'https://www.americanbanker.com/feed',
+      category: 'Financial Services',
+      priority: 'MEDIUM'
+    },
+    {
+      name: 'Automotive News',
+      url: 'https://www.autonews.com/rss.xml',
+      category: 'Automotive',
+      priority: 'MEDIUM'
     }
   ],
   
@@ -122,18 +182,18 @@ export const CONTENT_SOURCES = {
 }
 
 export const CONTENT_SCHEDULE = {
-  // Tuesday 12:00 AM PST (UTC-8, or UTC-7 during DST)
+  // Tuesday 12:00 AM EST (UTC-5, or UTC-4 during DST)
   refreshDay: 'TUESDAY',
   refreshTime: '00:00',
-  timezone: 'America/Los_Angeles',
+  timezone: 'America/New_York',
   
-  // Content age limits - 4 day lookback window
-  maxAgeHours: 96, // 4 days
-  preferredAgeHours: 96, // Prefer content within 4 days
+  // Content age limits - 6 day lookback window
+  maxAgeHours: 144, // 6 days
+  preferredAgeHours: 144, // Prefer content within 6 days
   
   // Content limits per week
-  maxArticles: 15, // Increased for more sources
-  maxMetrics: 10
+  maxArticles: 50, // Increased for comprehensive coverage
+  maxMetrics: 15
 }
 
 export const METRICS_SOURCES = [

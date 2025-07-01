@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
             ELSE 1 
           END DESC,
           "publishedAt" DESC
-        LIMIT 10
+        LIMIT 15
       `
 
       const result = await pool.query(query, params)
