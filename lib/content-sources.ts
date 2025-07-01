@@ -38,10 +38,28 @@ export const CONTENT_SOURCES = {
       priority: 'HIGH'
     },
     {
-      name: 'MediaPost',
-      url: 'https://www.mediapost.com/rss/',
+      name: 'MediaPost - Online Media Daily',
+      url: 'http://feeds.mediapost.com/online-media-daily',
       category: 'Technology & Media',
       priority: 'MEDIUM'
+    },
+    {
+      name: 'MediaPost - Media Daily News',
+      url: 'http://feeds.mediapost.com/mediadailynews',
+      category: 'Technology & Media',
+      priority: 'MEDIUM'
+    },
+    {
+      name: 'MediaPost - TV News Daily',
+      url: 'http://feeds.mediapost.com/television-news-daily',
+      category: 'Technology & Media',
+      priority: 'MEDIUM'
+    },
+    {
+      name: 'MediaPost - Social Media Marketing',
+      url: 'http://feeds.mediapost.com/social-media-marketing-daily',
+      category: 'Technology & Media',
+      priority: 'HIGH'
     },
     {
       name: 'VentureBeat Marketing',
@@ -92,8 +110,8 @@ export const CONTENT_SOURCES = {
       priority: 'HIGH'
     },
     {
-      name: 'TechCrunch Marketing',
-      url: 'https://techcrunch.com/category/marketing/feed/',
+      name: 'TechCrunch',
+      url: 'https://techcrunch.com/feed/',
       category: 'Technology & Media',
       priority: 'MEDIUM'
     },
@@ -105,7 +123,7 @@ export const CONTENT_SOURCES = {
     },
     {
       name: 'Forbes CMO Network',
-      url: 'https://www.forbes.com/cmo-network/feed/',
+      url: 'https://www.forbes.com/sites/cmo/feed/',
       category: 'Services',
       priority: 'MEDIUM'
     },
