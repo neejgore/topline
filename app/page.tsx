@@ -1,3 +1,4 @@
+// DEPLOYMENT TIMESTAMP: 2024-12-08 - Force rebuild with API routes
 import { Suspense } from 'react'
 import { Metadata } from 'next'
 import Header from '@/components/Header'
@@ -23,7 +24,7 @@ export default function HomePage() {
           </h1>
           <p className="text-lg text-gray-600 max-w-3xl mx-auto">
             Curated sales intelligence for enterprise professionals in marketing, media, and technology. 
-            Sharp insights, strategic interpretation, ready for customer conversations.
+            Sharp insights, strategic interpretation, ready for customer conversations. Updated with live RSS feeds.
           </p>
         </div>
 
