@@ -49,7 +49,7 @@ export default function Header() {
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
             <Newspaper className="h-8 w-8 text-primary-600" />
-            <span className="text-2xl font-bold text-gray-900">Topline</span>
+            <span className="text-2xl font-bold text-gray-900">Topline Sales Intelligence</span>
           </Link>
 
           {/* Desktop Navigation */}
