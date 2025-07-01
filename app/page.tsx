@@ -24,7 +24,7 @@ export default function HomePage() {
           </h1>
           <p className="text-lg text-gray-600 max-w-3xl mx-auto">
             Curated sales intelligence for enterprise professionals in marketing, media, and technology. 
-            Sharp insights, strategic interpretation, ready for customer conversations. Updated with live RSS feeds.
+            Sharp insights, strategic interpretation, ready for customer conversations.
           </p>
         </div>
 
