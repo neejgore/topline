@@ -2,6 +2,8 @@
 
 Topline is a curated, weekly sales intelligence platform that delivers the top news and metrics relevant to enterprise sales professionals in marketing, media, and technology. It combines sharp editorial insight, strategic interpretation, and easy distribution across web and email.
 
+**Last deployment check: 2025-07-01 05:02 UTC**
+
 ## 🔧 Key Features
 
 ### 1. Weekly Curation Engine
@@ -154,6 +156,9 @@ topline/
 - `POST /api/newsletter/subscribe` - Newsletter subscription
 - `POST /api/admin/articles` - Create article (auth required)
 - `POST /api/admin/metrics` - Create metric (auth required)
+- `/api/reset-content` - Populate database with fresh articles
+- `/api/debug-content` - Check database status
+- `/api/content/filtered` - Get filtered articles and metrics
 
 ## 🚀 Deployment
 
