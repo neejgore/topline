@@ -13,8 +13,7 @@ export async function POST() {
     const simpleMetrics = [
       {
         title: 'AI Marketing Spend Growth',
-        value: '47%',
-        unit: 'YoY Growth',
+        value: '47% YoY Growth',
         context: 'Enterprise marketing teams are rapidly adopting AI-powered solutions for personalization and automation',
         source: 'MarTech Intelligence Report 2025',
         sourceUrl: 'https://example.com/martech-intelligence-2025',
@@ -27,8 +26,7 @@ export async function POST() {
       },
       {
         title: 'Retail Media Growth Rate',
-        value: '28%',
-        unit: 'YoY Growth',
+        value: '28% YoY Growth',
         context: 'Retail media networks are becoming major advertising channels for consumer brands',
         source: 'IAB Retail Media Report 2025',
         sourceUrl: 'https://example.com/iab-retail-media-2025',
@@ -41,8 +39,7 @@ export async function POST() {
       },
       {
         title: 'Third-Party Cookie Concerns',
-        value: '68%',
-        unit: 'of Marketers',
+        value: '68% of Marketers',
         context: 'Cookie deprecation continues to be the top concern for digital marketers across industries',
         source: 'Digital Marketing Trends Survey',
         sourceUrl: 'https://example.com/digital-marketing-trends-2025',
@@ -55,8 +52,7 @@ export async function POST() {
       },
       {
         title: 'Digital Banking Adoption',
-        value: '89%',
-        unit: 'of US Consumers',
+        value: '89% of US Consumers',
         context: 'Digital-first banking is now the norm across all demographics and age groups',
         source: 'Federal Reserve Digital Banking Study',
         sourceUrl: 'https://example.com/fed-digital-banking-study-2025',
@@ -69,8 +65,7 @@ export async function POST() {
       },
       {
         title: 'Customer Data Platform Adoption',
-        value: '78%',
-        unit: 'of Enterprise Brands',
+        value: '78% of Enterprise Brands',
         context: 'CDPs have become essential infrastructure for enterprise marketing operations',
         source: 'Enterprise MarTech Stack Survey',
         sourceUrl: 'https://example.com/enterprise-martech-survey-2025',
@@ -83,8 +78,7 @@ export async function POST() {
       },
       {
         title: 'B2B Marketing Automation ROI',
-        value: '435%',
-        unit: 'Average ROI',
+        value: '435% Average ROI',
         context: 'B2B companies see significant returns from marketing automation investments',
         source: 'B2B Marketing Technology ROI Study',
         sourceUrl: 'https://example.com/b2b-automation-roi-study-2025',
