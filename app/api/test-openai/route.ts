@@ -12,12 +12,12 @@ export async function GET() {
     }
 
     // Check if OpenAI API key is available
-    if (!process.env.OPENAI_API_KEY) {
+    if (!process.env.OPEN_AI_KEY) {
       return NextResponse.json({
         success: false,
         error: 'OpenAI API key not configured',
         testArticle,
-        recommendation: 'Add OPENAI_API_KEY to environment variables'
+        recommendation: 'Add OPEN_AI_KEY to environment variables'
       })
     }
 
@@ -51,7 +51,7 @@ Respond in JSON format:
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        'Authorization': `Bearer ${process.env.OPEN_AI_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
