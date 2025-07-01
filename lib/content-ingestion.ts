@@ -131,7 +131,7 @@ export class ContentIngestionService {
             : this.fallbackEvaluation(articleData)
           
           // Lower thresholds to get more articles
-          const minScore = isMetricsArticle ? 3 : 3 // Lowered from 4
+          const minScore = isMetricsArticle ? 2 : 2 // Extremely low threshold to get content
           
           if (evaluation.importanceScore >= minScore) {
             // Force proper vertical based on source
@@ -297,19 +297,19 @@ Respond in JSON format:
   }
 
   private fallbackEvaluation(article: ParsedArticle): ArticleEvaluation {
-    // Fallback scoring based on keywords and source
-    let score = 5 // baseline
+    // Fallback scoring - MUCH MORE GENEROUS to get content
+    let score = 6 // Higher baseline score
     const text = `${article.title} ${article.summary}`.toLowerCase()
     
     // High-impact keywords
     const highImpactKeywords = ['ai', 'artificial intelligence', 'merger', 'acquisition', 'privacy', 'cookies', 'regulation']
-    const mediumImpactKeywords = ['marketing', 'advertising', 'programmatic', 'automation', 'data']
+    const mediumImpactKeywords = ['marketing', 'advertising', 'programmatic', 'automation', 'data', 'technology', 'business']
     
     if (highImpactKeywords.some(keyword => text.includes(keyword))) score += 2
-    if (mediumImpactKeywords.some(keyword => text.includes(keyword))) score += 1
+    if (mediumImpactKeywords.some(keyword => text.includes(keyword))) score += 2 // Increased boost
     
-    // Source priority boost
-    if (article.sourceName === 'AdExchanger' || article.sourceName === 'Ad Age') score += 1
+    // Source priority boost - all major sources get boost
+    if (['AdExchanger', 'Ad Age', 'Digiday', 'Marketing Land', 'MarTech Today', 'Adweek'].includes(article.sourceName)) score += 1
     
     return {
       importanceScore: Math.min(10, score),
@@ -323,18 +323,34 @@ Respond in JSON format:
   private isRelevantContent(title: string, content: string): boolean {
     const text = `${title} ${content}`.toLowerCase()
     
-    // Check if content contains excluded keywords
+    // Check if content contains excluded keywords (reject if found)
     const hasExcluded = CONTENT_SOURCES.excludeKeywords.some(keyword =>
       text.includes(keyword.toLowerCase())
     )
     if (hasExcluded) return false
     
-    // Check if content contains relevant keywords
+    // **MUCH MORE LENIENT**: Accept if ANY of these conditions are met:
+    // 1. Contains any relevant keywords
     const hasRelevant = CONTENT_SOURCES.keywordFilters.some(keyword =>
       text.includes(keyword.toLowerCase())
     )
     
-    return hasRelevant
+    // 2. Contains common business/marketing terms
+    const businessTerms = [
+      'marketing', 'advertising', 'technology', 'business', 'company', 'brand',
+      'data', 'digital', 'online', 'strategy', 'campaign', 'customer', 'sales',
+      'revenue', 'growth', 'platform', 'software', 'service', 'industry'
+    ]
+    const hasBusinessTerms = businessTerms.some(term => text.includes(term))
+    
+    // 3. Is from a trusted marketing/tech source (assume relevant)
+    const trustedSources = ['adexchanger', 'digiday', 'martech', 'adage', 'marketing']
+    const fromTrustedSource = trustedSources.some(source => 
+      text.includes(source) || title.toLowerCase().includes(source)
+    )
+    
+    // Accept if ANY of these conditions are met (much more lenient)
+    return hasRelevant || hasBusinessTerms || fromTrustedSource
   }
   
   private determineVertical(title: string, content: string): string {
