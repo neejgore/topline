@@ -394,7 +394,8 @@ Respond in JSON format:
       ],
       'Consumer & Retail': [
         'retail', 'e-commerce', 'ecommerce', 'shopping', 'consumer goods', 'brand',
-        'cpg', 'fashion', 'grocery', 'marketplace', 'amazon', 'walmart'
+        'cpg', 'fashion', 'grocery', 'marketplace', 'amazon', 'walmart', 'retail media',
+        'in-store', 'store', 'shopper', 'commerce', 'merchandising', 'pos', 'point of sale'
       ],
       'Automotive': [
         'automotive', 'auto', 'car', 'vehicle', 'tesla', 'ford', 'gm', 'toyota',
@@ -446,6 +447,93 @@ Respond in JSON format:
       if (text.includes('adtech') || text.includes('martech') || text.includes('programmatic')) {
         return 'Technology & Media'
       }
+    }
+    
+    return bestMatch.vertical
+  }
+  
+  // Add new function for metric vertical determination
+  public determineMetricVertical(title: string, description: string, source: string): string {
+    const text = `${title} ${description} ${source}`.toLowerCase()
+    
+    // Define keywords for each vertical with metric-specific terms
+    const verticalKeywords = {
+      'Healthcare': [
+        'healthcare', 'health care', 'medical', 'hospital', 'pharma', 'pharmaceutical', 
+        'patient', 'clinical', 'medicare', 'medicaid', 'health spending', 'drug prices',
+        'healthcare costs', 'medical expenses', 'health insurance premiums'
+      ],
+      'Financial Services': [
+        'bank', 'banking', 'fintech', 'finance', 'financial services', 'credit card', 
+        'loan', 'mortgage', 'investment', 'wealth management', 'trading', 'crypto',
+        'banking revenue', 'financial growth', 'payment processing', 'transaction volume'
+      ],
+      'Insurance': [
+        'insurance', 'insurer', 'auto insurance', 'health insurance', 'life insurance',
+        'claims', 'underwriting', 'actuarial', 'policy', 'premium', 'insurance rates',
+        'claim frequency', 'loss ratio', 'policy renewals'
+      ],
+      'Consumer & Retail': [
+        'retail', 'e-commerce', 'ecommerce', 'shopping', 'consumer goods', 'brand',
+        'cpg', 'fashion', 'grocery', 'marketplace', 'amazon', 'walmart', 'retail media',
+        'in-store', 'store', 'shopper', 'commerce', 'merchandising', 'pos', 'point of sale',
+        'retail sales', 'consumer spending', 'basket size', 'foot traffic', 'conversion rate',
+        'retail revenue', 'store performance', 'retail growth', 'retail media network'
+      ],
+      'Automotive': [
+        'automotive', 'auto', 'car', 'vehicle', 'tesla', 'ford', 'gm', 'toyota',
+        'electric vehicle', 'ev', 'dealership', 'auto industry', 'car sales',
+        'vehicle production', 'auto market share', 'ev adoption', 'dealership revenue'
+      ],
+      'Travel & Hospitality': [
+        'travel', 'hotel', 'airline', 'hospitality', 'booking', 'vacation',
+        'tourism', 'restaurant', 'airbnb', 'uber', 'lyft', 'occupancy rate',
+        'room revenue', 'passenger volume', 'travel spending', 'booking revenue'
+      ],
+      'Education': [
+        'education', 'university', 'college', 'school', 'learning', 'edtech',
+        'student', 'online learning', 'courseware', 'academic', 'enrollment',
+        'tuition revenue', 'student retention', 'education spending'
+      ],
+      'Telecom': [
+        'telecom', 'telecommunication', 'wireless', 'mobile', 'cellular', '5g',
+        'verizon', 'att', 'spectrum', 'broadband', 'internet provider',
+        'subscriber growth', 'arpu', 'network coverage', 'data usage'
+      ],
+      'Technology & Media': [
+        'martech', 'adtech', 'saas', 'software', 'technology', 'AI', 'artificial intelligence',
+        'machine learning', 'programmatic', 'media', 'advertising', 'marketing technology',
+        'ad spend', 'digital advertising', 'programmatic revenue', 'tech adoption'
+      ],
+      'Political Candidate & Advocacy': [
+        'political', 'campaign', 'election', 'candidate', 'advocacy', 'lobbying',
+        'government', 'policy', 'regulation', 'campaign spending', 'voter engagement'
+      ],
+      'Services': [
+        'consulting', 'professional services', 'agency', 'marketing services',
+        'revenue operations', 'sales enablement', 'outsourcing', 'service revenue',
+        'billable hours', 'client retention', 'service adoption'
+      ]
+    }
+    
+    // Score each vertical based on keyword matches
+    const scores: { [key: string]: number } = {}
+    
+    for (const [vertical, keywords] of Object.entries(verticalKeywords)) {
+      scores[vertical] = keywords.reduce((score, keyword) => {
+        const matches = (text.match(new RegExp(keyword, 'gi')) || []).length
+        return score + matches
+      }, 0)
+    }
+    
+    // Find the vertical with the highest score
+    const bestMatch = Object.entries(scores).reduce((best, [vertical, score]) => {
+      return score > best.score ? { vertical, score } : best
+    }, { vertical: 'Technology & Media', score: 0 }) // Default to Technology & Media
+    
+    // Special handling for retail media metrics
+    if (text.includes('retail media') || text.includes('in-store media') || text.includes('store media')) {
+      return 'Consumer & Retail'
     }
     
     return bestMatch.vertical
