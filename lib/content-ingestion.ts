@@ -2,6 +2,7 @@ import Parser from 'rss-parser'
 import { prisma } from '@/lib/db'
 import { CONTENT_SOURCES, CONTENT_SCHEDULE } from './content-sources'
 import { duplicatePreventionService } from './duplicate-prevention'
+import { contentAnalysisService } from './content-analysis'
 
 const parser = new Parser()
 
@@ -468,7 +469,11 @@ Respond in JSON format:
     
     // Generate AI-powered summary and insights
     const summary = await this.generateSummary(item.title, item.contentSnippet || '')
-    const insights = await this.generateInsights(item.title, summary)
+    const insights = await contentAnalysisService.generateInsights({
+      title: item.title,
+      summary: summary,
+      sourceName: source.name
+    })
     
     // Determine vertical based on content analysis
     const vertical = this.determineVertical(item.title, item.contentSnippet || '')
@@ -497,8 +502,10 @@ Respond in JSON format:
       sourceName: source.name,
       publishedAt,
       category: source.category, // This will be overridden by AI evaluation
-      priority: source.priority,
-      vertical
+      priority: insights.urgencyLevel === 'HIGH' ? 'HIGH' : source.priority,
+      vertical,
+      whyItMatters: insights.whyItMatters,
+      talkTrack: insights.talkTrack
     }
   }
   
@@ -511,36 +518,7 @@ Respond in JSON format:
       : cleanContent
   }
   
-  private async generateInsights(title: string, summary: string): Promise<{
-    whyItMatters: string
-    talkTrack: string
-  }> {
-    // TODO: Use AI to generate "Why it Matters" and "Talk Track" sections
-    // For now, return template-based insights
-    
-    const isAIContent = title.toLowerCase().includes('ai') || title.toLowerCase().includes('artificial intelligence')
-    const isPrivacyContent = title.toLowerCase().includes('privacy') || title.toLowerCase().includes('cookie')
-    const isMergerContent = title.toLowerCase().includes('merger') || title.toLowerCase().includes('acquisition')
-    
-    let whyItMatters = ''
-    let talkTrack = ''
-    
-    if (isAIContent) {
-      whyItMatters = 'AI adoption is accelerating across marketing and sales. Companies that don\'t adapt risk falling behind competitors who are leveraging AI for efficiency and personalization.'
-      talkTrack = 'Ask: "How is your team currently using AI in your marketing operations?" Position AI solutions as competitive necessities, not experimental tools.'
-    } else if (isPrivacyContent) {
-      whyItMatters = 'Privacy regulations and cookie deprecation are reshaping digital marketing. Brands need first-party data strategies to maintain targeting effectiveness.'
-      talkTrack = 'Lead with: "What\'s your plan for reaching customers as third-party data becomes unavailable?" Focus on first-party data collection and identity resolution.'
-    } else if (isMergerContent) {
-      whyItMatters = 'Industry consolidation drives efficiency pressure. Companies will scrutinize vendor relationships and demand proof of incremental value.'
-      talkTrack = 'Frame around future-proofing: "How are you preparing for increased competition and tighter budgets?" Emphasize measurable ROI and vendor consolidation benefits.'
-    } else {
-      whyItMatters = 'Market dynamics are shifting rapidly. Staying informed about industry changes helps maintain competitive advantage and strategic alignment.'
-      talkTrack = 'Use as conversation starter: "Have you seen this recent development in [specific area]?" Connect the trend to their business challenges and priorities.'
-    }
-    
-    return { whyItMatters, talkTrack }
-  }
+
   
   private async saveArticle(articleData: ParsedArticle): Promise<void> {
     try {

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import Parser from 'rss-parser'
 import { duplicatePreventionService } from '@/lib/duplicate-prevention'
+import { contentAnalysisService } from '@/lib/content-analysis'
 
 const parser = new Parser()
 
@@ -61,15 +62,22 @@ export async function POST() {
           if (title.length < 10) continue // Skip very short titles
 
           try {
+            // Generate contextual insights based on actual article content
+            const insights = await contentAnalysisService.generateInsights({
+              title: title,
+              summary: summary || `Latest news from ${source.name}: ${title}`,
+              sourceName: source.name
+            })
+
             const result = await duplicatePreventionService.createArticleSafely({
               title: title,
               summary: summary || `Latest news from ${source.name}: ${title}`,
               sourceUrl: item.link,
               sourceName: source.name,
-                             whyItMatters: generateWhyItMatters(title, source.name),
-               talkTrack: generateTalkTrack(title, source.name),
+              whyItMatters: insights.whyItMatters,
+              talkTrack: insights.talkTrack,
               vertical: source.vertical,
-              priority: 'MEDIUM',
+              priority: insights.urgencyLevel === 'HIGH' ? 'HIGH' : 'MEDIUM',
               publishedAt: item.pubDate ? new Date(item.pubDate) : new Date()
             })
             
@@ -130,33 +138,7 @@ export async function POST() {
   }
 }
 
-function generateWhyItMatters(title: string, sourceName: string): string {
-  const lowerTitle = title.toLowerCase()
-  
-  if (lowerTitle.includes('ai') || lowerTitle.includes('artificial intelligence')) {
-    return 'AI adoption is accelerating across marketing. Companies leveraging AI gain competitive advantages in personalization and efficiency.'
-  } else if (lowerTitle.includes('privacy') || lowerTitle.includes('cookie')) {
-    return 'Privacy regulations reshape digital marketing. First-party data strategies become essential for targeting effectiveness.'
-  } else if (lowerTitle.includes('merger') || lowerTitle.includes('acquisition')) {
-    return 'Industry consolidation drives efficiency pressure. Companies scrutinize vendor relationships and demand measurable ROI.'
-  } else {
-    return `${sourceName} covers key industry developments that impact business strategy and competitive positioning.`
-  }
-}
 
-function generateTalkTrack(title: string, sourceName: string): string {
-  const lowerTitle = title.toLowerCase()
-  
-  if (lowerTitle.includes('ai') || lowerTitle.includes('artificial intelligence')) {
-    return 'Ask: "How is your team currently using AI in marketing operations?" Position AI solutions as competitive necessities.'
-  } else if (lowerTitle.includes('privacy') || lowerTitle.includes('cookie')) {
-    return 'Lead with: "What\'s your plan for reaching customers as third-party data becomes unavailable?" Focus on first-party data.'
-  } else if (lowerTitle.includes('merger') || lowerTitle.includes('acquisition')) {
-    return 'Frame around future-proofing: "How are you preparing for increased competition?" Emphasize measurable ROI.'
-  } else {
-    return `Use as conversation starter: "Have you seen this development in ${sourceName.split(' ')[0]}?" Connect to their business challenges.`
-  }
-}
 
 export async function GET() {
   return POST()
