@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server'
 import Parser from 'rss-parser'
 import { prisma } from '@/lib/db'
+import { ContentAnalysisService } from '@/lib/content-analysis'
 
 const parser = new Parser()
+const contentAnalysis = new ContentAnalysisService()
 
 // Generate relevant metrics for sales conversations
 async function generateRelevantMetrics(verticals: string[]) {
@@ -242,9 +244,26 @@ export async function POST() {
             const contentLower = `${title} ${summary}`.toLowerCase()
             const hasZetaRelevance = zetaKeywords.some(keyword => contentLower.includes(keyword))
             
-            // Generate simple insights
-            const talkTrack = `${source.vertical} insight: ${title.split(' ').slice(0, 10).join(' ')}${title.split(' ').length > 10 ? '...' : ''} This development could impact client conversations in the ${source.vertical.toLowerCase()} space.`
-            const whyItMatters = `Important ${source.vertical.toLowerCase()} trend for Zeta Global sellers to discuss with clients in this vertical.`
+            // Generate tailored insights using ContentAnalysisService
+            let talkTrack = `${source.vertical} insight: ${title.split(' ').slice(0, 10).join(' ')}${title.split(' ').length > 10 ? '...' : ''} This development could impact client conversations in the ${source.vertical.toLowerCase()} space.`
+            let whyItMatters = `Important ${source.vertical.toLowerCase()} trend for Zeta Global sellers to discuss with clients in this vertical.`
+            
+            try {
+              // Use content analysis for tailored insights
+              const insights = await contentAnalysis.generateInsights({
+                title,
+                summary,
+                sourceName: source.name
+              })
+              
+              whyItMatters = insights.whyItMatters
+              talkTrack = insights.talkTrack
+              
+              console.log(`  🧠 Generated tailored insights for: ${title.slice(0, 30)}...`)
+            } catch (analysisError) {
+              console.log(`  ⚠️ Using fallback insights for: ${title.slice(0, 30)}... (${analysisError})`)
+              // Keep the fallback insights already set above
+            }
             
             const article = await prisma.article.create({
               data: {
