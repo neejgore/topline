@@ -1,64 +1,59 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { ContentIngestionService } from '@/lib/content-ingestion'
 
 export async function POST() {
   try {
-    console.log('🔄 Updating content dates to current week...')
-    
-    const now = new Date()
-    const thisWeek = new Date()
-    thisWeek.setDate(thisWeek.getDate() - 3) // 3 days ago to ensure it's within the week
+    console.log('🔄 Resetting content and fetching real articles...')
 
-    // Update articles to have current week dates
-    console.log('📰 Updating article publication dates...')
-    await prisma.$executeRaw`
-      UPDATE articles 
-      SET "publishedAt" = ${thisWeek}, "updatedAt" = ${now}
-      WHERE status = 'PUBLISHED'
-    `
+    // Clear all existing articles (including sample articles)
+    console.log('🧹 Clearing existing content...')
+    const deletedArticles = await prisma.article.deleteMany({})
+    console.log(`🗑️  Deleted ${deletedArticles.count} existing articles`)
 
-    // Update metrics to have current week dates  
-    console.log('📊 Updating metric publication dates...')
-    await prisma.$executeRaw`
-      UPDATE metrics 
-      SET "publishedAt" = ${thisWeek}, "updatedAt" = ${now}
-      WHERE status = 'PUBLISHED'
-    `
+    // Clear all existing metrics
+    const deletedMetrics = await prisma.metric.deleteMany({})
+    console.log(`🗑️  Deleted ${deletedMetrics.count} existing metrics`)
 
-    // Get counts
-    const [articleCount, metricCount] = await Promise.all([
-      prisma.$queryRaw<Array<{count: bigint}>>`
-        SELECT COUNT(*) as count FROM articles 
-        WHERE status = 'PUBLISHED' AND "publishedAt" >= ${new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)}
-      `,
-      prisma.$queryRaw<Array<{count: bigint}>>`
-        SELECT COUNT(*) as count FROM metrics 
-        WHERE status = 'PUBLISHED' AND "publishedAt" >= ${new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)}
-      `
-    ])
+    // Fetch real articles using enhanced RSS ingestion
+    console.log('📡 Fetching real articles from RSS feeds with OpenAI evaluation...')
+    const contentService = new ContentIngestionService()
+    const result = await contentService.ingestFromRSSFeeds()
 
-    const articlesVisible = Number(articleCount[0]?.count ?? 0)
-    const metricsVisible = Number(metricCount[0]?.count ?? 0)
+    // Get final stats
+    const stats = await contentService.getContentStats()
 
-    return NextResponse.json({
+    const response = {
       success: true,
-      message: 'Content dates updated successfully!',
-      details: {
-        updateDate: thisWeek.toISOString(),
-        articlesNowVisible: articlesVisible,
-        metricsNowVisible: metricsVisible
-      }
-    })
+      message: 'Content reset and real articles fetched successfully!',
+      results: {
+        articlesDeleted: deletedArticles.count,
+        metricsDeleted: deletedMetrics.count,
+        realArticlesAdded: result.articles,
+        articlesSkipped: result.skipped
+      },
+      stats: {
+        totalArticles: stats.totalArticles,
+        publishedArticles: stats.publishedArticles,
+        recentArticles: stats.recentArticles
+      },
+      note: 'All articles now come from real RSS feeds with OpenAI importance evaluation',
+      timestamp: new Date().toISOString()
+    }
+
+    console.log('🎉 Content reset completed:', response)
+    return NextResponse.json(response)
 
   } catch (error) {
-    console.error('❌ Update failed:', error)
+    console.error('❌ Content reset failed:', error)
     
-    return NextResponse.json({
+    const errorResponse = {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
-      details: 'Failed to update content dates'
-    }, { status: 500 })
+      timestamp: new Date().toISOString()
+    }
     
+    return NextResponse.json(errorResponse, { status: 500 })
   }
 }
 

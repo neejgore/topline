@@ -13,12 +13,23 @@ interface ParsedArticle {
   category: string
   priority: string
   vertical: string
+  whyItMatters?: string
+  talkTrack?: string
+  importanceScore?: number
+}
+
+interface ArticleEvaluation {
+  importanceScore: number // 1-10 scale
+  whyItMatters: string
+  talkTrack: string
+  vertical: string
+  priority: 'HIGH' | 'MEDIUM' | 'LOW'
 }
 
 export class ContentIngestionService {
   
   async ingestFromRSSFeeds(): Promise<{ articles: number; skipped: number }> {
-    console.log('🔄 Starting RSS feed ingestion...')
+    console.log('🔄 Starting enhanced RSS feed ingestion with OpenAI evaluation...')
     
     let totalArticles = 0
     let totalSkipped = 0
@@ -28,22 +39,59 @@ export class ContentIngestionService {
         console.log(`📡 Fetching from ${source.name}...`)
         const feed = await parser.parseURL(source.url)
         
-        const relevantItems = feed.items?.filter(item => 
-          this.isRelevantContent(item.title || '', item.contentSnippet || '')
-        ).slice(0, 5) // Limit to 5 articles per source
+        if (!feed.items?.length) {
+          console.log(`⚠️  No items found in ${source.name} feed`)
+          continue
+        }
         
-        if (!relevantItems?.length) {
+        // Filter for recent articles (4-day lookback)
+        const fourDaysAgo = new Date(Date.now() - CONTENT_SCHEDULE.maxAgeHours * 60 * 60 * 1000)
+        const recentItems = feed.items.filter(item => {
+          const pubDate = item.pubDate ? new Date(item.pubDate) : new Date()
+          return pubDate >= fourDaysAgo
+        })
+        
+        console.log(`📰 Found ${recentItems.length} recent articles from ${source.name}`)
+        
+        // Filter for relevant content
+        const relevantItems = recentItems.filter(item => 
+          this.isRelevantContent(item.title || '', item.contentSnippet || '')
+        )
+        
+        console.log(`🎯 ${relevantItems.length} relevant articles found`)
+        
+        if (!relevantItems.length) {
           console.log(`⚠️  No relevant content from ${source.name}`)
           continue
         }
         
-        for (const item of relevantItems) {
-          const article = await this.processRSSItem(item, source)
-          if (article) {
-            await this.saveArticle(article)
-            totalArticles++
-            console.log(`✅ Added: ${article.title}`)
-          } else {
+        // Process each article
+        for (const item of relevantItems.slice(0, 3)) { // Limit per source
+          try {
+            const article = await this.processRSSItem(item, source)
+            if (article) {
+              // Use OpenAI to evaluate importance and generate insights
+              const evaluation = await this.evaluateArticleWithAI(article)
+              
+              if (evaluation.importanceScore >= 6) { // Only save important articles
+                article.whyItMatters = evaluation.whyItMatters
+                article.talkTrack = evaluation.talkTrack
+                article.vertical = evaluation.vertical
+                article.priority = evaluation.priority
+                article.importanceScore = evaluation.importanceScore
+                
+                await this.saveArticle(article)
+                totalArticles++
+                console.log(`✅ Added: ${article.title} (Score: ${evaluation.importanceScore}/10)`)
+              } else {
+                console.log(`⏭️  Skipped: ${article.title} (Score: ${evaluation.importanceScore}/10 - too low)`)
+                totalSkipped++
+              }
+            } else {
+              totalSkipped++
+            }
+          } catch (error) {
+            console.error(`❌ Error processing article from ${source.name}:`, error)
             totalSkipped++
           }
         }
@@ -53,8 +101,118 @@ export class ContentIngestionService {
       }
     }
     
-    console.log(`🎉 Ingestion complete: ${totalArticles} added, ${totalSkipped} skipped`)
+    console.log(`🎉 Enhanced ingestion complete: ${totalArticles} added, ${totalSkipped} skipped`)
     return { articles: totalArticles, skipped: totalSkipped }
+  }
+  
+  private async evaluateArticleWithAI(article: ParsedArticle): Promise<ArticleEvaluation> {
+    try {
+      // Check if OpenAI API key is available
+      if (!process.env.OPENAI_API_KEY) {
+        console.log('⚠️  OpenAI API key not found, using fallback evaluation')
+        return this.fallbackEvaluation(article)
+      }
+
+      const prompt = `
+Evaluate this marketing/advertising industry article for a sales intelligence platform:
+
+Title: ${article.title}
+Summary: ${article.summary}
+Source: ${article.sourceName}
+
+Please provide:
+1. Importance Score (1-10): How important is this for sales professionals in marketing/adtech?
+2. Why It Matters: 1-2 sentences explaining business impact
+3. Talk Track: Sales conversation starter for this news
+4. Vertical: Best fit category (Healthcare, Financial Services, Consumer & Retail, Technology & Media, Services, etc.)
+5. Priority: HIGH/MEDIUM/LOW
+
+Focus on: AI/automation, privacy/compliance, mergers/acquisitions, technology changes, market shifts, revenue impact.
+
+Respond in JSON format:
+{
+  "importanceScore": 8,
+  "whyItMatters": "Brief explanation of business impact...",
+  "talkTrack": "Conversation starter for sales...",
+  "vertical": "Technology & Media",
+  "priority": "HIGH"
+}
+`
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are an expert in marketing technology and advertising industry trends. Evaluate articles for their importance to sales professionals selling to marketing/advertising executives.'
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          temperature: 0.3,
+          max_tokens: 500
+        })
+      })
+
+      if (!response.ok) {
+        console.error('OpenAI API error:', response.status)
+        return this.fallbackEvaluation(article)
+      }
+
+      const data = await response.json()
+      const content = data.choices[0]?.message?.content
+
+      if (!content) {
+        return this.fallbackEvaluation(article)
+      }
+
+      // Parse JSON response
+      const evaluation = JSON.parse(content)
+      
+      return {
+        importanceScore: Math.min(10, Math.max(1, evaluation.importanceScore || 5)),
+        whyItMatters: evaluation.whyItMatters || 'Industry development with potential business impact.',
+        talkTrack: evaluation.talkTrack || `Ask: "Have you seen the recent news about ${article.title.toLowerCase()}? How might this impact your strategy?"`,
+        vertical: evaluation.vertical || 'Technology & Media',
+        priority: evaluation.priority || 'MEDIUM'
+      }
+
+    } catch (error) {
+      console.error('Error evaluating article with AI:', error)
+      return this.fallbackEvaluation(article)
+    }
+  }
+
+  private fallbackEvaluation(article: ParsedArticle): ArticleEvaluation {
+    // Fallback scoring based on keywords and source
+    let score = 5 // baseline
+    const text = `${article.title} ${article.summary}`.toLowerCase()
+    
+    // High-impact keywords
+    const highImpactKeywords = ['ai', 'artificial intelligence', 'merger', 'acquisition', 'privacy', 'cookies', 'regulation']
+    const mediumImpactKeywords = ['marketing', 'advertising', 'programmatic', 'automation', 'data']
+    
+    if (highImpactKeywords.some(keyword => text.includes(keyword))) score += 2
+    if (mediumImpactKeywords.some(keyword => text.includes(keyword))) score += 1
+    
+    // Source priority boost
+    if (article.sourceName === 'AdExchanger' || article.sourceName === 'Ad Age') score += 1
+    
+    return {
+      importanceScore: Math.min(10, score),
+      whyItMatters: 'Relevant industry development that could impact marketing strategies and technology decisions.',
+      talkTrack: `Ask: "Have you seen the recent developments in ${text.includes('ai') ? 'AI marketing' : 'the industry'}? How is this affecting your current initiatives?"`,
+      vertical: this.determineVertical(article.title, article.summary),
+      priority: score >= 7 ? 'HIGH' : score >= 5 ? 'MEDIUM' : 'LOW'
+    }
   }
   
   private isRelevantContent(title: string, content: string): boolean {
@@ -219,16 +377,14 @@ export class ContentIngestionService {
   }
   
   private async saveArticle(articleData: ParsedArticle): Promise<void> {
-    const insights = await this.generateInsights(articleData.title, articleData.summary)
-    
     await prisma.article.create({
       data: {
         title: articleData.title,
         summary: articleData.summary,
         sourceUrl: articleData.sourceUrl,
         sourceName: articleData.sourceName,
-        whyItMatters: insights.whyItMatters,
-        talkTrack: insights.talkTrack,
+        whyItMatters: articleData.whyItMatters || 'Relevant industry development that could impact marketing strategies.',
+        talkTrack: articleData.talkTrack || 'Use this as a conversation starter about recent industry trends.',
         category: articleData.category,
         vertical: articleData.vertical,
         priority: articleData.priority,

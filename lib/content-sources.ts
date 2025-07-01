@@ -17,24 +17,60 @@ export const CONTENT_SOURCES = {
       name: 'Digiday',
       url: 'https://digiday.com/feed/',
       category: 'ADTECH',
-      priority: 'MEDIUM'
+      priority: 'HIGH'
     },
     {
-      name: 'Marketing Land',
-      url: 'https://marketingland.com/feed',
-      category: 'MARTECH',
-      priority: 'MEDIUM'
-    },
-    {
-      name: 'AdAge',
+      name: 'Ad Age',
       url: 'https://adage.com/rss.xml',
       category: 'ADTECH',
       priority: 'HIGH'
     },
     {
+      name: 'Marketing Land',
+      url: 'https://marketingland.com/feed',
+      category: 'MARTECH',
+      priority: 'HIGH'
+    },
+    {
+      name: 'Campaign US',
+      url: 'https://www.campaignlive.com/rss',
+      category: 'ADTECH',
+      priority: 'HIGH'
+    },
+    {
+      name: 'MediaPost',
+      url: 'https://www.mediapost.com/rss/',
+      category: 'ADTECH',
+      priority: 'MEDIUM'
+    },
+    {
       name: 'VentureBeat Marketing',
       url: 'https://venturebeat.com/category/marketing/feed/',
       category: 'MARTECH',
+      priority: 'MEDIUM'
+    },
+    {
+      name: 'Advertising Age Marketing',
+      url: 'https://adage.com/section/marketing/rss',
+      category: 'MARTECH',
+      priority: 'HIGH'
+    },
+    {
+      name: 'Chief Marketer',
+      url: 'https://www.chiefmarketer.com/feed/',
+      category: 'MARTECH',
+      priority: 'MEDIUM'
+    },
+    {
+      name: 'Mobile Marketer',
+      url: 'https://www.mobilemarketer.com/rss.xml',
+      category: 'MOBILE',
+      priority: 'MEDIUM'
+    },
+    {
+      name: 'Retail Dive',
+      url: 'https://www.retaildive.com/feeds/news/',
+      category: 'RETAIL',
       priority: 'MEDIUM'
     }
   ],
@@ -42,27 +78,46 @@ export const CONTENT_SOURCES = {
   keywordFilters: [
     // AI/ML Keywords
     'artificial intelligence', 'machine learning', 'AI advertising', 'programmatic AI',
+    'generative AI', 'AI marketing', 'chatGPT', 'automation',
     
     // Privacy/Compliance
     'third-party cookies', 'privacy regulations', 'GDPR', 'CCPA', 'data privacy',
+    'consent management', 'first-party data', 'cookieless',
     
     // MarTech
     'customer data platform', 'CDP', 'marketing automation', 'personalization',
-    'attribution', 'marketing mix modeling', 'MMM',
+    'attribution', 'marketing mix modeling', 'MMM', 'martech stack',
+    'customer journey', 'omnichannel', 'marketing technology',
     
     // AdTech
     'programmatic advertising', 'demand side platform', 'DSP', 'supply side platform', 'SSP',
-    'header bidding', 'real-time bidding', 'RTB',
+    'header bidding', 'real-time bidding', 'RTB', 'connected TV', 'CTV',
+    'addressable advertising', 'ad fraud', 'viewability',
     
     // Business Intelligence
     'merger', 'acquisition', 'funding', 'IPO', 'valuation', 'partnership',
+    'revenue', 'growth', 'earnings', 'investment',
     
-    // Sales/Revenue
-    'revenue operations', 'sales enablement', 'lead generation', 'conversion optimization'
+    // Sales/Revenue Operations
+    'revenue operations', 'sales enablement', 'lead generation', 'conversion optimization',
+    'sales technology', 'CRM', 'pipeline', 'forecasting',
+    
+    // Digital Marketing
+    'social media marketing', 'influencer marketing', 'content marketing',
+    'email marketing', 'search marketing', 'SEO', 'SEM', 'PPC',
+    
+    // Retail & E-commerce
+    'retail media', 'e-commerce', 'omnichannel retail', 'direct-to-consumer',
+    'marketplace advertising', 'product discovery',
+    
+    // Measurement & Analytics
+    'marketing measurement', 'attribution modeling', 'incrementality',
+    'marketing ROI', 'cross-channel measurement', 'unified measurement'
   ],
   
   excludeKeywords: [
-    'celebrity', 'entertainment', 'sports', 'politics', 'weather'
+    'celebrity', 'entertainment', 'sports', 'politics', 'weather',
+    'gossip', 'fashion', 'lifestyle', 'travel', 'food'
   ]
 }
 
@@ -72,12 +127,12 @@ export const CONTENT_SCHEDULE = {
   refreshTime: '00:00',
   timezone: 'America/Los_Angeles',
   
-  // Content age limits
-  maxAgeHours: 168, // 7 days
-  preferredAgeHours: 72, // Prefer content within 3 days
+  // Content age limits - 4 day lookback window
+  maxAgeHours: 96, // 4 days
+  preferredAgeHours: 96, // Prefer content within 4 days
   
   // Content limits per week
-  maxArticles: 10,
+  maxArticles: 15, // Increased for more sources
   maxMetrics: 10
 }
 
