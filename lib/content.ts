@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db'
+import { diverseContentIngestionService } from './diverse-content-ingestion'
 
 export async function getPublishedArticles() {
   try {
@@ -166,5 +167,99 @@ export async function searchContent(query: string) {
   } catch (error) {
     console.error('Error searching content:', error)
     return { articles: [], metrics: [] }
+  }
+}
+
+/**
+ * Get articles for specific vertical or ALL page (Zeta Global relevant)
+ * This replaces the old getPublishedArticles for the new vertical system
+ */
+export async function getArticlesByVertical(vertical: string = 'All', limit: number = 12) {
+  try {
+    console.log(`🎯 Getting articles for vertical: ${vertical}`)
+    
+    // Use the new diverse content service for vertical filtering
+    const articles = await diverseContentIngestionService.getVerticalArticles(vertical, limit)
+    
+    console.log(`✅ Found ${articles.length} articles for ${vertical} vertical`)
+    return articles
+    
+  } catch (error) {
+    console.error(`Error fetching articles for vertical ${vertical}:`, error)
+    return []
+  }
+}
+
+/**
+ * Get available verticals from the current article corpus
+ */
+export async function getAvailableVerticals() {
+  try {
+    const verticals = await prisma.article.findMany({
+      where: {
+        status: 'PUBLISHED',
+        vertical: {
+          not: null
+        }
+      },
+      select: {
+        vertical: true
+      },
+      distinct: ['vertical']
+    })
+
+    // Extract unique vertical names and add "All" option
+    const uniqueVerticals = ['All', ...verticals.map(v => v.vertical).filter(Boolean)]
+    
+    console.log(`📊 Available verticals: ${uniqueVerticals.join(', ')}`)
+    return uniqueVerticals
+    
+  } catch (error) {
+    console.error('Error fetching available verticals:', error)
+    return ['All', 'Technology & Media'] // Fallback
+  }
+}
+
+/**
+ * Get content statistics by vertical
+ */
+export async function getVerticalStats() {
+  try {
+    const stats = await prisma.article.groupBy({
+      by: ['vertical'],
+      where: {
+        status: 'PUBLISHED',
+        vertical: {
+          not: null
+        }
+      },
+      _count: {
+        id: true
+      },
+      orderBy: {
+        _count: {
+          id: 'desc'
+        }
+      }
+    })
+
+    const totalArticles = await prisma.article.count({
+      where: { status: 'PUBLISHED' }
+    })
+
+    return {
+      totalArticles,
+      verticalBreakdown: stats.map(stat => ({
+        vertical: stat.vertical,
+        count: stat._count.id
+      }))
+    }
+    
+  } catch (error) {
+    console.error('Error fetching vertical stats:', error)
+    return {
+      totalArticles: 0,
+      verticalBreakdown: []
+    }
   }
 } 

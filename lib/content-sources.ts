@@ -150,8 +150,137 @@ export const CONTENT_SOURCES = {
       url: 'https://www.autonews.com/rss.xml',
       category: 'Automotive',
       priority: 'MEDIUM'
+    },
+    
+    // Consumer & Retail Sources
+    {
+      name: 'Chain Store Age',
+      url: 'https://chainstoreage.com/rss.xml',
+      category: 'Consumer & Retail',
+      priority: 'MEDIUM'
+    },
+    {
+      name: 'Progressive Grocer',
+      url: 'https://www.progressivegrocer.com/rss.xml',
+      category: 'Consumer & Retail',
+      priority: 'MEDIUM'
+    },
+    {
+      name: 'Supermarket News',
+      url: 'https://www.supermarketnews.com/rss.xml',
+      category: 'Consumer & Retail',
+      priority: 'MEDIUM'
+    },
+    
+    // Financial Services Sources
+    {
+      name: 'Bank Innovation',
+      url: 'https://bankinnovation.net/feed/',
+      category: 'Financial Services',
+      priority: 'MEDIUM'
+    },
+    {
+      name: 'Credit Union Times',
+      url: 'https://www.cutimes.com/rss.xml',
+      category: 'Financial Services',
+      priority: 'MEDIUM'
+    },
+    {
+      name: 'Banking Dive',
+      url: 'https://www.bankingdive.com/feeds/news/',
+      category: 'Financial Services',
+      priority: 'MEDIUM'
+    },
+    
+    // Healthcare Sources
+    {
+      name: 'Healthcare Dive',
+      url: 'https://www.healthcaredive.com/feeds/news/',
+      category: 'Healthcare',
+      priority: 'MEDIUM'
+    },
+    {
+      name: 'Becker\'s Hospital Review',
+      url: 'https://www.beckershospitalreview.com/rss.xml',
+      category: 'Healthcare',
+      priority: 'MEDIUM'
+    },
+    
+    // Insurance Sources
+    {
+      name: 'Insurance Business',
+      url: 'https://www.insurancebusinessmag.com/rss.xml',
+      category: 'Insurance',
+      priority: 'MEDIUM'
+    },
+    {
+      name: 'Insurance Journal',
+      url: 'https://www.insurancejournal.com/rss/',
+      category: 'Insurance',
+      priority: 'MEDIUM'
+    },
+    
+    // Education Sources
+    {
+      name: 'EdTech Magazine',
+      url: 'https://edtechmagazine.com/rss.xml',
+      category: 'Education',
+      priority: 'MEDIUM'
+    },
+    {
+      name: 'Campus Technology',
+      url: 'https://campustechnology.com/rss.xml',
+      category: 'Education',
+      priority: 'MEDIUM'
+    },
+    
+    // Travel & Hospitality Sources
+    {
+      name: 'Hotel Management',
+      url: 'https://www.hotelmanagement.net/rss.xml',
+      category: 'Travel & Hospitality',
+      priority: 'MEDIUM'
+    },
+    {
+      name: 'Travel Weekly',
+      url: 'https://www.travelweekly.com/rss.xml',
+      category: 'Travel & Hospitality',
+      priority: 'MEDIUM'
+    },
+    
+    // Telecom Sources
+    {
+      name: 'Fierce Telecom',
+      url: 'https://www.fiercetelecom.com/rss.xml',
+      category: 'Telecom',
+      priority: 'MEDIUM'
+    },
+    {
+      name: 'Light Reading',
+      url: 'https://www.lightreading.com/rss.xml',
+      category: 'Telecom',
+      priority: 'MEDIUM'
     }
   ],
+  
+  // Zeta Global business focus areas for "ALL" page relevance scoring
+  zetaGlobalRelevance: {
+    primaryFocus: [
+      'customer data platform', 'CDP', 'personalization', 'AI marketing',
+      'programmatic advertising', 'email marketing', 'marketing automation',
+      'customer journey', 'attribution', 'first-party data', 'omnichannel',
+      'retail media', 'connected TV', 'CTV', 'addressable advertising'
+    ],
+    secondaryFocus: [
+      'privacy regulations', 'cookieless', 'data privacy', 'GDPR', 'CCPA',
+      'machine learning', 'artificial intelligence', 'martech', 'adtech',
+      'digital marketing', 'social media marketing', 'influencer marketing'
+    ],
+    industries: [
+      'retail', 'e-commerce', 'financial services', 'healthcare', 'automotive',
+      'travel', 'hospitality', 'insurance', 'telecom', 'education'
+    ]
+  },
   
   keywordFilters: [
     // AI/ML Keywords
