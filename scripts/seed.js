@@ -16,7 +16,7 @@ async function main() {
         whyItMatters: 'AI is no longer experimental; it\'s an arms race. CMOs are looking for execution partners—this is your wedge.',
         talkTrack: 'Ask: "Where are your biggest content and campaign bottlenecks right now?" Then position AI-powered solutions as competitive necessities, not nice-to-haves.',
         category: 'NEWS',
-        vertical: 'MARTECH',
+        vertical: 'Technology & Media',
         priority: 'HIGH',
         status: 'PUBLISHED',
         publishedAt: new Date(),
@@ -32,23 +32,55 @@ async function main() {
         whyItMatters: 'Consolidation drives efficiency pressure. Brands will scrutinize every vendor relationship and demand proof of incremental value.',
         talkTrack: 'Talk about: Future-proofing against walled gardens. "How are you preparing for a world where media buying becomes even more consolidated?"',
         category: 'NEWS',  
-        vertical: 'ADTECH',
+        vertical: 'Technology & Media',
         priority: 'HIGH',
         status: 'PUBLISHED',
         publishedAt: new Date(),
       }
     }),
-
+    
     prisma.article.create({
       data: {
-        title: 'Cookieless Future Accelerates as Chrome Timeline Moves',
-        summary: 'Google pushes third-party cookie deprecation to Q1 2025, but preparedness among advertisers remains low.',
-        sourceUrl: 'https://example.com/cookieless-future',
+        title: 'Cookie Deprecation Creates Attribution Gap for Advertisers',
+        summary: 'As third-party cookies phase out, attribution models are breaking down—forcing a shift to first-party data strategies.',
+        sourceUrl: 'https://example.com/cookie-deprecation-attribution',
         sourceName: 'Digiday',
-        whyItMatters: 'Brands are running out of time to build first-party data strategies. Those who wait will face significant competitive disadvantage.',
-        talkTrack: 'Lead with: "What\'s your plan for reaching customers when third-party cookies disappear in Q1?" Position first-party data collection and identity resolution as urgent priorities.',
+        whyItMatters: 'The cookie deprecation isn\'t just a tech problem—it\'s a measurement crisis. Companies need new ways to prove campaign effectiveness.',
+        talkTrack: 'Ask: "How confident are you in your current attribution model?" Position first-party data collection as the foundation for future measurement.',
         category: 'NEWS',
-        vertical: 'ADTECH',
+        vertical: 'Technology & Media',
+        priority: 'HIGH',
+        status: 'PUBLISHED',
+        publishedAt: new Date(),
+      }
+    }),
+    
+    prisma.article.create({
+      data: {
+        title: 'RevOps Teams Drive 32% Pipeline Velocity Improvement',
+        summary: 'Companies with dedicated Revenue Operations teams see faster deal closure and better sales-marketing alignment.',
+        sourceUrl: 'https://example.com/revops-pipeline-velocity',
+        sourceName: 'SalesforceBen',
+        whyItMatters: 'RevOps is becoming the connective tissue between sales and marketing—and a competitive advantage for companies that get it right.',
+        talkTrack: 'Ask: "How aligned are your sales and marketing teams on pipeline definitions?" Position RevOps as the solution to revenue predictability.',
+        category: 'NEWS',
+        vertical: 'Services',
+        priority: 'MEDIUM',
+        status: 'PUBLISHED',
+        publishedAt: new Date(),
+      }
+    }),
+    
+    prisma.article.create({
+      data: {
+        title: 'Retail Media Networks Hit $60B as Brands Shift Budgets',
+        summary: 'Retail media advertising spending accelerates as brands seek first-party data and closed-loop attribution.',
+        sourceUrl: 'https://example.com/retail-media-60b',
+        sourceName: 'Retail Dive',
+        whyItMatters: 'Retail media offers something traditional advertising can\'t: direct connection to purchase behavior and closed-loop measurement.',
+        talkTrack: 'Ask: "What percentage of your media budget goes to retail media networks?" Position as essential for reaching purchase-ready audiences.',
+        category: 'NEWS',
+        vertical: 'Consumer & Retail',
         priority: 'HIGH',
         status: 'PUBLISHED',
         publishedAt: new Date(),
@@ -56,111 +88,102 @@ async function main() {
     })
   ])
 
-  // Create sample metrics based on spec
+  // Create sample metrics
   const metrics = await Promise.all([
     prisma.metric.create({
       data: {
-        title: 'Marketers Using AI Daily',
-        value: '88%',
-        description: 'of marketers now use AI in their daily workflows, up from 23% in 2022.',
-        source: 'SurveyMonkey',
-        sourceUrl: 'https://example.com/ai-usage-stats',
-        howToUse: 'Ask "Where are your content ops bottlenecks today?"—then offer automation insights.',
-        talkTrack: 'Position AI adoption as table stakes: "88% of your competitors are already using AI daily. What\'s your team\'s AI strategy for staying ahead?"',
-        vertical: 'MARTECH',
+        title: '71% of CMOs Increase AI Marketing Budgets',
+        value: '71',
+        unit: '%',
+        context: 'of CMOs plan to invest $10M+ in AI marketing technology this year',
+        source: 'BCG Cannes Lions Survey 2024',
+        whyItMatters: 'AI spending is accelerating—companies not investing risk falling behind in personalization and efficiency.',
+        talkTrack: 'Ask prospects: "What\'s your current AI marketing budget?" Use 71% as the benchmark for serious players.',
+        category: 'METRICS',
+        vertical: 'Technology & Media',
         priority: 'HIGH',
         status: 'PUBLISHED',
         publishedAt: new Date(),
       }
     }),
-
+    
     prisma.metric.create({
       data: {
-        title: 'Digital Spend Share',
-        value: '72%',
-        description: 'of total advertising budgets now go to digital channels, marking a new high.',
-        source: 'Deloitte',
-        sourceUrl: 'https://example.com/digital-spend-share',
-        howToUse: 'Talk track: "Most orgs are already digitally loaded. The difference now is signal strategy, not media mix."',
-        talkTrack: 'Frame the conversation around optimization: "With 72% of budgets already digital, the next competitive advantage is in how precisely you can target and measure."',
-        vertical: 'ADTECH',
+        title: '$60B Retail Media Ad Spend in 2024',
+        value: '60',
+        unit: 'B',
+        context: 'in retail media network advertising spend, up 25% YoY',
+        source: 'eMarketer Retail Media Report',
+        whyItMatters: 'Retail media is becoming a massive channel—brands need strategies to compete for shelf space in digital marketplaces.',
+        talkTrack: 'Ask: "How much of your media budget goes to retail media?" Position $60B as proof of channel importance.',
+        category: 'METRICS',
+        vertical: 'Consumer & Retail',
         priority: 'HIGH',
         status: 'PUBLISHED',
         publishedAt: new Date(),
       }
     }),
-
+    
     prisma.metric.create({
       data: {
-        title: 'Customer Acquisition Cost Increase',
-        value: '+38%',
-        description: 'Average CAC has increased 38% year-over-year as competition for digital attention intensifies.',
-        source: 'ProfitWell',
-        sourceUrl: 'https://example.com/cac-increase',
-        howToUse: 'Position retention and LTV optimization as the answer to rising CAC.',
-        talkTrack: 'Lead with urgency: "With CAC up 38%, every company needs to squeeze more value from existing customers. How are you maximizing customer lifetime value?"',
-        vertical: 'REVENUE_OPS',
-        priority: 'HIGH',
+        title: '32% Pipeline Velocity Improvement',
+        value: '32',
+        unit: '%',
+        context: 'faster deal closure for companies with dedicated RevOps teams',
+        source: 'Salesforce State of Sales Report',
+        whyItMatters: 'Revenue Operations isn\'t just a buzzword—it\'s delivering measurable improvements in sales efficiency.',
+        talkTrack: 'Ask: "What\'s your current sales cycle length?" Use 32% improvement as the RevOps value proposition.',
+        category: 'METRICS',
+        vertical: 'Services',
+        priority: 'MEDIUM',
         status: 'PUBLISHED',
         publishedAt: new Date(),
       }
     })
   ])
 
-  // Create sample tags
+  // Create tags
   const tags = await Promise.all([
     prisma.tag.create({
-      data: { name: 'AI/ML', color: '#8B5CF6' }
+      data: { id: 'tag1', name: 'AI Marketing', color: '#8B5CF6' }
     }),
     prisma.tag.create({
-      data: { name: 'Privacy', color: '#EF4444' }
+      data: { id: 'tag2', name: 'Attribution', color: '#EF4444' }
     }),
     prisma.tag.create({
-      data: { name: 'M&A', color: '#10B981' }
+      data: { id: 'tag3', name: 'Technology & Media', color: '#10B981' }
     }),
     prisma.tag.create({
-      data: { name: 'Attribution', color: '#F59E0B' }
+      data: { id: 'tag4', name: 'Consumer & Retail', color: '#F59E0B' }
+    }),
+    prisma.tag.create({
+      data: { id: 'tag5', name: 'Revenue Operations', color: '#3B82F6' }
+    }),
+    prisma.tag.create({
+      data: { id: 'tag6', name: 'Privacy & Compliance', color: '#6366F1' }
     })
   ])
 
-  // Create sample sources
+  // Create sources
   const sources = await Promise.all([
     prisma.source.create({
-      data: {
-        name: 'AdExchanger',
-        url: 'https://adexchanger.com',
-        rssUrl: 'https://adexchanger.com/feed/',
-        isActive: true,
-      }
+      data: { id: 'src1', name: 'AdExchanger', url: 'https://adexchanger.com', rssUrl: 'https://www.adexchanger.com/feed/' }
     }),
     prisma.source.create({
-      data: {
-        name: 'MarTech',
-        url: 'https://martech.org',
-        rssUrl: 'https://martech.org/feed/',
-        isActive: true,
-      }
+      data: { id: 'src2', name: 'Technology & Media Today', url: 'https://martech.org', rssUrl: 'https://martech.org/feed/' }
     }),
     prisma.source.create({
-      data: {
-        name: 'Digiday',
-        url: 'https://digiday.com',
-        rssUrl: 'https://digiday.com/feed/',
-        isActive: true,
-      }
+      data: { id: 'src3', name: 'Digiday', url: 'https://digiday.com', rssUrl: 'https://digiday.com/feed/' }
     })
   ])
 
-  console.log(`✅ Created ${articles.length} articles`)
-  console.log(`✅ Created ${metrics.length} metrics`)
-  console.log(`✅ Created ${tags.length} tags`)
-  console.log(`✅ Created ${sources.length} sources`)
-  console.log('🎉 Seed completed!')
+  console.log('✅ Database seeded successfully!')
+  console.log(`Created ${articles.length} articles, ${metrics.length} metrics, ${tags.length} tags, and ${sources.length} sources`)
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Seed failed:', e)
+    console.error(e)
     process.exit(1)
   })
   .finally(async () => {

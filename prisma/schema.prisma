@@ -14,8 +14,7 @@ model User {
   id        String   @id @default(cuid())
   email     String   @unique
   name      String?
-  role      String   @default("SUBSCRIBER")
-  isActive  Boolean  @default(true)
+  role      Role     @default(SUBSCRIBER)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -28,31 +27,33 @@ model User {
 }
 
 model Article {
-  id          String      @id @default(cuid())
-  title       String
-  summary     String?
-  content     String?
-  sourceUrl   String
-  sourceName  String
-  imageUrl    String?
-  whyItMatters String?
-  talkTrack   String?
+  id            String    @id @default(cuid())
+  title         String
+  summary       String?
+  content       String?
+  sourceUrl     String?
+  sourceName    String?
+  author        String?
+  publishedAt   DateTime?
+  whyItMatters  String?
+  talkTrack     String?
+  category      String    @default("NEWS")
+  vertical      String?
+  priority      Priority  @default(MEDIUM)
+  status        Status    @default(DRAFT)
+  tags          String[]  @default([])
   
-  // Categorization
-  category    String      @default("NEWS")
-  vertical    String?
-  priority    String      @default("MEDIUM")
+  // AI Evaluation fields
+  importanceScore Int?     @default(0)
+  reasoning       String?
   
-  // Publishing
-  status      String      @default("DRAFT")
-  publishedAt DateTime?
-  expiresAt   DateTime?
+  // Metrics
+  views         Int       @default(0)
+  clicks        Int       @default(0)
+  shares        Int       @default(0)
   
-  // Metadata
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  authorId    String?
-  author      User?       @relation(fields: [authorId], references: [id])
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   // Relations
   newsletterArticles NewsletterArticle[]
@@ -62,29 +63,24 @@ model Article {
 }
 
 model Metric {
-  id          String      @id @default(cuid())
+  id          String    @id @default(cuid())
   title       String
   value       String
-  description String?
-  source      String
+  unit        String?
+  context     String?
+  source      String?
   sourceUrl   String?
-  howToUse    String?
+  whyItMatters String?
   talkTrack   String?
-  
-  // Categorization
+  category    String    @default("METRICS")
   vertical    String?
-  priority    String      @default("MEDIUM")
+  priority    Priority  @default(MEDIUM)
+  status      Status    @default(DRAFT)
+  tags        String[]  @default([])
   
-  // Publishing
-  status      String      @default("DRAFT")
   publishedAt DateTime?
-  expiresAt   DateTime?
-  
-  // Metadata
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  authorId    String?
-  author      User?       @relation(fields: [authorId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   // Relations
   newsletterMetrics NewsletterMetric[]
@@ -94,17 +90,20 @@ model Metric {
 }
 
 model Newsletter {
-  id           String   @id @default(cuid())
-  title        String
-  subject      String
-  content      String?
-  scheduledFor DateTime
-  sentAt       DateTime?
-  status       String @default("DRAFT")
+  id          String            @id @default(cuid())
+  subject     String
+  content     String
+  status      NewsletterStatus  @default(DRAFT)
+  scheduledAt DateTime?
+  sentAt      DateTime?
   
-  // Metadata
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  // Metrics
+  recipients  Int               @default(0)
+  opens       Int               @default(0)
+  clicks      Int               @default(0)
+  
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
 
   // Relations
   articles     NewsletterArticle[]
@@ -156,10 +155,10 @@ model NewsletterSent {
 }
 
 model Tag {
-  id       String @id @default(cuid())
-  name     String @unique
-  color    String @default("#3B82F6")
-  
+  id    String @id
+  name  String @unique
+  color String @default("#6B7280")
+
   // Relations
   articles ArticleTag[]
   metrics  MetricTag[]
@@ -190,24 +189,56 @@ model MetricTag {
 }
 
 model Source {
-  id          String @id @default(cuid())
-  name        String @unique
-  url         String
-  rssUrl      String?
-  isActive    Boolean @default(true)
-  lastChecked DateTime?
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id      String  @id
+  name    String  @unique
+  url     String?
+  rssUrl  String?
+  active  Boolean @default(true)
 
   @@map("sources")
 }
 
-// Note: Using String types for SQLite compatibility
+model NewsletterSubscriber {
+  id              String            @id @default(cuid())
+  email           String            @unique
+  name            String?
+  isActive        Boolean           @default(true)
+  subscribedAt    DateTime          @default(now())
+  unsubscribedAt  DateTime?
+  
+  @@map("newsletter_subscribers")
+}
+
+// Enums
+enum Role {
+  ADMIN
+  EDITOR
+  SUBSCRIBER
+}
+
+enum Priority {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum Status {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum NewsletterStatus {
+  DRAFT
+  SCHEDULED
+  SENT
+  CANCELLED
+}
+
 // Valid values:
 // Role: "ADMIN", "EDITOR", "SUBSCRIBER"
-// Category: "NEWS", "METRIC"
-// Vertical: "MARTECH", "ADTECH", "SALES_ENABLEMENT", "REVENUE_OPS", "GENERAL"
+// Category: "NEWS", "METRICS"
+// Vertical: "Technology & Media", "Consumer & Retail", "Healthcare", "Financial Services", "Insurance", "Automotive", "Travel & Hospitality", "Education", "Telecom", "Services", "Political Candidate & Advocacy", "Other"
 // Priority: "HIGH", "MEDIUM", "LOW"
 // Status: "DRAFT", "PUBLISHED", "ARCHIVED"
 // NewsletterStatus: "DRAFT", "SCHEDULED", "SENT", "CANCELLED" 
