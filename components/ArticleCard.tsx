@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import { ExternalLink, Calendar, Tag } from 'lucide-react'
-import { format } from 'date-fns'
 
 type Article = {
   id: string
@@ -16,6 +15,19 @@ type Article = {
 
 interface ArticleCardProps {
   article: Article
+}
+
+// Function to format date without external dependencies
+const formatDate = (dateInput: Date | string | null): string => {
+  if (!dateInput) return 'Today'
+  
+  const date = new Date(dateInput)
+  if (isNaN(date.getTime())) return 'Today'
+  
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  
+  return `${months[date.getMonth()]} ${date.getDate()}`
 }
 
 // Function to get vertical tag styling
@@ -57,7 +69,7 @@ export default function ArticleCard({ article }: ArticleCardProps) {
         <div className="flex items-center text-xs text-gray-500">
           <Calendar className="h-3 w-3 mr-1" />
           {article.publishedAt 
-            ? format(new Date(article.publishedAt as string), 'MMM d')
+            ? formatDate(article.publishedAt)
             : 'Today'
           }
         </div>
