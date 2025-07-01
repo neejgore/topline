@@ -1,6 +1,4 @@
-const { PrismaClient } = require('@prisma/client')
-
-const prisma = new PrismaClient()
+const { prisma } = require('../lib/db')
 
 async function main() {
   console.log('🌱 Seeding database...')
@@ -187,5 +185,6 @@ main()
     process.exit(1)
   })
   .finally(async () => {
-    await prisma.$disconnect()
+    // Don't disconnect here since we're using the singleton
+    console.log('✅ Seed complete')
   }) 

@@ -1,90 +1,48 @@
-const { PrismaClient } = require('@prisma/client')
-
-const prisma = new PrismaClient()
+const { prisma } = require('../lib/db')
 
 async function checkSetup() {
-  console.log('🔍 Checking Topline setup...\n')
-
+  console.log('🔍 Checking database setup...')
+  
   try {
-    // Check database connection
-    console.log('1. Testing database connection...')
-    await prisma.$connect()
-    console.log('   ✅ Database connected successfully')
-
-    // Check if tables exist and have data
-    console.log('2. Checking database schema...')
+    // Check articles
     const articleCount = await prisma.article.count()
+    console.log(`📰 Articles: ${articleCount}`)
+    
+    // Check metrics  
     const metricCount = await prisma.metric.count()
-    const userCount = await prisma.user.count()
+    console.log(`📊 Metrics: ${metricCount}`)
     
-    console.log(`   ✅ Articles: ${articleCount} found`)
-    console.log(`   ✅ Metrics: ${metricCount} found`)
-    console.log(`   ✅ Users: ${userCount} found`)
-
-    if (articleCount === 0 || metricCount === 0) {
-      console.log('   ⚠️  Run "npm run seed" to add sample content')
-    }
-
-    // Check published content
-    console.log('3. Checking published content...')
-    const publishedArticles = await prisma.article.count({
-      where: { status: 'PUBLISHED' }
-    })
-    const publishedMetrics = await prisma.metric.count({
-      where: { status: 'PUBLISHED' }
-    })
-
-    console.log(`   ✅ Published articles: ${publishedArticles}`)
-    console.log(`   ✅ Published metrics: ${publishedMetrics}`)
-
-    // Check environment variables
-    console.log('4. Checking environment variables...')
-    const requiredEnvVars = ['DATABASE_URL', 'NEXTAUTH_SECRET']
-    const missingVars = requiredEnvVars.filter(varName => !process.env[varName])
+    // Check tags
+    const tagCount = await prisma.tag.count()
+    console.log(`🏷️  Tags: ${tagCount}`)
     
-    if (missingVars.length === 0) {
-      console.log('   ✅ Required environment variables found')
-    } else {
-      console.log(`   ❌ Missing environment variables: ${missingVars.join(', ')}`)
-      console.log('   📝 Check your .env file')
+    // Check sources
+    const sourceCount = await prisma.source.count()
+    console.log(`📡 Sources: ${sourceCount}`)
+    
+    // Check recent content
+    const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    const recentArticles = await prisma.article.count({
+      where: {
+        publishedAt: { gte: oneWeekAgo },
+        status: 'PUBLISHED'
+      }
+    })
+    console.log(`📅 Recent articles (7 days): ${recentArticles}`)
+    
+    if (articleCount === 0) {
+      console.log('⚠️  No articles found. Run: npm run db:seed')
     }
-
-    // Summary
-    console.log('\n🎉 Setup Check Complete!')
-    console.log('\nNext steps:')
-    console.log('1. Run "npm run dev" to start development server')
-    console.log('2. Visit http://localhost:3000 to see your site')
-    console.log('3. Check the homepage shows articles and metrics')
-    console.log('4. Test the archive page and search functionality')
-    console.log('\nOnce local development works:')
-    console.log('- Push to GitHub: git push origin main')
-    console.log('- Deploy to Vercel (see DEPLOY.md)')
-
+    
+    if (recentArticles === 0) {
+      console.log('⚠️  No recent articles. Content may need refresh.')
+    }
+    
+    console.log('✅ Setup check complete')
+    
   } catch (error) {
-    console.log('\n❌ Setup check failed!')
-    
-    if (error.code === 'P1001') {
-      console.log('🔧 Database connection failed:')
-      console.log('   - Check your DATABASE_URL in .env file')
-      console.log('   - Make sure PostgreSQL is running')
-      console.log('   - For Supabase, verify the connection string')
-    } else if (error.code === 'P2021') {
-      console.log('🔧 Database tables not found:')
-      console.log('   - Run "npm run db:push" to create tables')
-      console.log('   - Then run "npm run seed" to add sample data')
-    } else {
-      console.log('Error details:', error.message)
-    }
-    
-    process.exit(1)
-  } finally {
-    await prisma.$disconnect()
+    console.error('❌ Setup check failed:', error.message)
   }
 }
 
-// Check if this script is being run directly
-if (require.main === module) {
-  checkSetup()
-}
-
-module.exports = { checkSetup } 
+checkSetup() 
