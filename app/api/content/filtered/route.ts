@@ -28,10 +28,9 @@ export async function GET(request: NextRequest) {
       ]
     }
 
-    // Build where conditions for metrics
+    // Build where conditions for metrics - SIMPLIFIED to avoid schema issues
     const metricWhere: any = {
-      status: 'PUBLISHED',
-      category: 'METRICS'
+      status: 'PUBLISHED'
     }
 
     if (vertical && vertical !== 'ALL') {
@@ -41,7 +40,7 @@ export async function GET(request: NextRequest) {
     if (search) {
       metricWhere.OR = [
         { title: { contains: search, mode: 'insensitive' } },
-        { context: { contains: search, mode: 'insensitive' } },
+        { value: { contains: search, mode: 'insensitive' } },
         { source: { contains: search, mode: 'insensitive' } }
       ]
     }
