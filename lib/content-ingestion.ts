@@ -44,7 +44,7 @@ export class ContentIngestionService {
         
         const feed = await parser.parseURL(source.url)
         let sourceArticleCount = 0
-        const maxPerSource = 8 // Increase limit per source for more variety
+        const maxPerSource = 15 // Allow more articles per source for better coverage
         
         for (const item of feed.items) {
           // Stop if we've reached the limit for this source
@@ -67,8 +67,8 @@ export class ContentIngestionService {
               // Evaluate article importance
               const evaluation = await this.evaluateArticleWithAI(articleData)
               
-              // Only save articles scoring 5+ or metrics articles scoring 4+
-              const minScore = isMetricsArticle ? 4 : 5
+              // Only save articles scoring 4+ or metrics articles scoring 3+
+              const minScore = isMetricsArticle ? 3 : 4
               if (evaluation.importanceScore >= minScore) {
                 // Force proper vertical based on source
                 let finalVertical = evaluation.vertical
