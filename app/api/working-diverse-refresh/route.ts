@@ -306,20 +306,32 @@ export async function POST() {
     const processedVerticals = Object.keys(verticalCounts)
     
     console.log(`📊 Generating relevant metrics for sales conversations...`)
+    console.log(`📋 Processed verticals for metrics:`, processedVerticals)
     
     // Generate relevant metrics for each vertical
     const metrics = await generateRelevantMetrics(processedVerticals)
+    console.log(`🎯 Generated ${metrics.length} metrics for processing:`, metrics.map(m => m.title))
     let totalMetrics = 0
     
     for (const metric of metrics) {
       try {
-        await prisma.metric.create({
+        console.log(`  🔧 Attempting to create metric: ${metric.title}`)
+        console.log(`  📊 Metric data:`, {
+          title: metric.title,
+          value: metric.value,
+          vertical: metric.vertical,
+          priority: metric.priority
+        })
+        
+        const createdMetric = await prisma.metric.create({
           data: metric
         })
         totalMetrics++
-        console.log(`  ✅ Created metric: ${metric.title}`)
+        console.log(`  ✅ Created metric: ${metric.title} (ID: ${createdMetric.id})`)
       } catch (error) {
-        console.error(`  ❌ Failed to create metric: ${error}`)
+        console.error(`  ❌ Failed to create metric '${metric.title}':`, error)
+        console.error(`  📋 Metric data that failed:`, metric)
+        errors.push(`Failed to create metric '${metric.title}': ${error instanceof Error ? error.message : 'Unknown error'}`)
       }
     }
     
