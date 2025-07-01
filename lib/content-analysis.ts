@@ -225,15 +225,16 @@ export class ContentAnalysisService {
   
   private generateAIInsights(details: any, context: any) {
     const hasSpecificMetric = details.percentages.length > 0 || details.numbers.length > 0
+    const bestMetric = details.percentages[0] || details.numbers[0] || 'significant improvements'
     
     return {
       whyItMatters: hasSpecificMetric 
-        ? `AI adoption is accelerating with measurable impact. ${details.specific_claims[0] || 'Companies are seeing real ROI from AI investments'}, making this a competitive necessity rather than experimental technology.`
+        ? `AI adoption is accelerating with measurable impact (${bestMetric}). Companies are seeing real ROI from AI investments, making this a competitive necessity rather than experimental technology.`
         : `AI development continues to reshape marketing operations. Companies that don't establish AI capabilities now risk falling behind competitors who are gaining efficiency and personalization advantages.`,
       
       talkTrack: hasSpecificMetric
-        ? `Reference this data: "${details.specific_claims[0] || details.percentages[0] || details.numbers[0]}". Ask: "How does your current AI adoption compare to industry benchmarks? Where do you see the biggest ROI opportunities?"`
-        : `Ask: "What's your current AI strategy for marketing operations?" Use this development to position AI solutions as competitive necessities, not nice-to-haves.`,
+        ? `Ask: "How does your current AI adoption compare to industry benchmarks?" Reference ${bestMetric} improvement data to discuss ROI opportunities.`
+        : `Ask: "What's your current AI strategy for marketing operations?" Position AI solutions as competitive necessities, not nice-to-haves.`,
       
       businessImpact: context.competitive 
         ? 'Competitive advantage through automation and personalization'
@@ -242,12 +243,14 @@ export class ContentAnalysisService {
   }
   
   private generatePrivacyInsights(details: any, context: any) {
+    const keyTimeframe = details.timeframes[0] || 'upcoming changes'
+    
     return {
       whyItMatters: details.specific_claims.length > 0
-        ? `Privacy landscape is evolving rapidly. ${details.specific_claims[0]}, forcing brands to rethink their data and targeting strategies fundamentally.`
+        ? `Privacy landscape is evolving rapidly with ${keyTimeframe}. This forces brands to rethink their data and targeting strategies fundamentally.`
         : 'Privacy regulations continue reshaping digital marketing. First-party data strategies are becoming essential for maintaining targeting effectiveness and compliance.',
       
-      talkTrack: `Lead with: "How prepared is your team for these privacy changes?" ${details.specific_claims[0] ? `Reference: "${details.specific_claims[0]}"` : ''} Focus on first-party data collection and compliant targeting solutions.`,
+      talkTrack: `Ask: "How prepared is your team for these privacy changes?" Discuss ${keyTimeframe} timeline and focus on first-party data solutions.`,
       
       businessImpact: 'Risk mitigation and sustainable targeting capabilities'
     }
@@ -258,50 +261,56 @@ export class ContentAnalysisService {
     
     return {
       whyItMatters: companyNames
-        ? `Industry consolidation accelerates with ${companyNames} ${details.specific_claims[0] || 'driving market changes'}. This creates efficiency pressure and vendor scrutiny across the ecosystem.`
+        ? `Industry consolidation accelerates with ${companyNames} driving market changes. This creates efficiency pressure and vendor scrutiny across the ecosystem.`
         : 'Market consolidation drives efficiency pressure. Companies will scrutinize vendor relationships more closely and demand clear proof of incremental value.',
       
       talkTrack: companyNames
-        ? `Ask: "How might the ${companyNames} situation affect your vendor strategy?" Frame around future-proofing and vendor consolidation benefits.`
-        : 'Frame around future-proofing: "How are you preparing for increased competition and tighter budgets?" Emphasize measurable ROI and strategic partnerships.',
+        ? `Ask: "How might the ${companyNames} situation affect your vendor strategy?" Focus on future-proofing and consolidation benefits.`
+        : `Ask: "How are you preparing for increased competition and tighter budgets?" Emphasize measurable ROI and strategic partnerships.`,
       
       businessImpact: 'Strategic positioning and vendor relationship optimization'
     }
   }
   
   private generateRetailMediaInsights(details: any, context: any) {
+    const keyNumber = details.numbers[0] || 'significant investment'
+    
     return {
       whyItMatters: details.numbers.length > 0
-        ? `Retail media growth continues with ${details.numbers[0] || 'significant investment'}. ${details.specific_claims[0] || 'This channel offers unique first-party data and closed-loop attribution capabilities.'}`
+        ? `Retail media growth continues with ${keyNumber}. This channel offers unique first-party data and closed-loop attribution capabilities.`
         : 'Retail media networks offer what traditional advertising cannot: direct connection to purchase behavior and closed-loop measurement.',
       
-      talkTrack: `Ask: "What percentage of your media budget currently goes to retail media?" ${details.numbers[0] ? `Use ${details.numbers[0]} as a benchmark for the category's growth.` : 'Position as essential for reaching purchase-ready audiences.'}`,
+      talkTrack: `Ask: "What percentage of your media budget goes to retail media?" ${details.numbers[0] ? `Reference ${keyNumber} as growth benchmark.` : 'Position as essential for purchase-ready audiences.'}`,
       
       businessImpact: 'Attribution accuracy and purchase behavior insights'
     }
   }
   
   private generatePerformanceInsights(details: any, context: any) {
+    const keyMetric = details.percentages[0] || 'measurable improvements'
+    
     return {
-      whyItMatters: details.specific_claims.length > 0
-        ? `Performance measurement evolves: ${details.specific_claims[0]}. This impacts how marketing effectiveness is measured and budgets are allocated.`
+      whyItMatters: details.percentages.length > 0
+        ? `Performance measurement evolves with ${keyMetric} improvements. This impacts how marketing effectiveness is measured and budgets are allocated.`
         : 'Performance measurement and attribution methods are evolving rapidly, affecting how marketing ROI is calculated and demonstrated.',
       
       talkTrack: details.percentages.length > 0
-        ? `Reference: "${details.percentages[0]} improvement in ${details.specific_claims[0] || 'key metrics'}". Ask: "How do you currently measure campaign performance?" Position advanced attribution as competitive advantage.`
-        : 'Ask: "What are your biggest measurement challenges?" Connect this development to their attribution and performance tracking needs.',
+        ? `Ask: "How do you currently measure campaign performance?" Reference ${keyMetric} improvement data to discuss attribution advantages.`
+        : `Ask: "What are your biggest measurement challenges?" Connect this development to their attribution and performance tracking needs.`,
       
       businessImpact: 'Improved ROI measurement and budget optimization'
     }
   }
   
   private generateDataInsights(details: any, context: any) {
+    const keyMetric = details.percentages[0] || details.numbers[0] || 'significant improvements'
+    
     return {
-      whyItMatters: details.specific_claims.length > 0
-        ? `Data capabilities drive competitive advantage: ${details.specific_claims[0]}. Companies with superior data strategies are outperforming those with traditional approaches.`
+      whyItMatters: details.percentages.length > 0 || details.numbers.length > 0
+        ? `Data capabilities drive competitive advantage with ${keyMetric}. Companies with superior data strategies are outperforming those with traditional approaches.`
         : 'Data and analytics capabilities are becoming key differentiators in marketing effectiveness and customer understanding.',
       
-      talkTrack: `Ask: "How sophisticated is your current data strategy?" ${details.specific_claims[0] ? `Reference: "${details.specific_claims[0]}" as an industry example.` : 'Position data capabilities as foundational for modern marketing.'}`,
+      talkTrack: `Ask: "How sophisticated is your current data strategy?" ${keyMetric !== 'significant improvements' ? `Reference ${keyMetric} as industry benchmark.` : 'Position data capabilities as foundational for modern marketing.'}`,
       
       businessImpact: 'Enhanced customer insights and targeting precision'
     }
@@ -309,12 +318,12 @@ export class ContentAnalysisService {
   
   private generateGeneralInsights(title: string, summary: string, sourceName: string, topics: string[]) {
     const mainTopic = topics[0] || 'Industry Development'
-    const contentPreview = summary.length > 100 ? summary.substring(0, 100) + '...' : summary
+    const shortSummary = summary.length > 80 ? summary.substring(0, 80) + '...' : summary
     
     return {
-      whyItMatters: `This ${sourceName} report on ${mainTopic.toLowerCase()} reveals: ${contentPreview}. Understanding these market shifts helps maintain competitive positioning and strategic alignment.`,
+      whyItMatters: `This ${sourceName} report on ${mainTopic.toLowerCase()} highlights key market developments. Understanding these shifts helps maintain competitive positioning and strategic alignment.`,
       
-      talkTrack: `Use as conversation starter: "Have you seen the recent ${sourceName} coverage on ${mainTopic.toLowerCase()}?" Connect to their business challenges: "${contentPreview}"`,
+      talkTrack: `Ask: "Have you seen the recent ${sourceName} coverage on ${mainTopic.toLowerCase()}?" Connect to their specific business challenges in this area.`,
       
       businessImpact: `Market intelligence for ${mainTopic.toLowerCase()} strategy`
     }
