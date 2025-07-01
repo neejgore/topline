@@ -20,30 +20,8 @@ module.exports = {
           500: '#f59e0b',
           600: '#d97706',
         }
-      },
-      typography: {
-        DEFAULT: {
-          css: {
-            maxWidth: 'none',
-            color: '#374151',
-            h1: {
-              color: '#111827',
-              fontWeight: '700',
-            },
-            h2: {
-              color: '#111827',
-              fontWeight: '600',
-            },
-            h3: {
-              color: '#111827',
-              fontWeight: '600',
-            },
-            'blockquote p:first-of-type::before': false,
-            'blockquote p:last-of-type::after': false,
-          },
-        },
-      },
+      }
     },
   },
-  plugins: [require('@tailwindcss/typography')],
+  plugins: [],
 } 
