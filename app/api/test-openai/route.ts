@@ -17,7 +17,7 @@ export async function GET() {
         success: false,
         error: 'OpenAI API key not configured',
         testArticle,
-        recommendation: 'Add OPEN_AI_KEY to environment variables'
+        recommendation: 'Add OPEN_AI_KEY to environment variables (currently configured)'
       })
     }
 
