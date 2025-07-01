@@ -76,7 +76,7 @@ export class ContentIngestionService {
   private async processSourceOptimized(source: any, cutoffDate: Date): Promise<{ articles: number; skipped: number }> {
     let sourceArticles = 0
     let sourceSkipped = 0
-    const maxPerSource = 8 // Reduced to balance quality vs quantity
+    const maxPerSource = 25 // Increased to maximize content capture from each source
 
     try {
       console.log(`📡 Fetching from ${source.name}...`)
@@ -130,8 +130,8 @@ export class ContentIngestionService {
             ? await this.evaluateArticleWithAI(articleData)
             : this.fallbackEvaluation(articleData)
           
-          // Lower thresholds to get more articles
-          const minScore = isMetricsArticle ? 2 : 2 // Extremely low threshold to get content
+          // Extremely low thresholds to maximize content capture
+          const minScore = isMetricsArticle ? 1 : 1 // Accept almost everything
           
           if (evaluation.importanceScore >= minScore) {
             // Force proper vertical based on source
@@ -297,19 +297,19 @@ Respond in JSON format:
   }
 
   private fallbackEvaluation(article: ParsedArticle): ArticleEvaluation {
-    // Fallback scoring - MUCH MORE GENEROUS to get content
-    let score = 6 // Higher baseline score
+    // Fallback scoring - EXTREMELY GENEROUS to maximize content capture
+    let score = 7 // Very high baseline score
     const text = `${article.title} ${article.summary}`.toLowerCase()
     
-    // High-impact keywords
-    const highImpactKeywords = ['ai', 'artificial intelligence', 'merger', 'acquisition', 'privacy', 'cookies', 'regulation']
-    const mediumImpactKeywords = ['marketing', 'advertising', 'programmatic', 'automation', 'data', 'technology', 'business']
+    // High-impact keywords (expanded)
+    const highImpactKeywords = ['ai', 'artificial intelligence', 'merger', 'acquisition', 'privacy', 'cookies', 'regulation', 'growth', 'revenue', 'automation']
+    const mediumImpactKeywords = ['marketing', 'advertising', 'programmatic', 'data', 'technology', 'business', 'digital', 'strategy', 'campaign', 'platform']
     
     if (highImpactKeywords.some(keyword => text.includes(keyword))) score += 2
-    if (mediumImpactKeywords.some(keyword => text.includes(keyword))) score += 2 // Increased boost
+    if (mediumImpactKeywords.some(keyword => text.includes(keyword))) score += 2
     
-    // Source priority boost - all major sources get boost
-    if (['AdExchanger', 'Ad Age', 'Digiday', 'Marketing Land', 'MarTech Today', 'Adweek'].includes(article.sourceName)) score += 1
+    // Source priority boost - ALL sources get boost (trust our curation)
+    if (article.sourceName) score += 1 // Any source gets a boost
     
     return {
       importanceScore: Math.min(10, score),
@@ -329,28 +329,48 @@ Respond in JSON format:
     )
     if (hasExcluded) return false
     
-    // **MUCH MORE LENIENT**: Accept if ANY of these conditions are met:
-    // 1. Contains any relevant keywords
+    // **EXTREMELY LENIENT**: Accept if ANY of these conditions are met:
+    // 1. Contains any relevant keywords (original list)
     const hasRelevant = CONTENT_SOURCES.keywordFilters.some(keyword =>
       text.includes(keyword.toLowerCase())
     )
     
-    // 2. Contains common business/marketing terms
+    // 2. Contains broad business/marketing terms (expanded)
     const businessTerms = [
-      'marketing', 'advertising', 'technology', 'business', 'company', 'brand',
-      'data', 'digital', 'online', 'strategy', 'campaign', 'customer', 'sales',
-      'revenue', 'growth', 'platform', 'software', 'service', 'industry'
+      'marketing', 'advertising', 'technology', 'business', 'company', 'brand', 'brands',
+      'data', 'digital', 'online', 'strategy', 'campaign', 'customer', 'sales', 'revenue', 
+      'growth', 'platform', 'software', 'service', 'industry', 'market', 'commerce',
+      'analytics', 'insights', 'trends', 'report', 'study', 'research', 'survey',
+      'budget', 'spend', 'investment', 'roi', 'performance', 'metrics', 'measurement',
+      'automation', 'efficiency', 'optimization', 'personalization', 'targeting',
+      'acquisition', 'merger', 'partnership', 'competition', 'competitive'
     ]
     const hasBusinessTerms = businessTerms.some(term => text.includes(term))
     
-    // 3. Is from a trusted marketing/tech source (assume relevant)
-    const trustedSources = ['adexchanger', 'digiday', 'martech', 'adage', 'marketing']
+    // 3. Industry/vertical terms (much broader)
+    const industryTerms = [
+      'retail', 'financial', 'healthcare', 'technology', 'media', 'telecom',
+      'automotive', 'insurance', 'banking', 'fintech', 'martech', 'adtech',
+      'ecommerce', 'b2b', 'enterprise', 'startup', 'innovation', 'digital transformation'
+    ]
+    const hasIndustryTerms = industryTerms.some(term => text.includes(term))
+    
+    // 4. Action/change words (news-worthy content)
+    const actionTerms = [
+      'launches', 'announces', 'introduces', 'acquires', 'partners', 'expands',
+      'grows', 'increases', 'decreases', 'reports', 'reveals', 'study shows',
+      'new', 'latest', 'first', 'record', 'milestone', 'breakthrough'
+    ]
+    const hasActionTerms = actionTerms.some(term => text.includes(term))
+    
+    // 5. Is from a trusted source (assume all our sources are relevant)
+    const trustedSources = ['adexchanger', 'digiday', 'martech', 'adage', 'marketing', 'retail', 'healthcare', 'banker']
     const fromTrustedSource = trustedSources.some(source => 
       text.includes(source) || title.toLowerCase().includes(source)
     )
     
-    // Accept if ANY of these conditions are met (much more lenient)
-    return hasRelevant || hasBusinessTerms || fromTrustedSource
+    // Accept if ANY condition is met (maximum inclusivity)
+    return hasRelevant || hasBusinessTerms || hasIndustryTerms || hasActionTerms || fromTrustedSource || text.length > 50
   }
   
   private determineVertical(title: string, content: string): string {
