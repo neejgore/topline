@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
         WHERE status = 'PUBLISHED' 
           AND "publishedAt" >= $1
           AND ("expiresAt" IS NULL OR "expiresAt" > NOW())
+          AND category != 'METRICS'
       `
       
       const params: any[] = [oneWeekAgo]
@@ -58,13 +59,14 @@ export async function GET(request: NextRequest) {
     } else if (type === 'metrics') {
       let query = `
         SELECT 
-          id, title, value, description, source, 
-          "howToUse", "talkTrack", vertical, 
+          id, title, summary as description, "sourceUrl", "sourceName" as source, 
+          "whyItMatters" as "howToUse", "talkTrack", vertical, 
           priority, status, "publishedAt", "createdAt", "updatedAt"
-        FROM metrics 
+        FROM articles 
         WHERE status = 'PUBLISHED' 
           AND "publishedAt" >= $1
           AND ("expiresAt" IS NULL OR "expiresAt" > NOW())
+          AND category = 'METRICS'
       `
       
       const params: any[] = [oneWeekAgo]

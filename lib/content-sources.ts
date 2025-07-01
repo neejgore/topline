@@ -4,73 +4,73 @@ export const CONTENT_SOURCES = {
     {
       name: 'AdExchanger',
       url: 'https://www.adexchanger.com/feed/',
-      category: 'ADTECH',
+      category: 'Technology & Media',
       priority: 'HIGH'
     },
     {
       name: 'MarTech Today',
       url: 'https://martech.org/feed/',
-      category: 'MARTECH', 
+      category: 'Technology & Media', 
       priority: 'HIGH'
     },
     {
       name: 'Digiday',
       url: 'https://digiday.com/feed/',
-      category: 'ADTECH',
+      category: 'Technology & Media',
       priority: 'HIGH'
     },
     {
       name: 'Ad Age',
       url: 'https://adage.com/rss.xml',
-      category: 'ADTECH',
+      category: 'Technology & Media',
       priority: 'HIGH'
     },
     {
       name: 'Marketing Land',
       url: 'https://marketingland.com/feed',
-      category: 'MARTECH',
+      category: 'Technology & Media',
       priority: 'HIGH'
     },
     {
       name: 'Campaign US',
       url: 'https://www.campaignlive.com/rss',
-      category: 'ADTECH',
+      category: 'Technology & Media',
       priority: 'HIGH'
     },
     {
       name: 'MediaPost',
       url: 'https://www.mediapost.com/rss/',
-      category: 'ADTECH',
+      category: 'Technology & Media',
       priority: 'MEDIUM'
     },
     {
       name: 'VentureBeat Marketing',
       url: 'https://venturebeat.com/category/marketing/feed/',
-      category: 'MARTECH',
+      category: 'Technology & Media',
       priority: 'MEDIUM'
     },
     {
       name: 'Advertising Age Marketing',
       url: 'https://adage.com/section/marketing/rss',
-      category: 'MARTECH',
+      category: 'Technology & Media',
       priority: 'HIGH'
     },
     {
       name: 'Chief Marketer',
       url: 'https://www.chiefmarketer.com/feed/',
-      category: 'MARTECH',
+      category: 'Technology & Media',
       priority: 'MEDIUM'
     },
     {
       name: 'Mobile Marketer',
       url: 'https://www.mobilemarketer.com/rss.xml',
-      category: 'MOBILE',
+      category: 'Technology & Media',
       priority: 'MEDIUM'
     },
     {
       name: 'Retail Dive',
       url: 'https://www.retaildive.com/feeds/news/',
-      category: 'RETAIL',
+      category: 'Consumer & Retail',
       priority: 'MEDIUM'
     }
   ],

@@ -29,70 +29,61 @@ interface ArticleEvaluation {
 export class ContentIngestionService {
   
   async ingestFromRSSFeeds(): Promise<{ articles: number; skipped: number }> {
-    console.log('🔄 Starting enhanced RSS feed ingestion with OpenAI evaluation...')
+    console.log('🔄 Starting RSS content ingestion...')
     
     let totalArticles = 0
-    let totalSkipped = 0
+    let skippedArticles = 0
+    
+    // Get cutoff date - only articles from last 4 days
+    const cutoffDate = new Date()
+    cutoffDate.setHours(cutoffDate.getHours() - CONTENT_SCHEDULE.maxAgeHours)
     
     for (const source of CONTENT_SOURCES.rssFeeds) {
       try {
         console.log(`📡 Fetching from ${source.name}...`)
+        
         const feed = await parser.parseURL(source.url)
         
-        if (!feed.items?.length) {
-          console.log(`⚠️  No items found in ${source.name} feed`)
-          continue
-        }
-        
-        // Filter for recent articles (4-day lookback)
-        const fourDaysAgo = new Date(Date.now() - CONTENT_SCHEDULE.maxAgeHours * 60 * 60 * 1000)
-        const recentItems = feed.items.filter(item => {
-          const pubDate = item.pubDate ? new Date(item.pubDate) : new Date()
-          return pubDate >= fourDaysAgo
-        })
-        
-        console.log(`📰 Found ${recentItems.length} recent articles from ${source.name}`)
-        
-        // Filter for relevant content
-        const relevantItems = recentItems.filter(item => 
-          this.isRelevantContent(item.title || '', item.contentSnippet || '')
-        )
-        
-        console.log(`🎯 ${relevantItems.length} relevant articles found`)
-        
-        if (!relevantItems.length) {
-          console.log(`⚠️  No relevant content from ${source.name}`)
-          continue
-        }
-        
-        // Process each article
-        for (const item of relevantItems.slice(0, 3)) { // Limit per source
+        for (const item of feed.items) {
           try {
-            const article = await this.processRSSItem(item, source)
-            if (article) {
-              // Use OpenAI to evaluate importance and generate insights
-              const evaluation = await this.evaluateArticleWithAI(article)
+            // Skip old articles
+            const publishDate = item.pubDate ? new Date(item.pubDate) : new Date()
+            if (publishDate < cutoffDate) continue
+            
+            // Skip if not relevant
+            if (!this.isRelevantContent(item.title || '', item.contentSnippet || '')) continue
+            
+            // Process the article
+            const articleData = await this.processRSSItem(item, source)
+            if (articleData) {
               
-              if (evaluation.importanceScore >= 6) { // Only save important articles
-                article.whyItMatters = evaluation.whyItMatters
-                article.talkTrack = evaluation.talkTrack
-                article.vertical = evaluation.vertical
-                article.priority = evaluation.priority
-                article.importanceScore = evaluation.importanceScore
-                
-                await this.saveArticle(article)
+              // Determine if this is a metrics article
+              const isMetricsArticle = this.isMetricsArticle(articleData.title, articleData.summary)
+              
+              // Evaluate article importance
+              const evaluation = await this.evaluateArticleWithAI(articleData)
+              
+              // Only save articles scoring 6+ or metrics articles scoring 4+
+              const minScore = isMetricsArticle ? 4 : 6
+              if (evaluation.importanceScore >= minScore) {
+                await this.saveArticle({
+                  ...articleData,
+                  ...evaluation,
+                  // Override category for metrics articles
+                  category: isMetricsArticle ? 'METRICS' : evaluation.vertical,
+                  vertical: isMetricsArticle ? 'METRICS' : evaluation.vertical,
+                  priority: isMetricsArticle ? 'HIGH' : evaluation.priority
+                })
                 totalArticles++
-                console.log(`✅ Added: ${article.title} (Score: ${evaluation.importanceScore}/10)`)
+                console.log(`✅ Saved: ${articleData.title} (Score: ${evaluation.importanceScore}${isMetricsArticle ? ', METRICS' : ''})`)
               } else {
-                console.log(`⏭️  Skipped: ${article.title} (Score: ${evaluation.importanceScore}/10 - too low)`)
-                totalSkipped++
+                skippedArticles++
+                console.log(`⏭️ Skipped: ${articleData.title} (Score: ${evaluation.importanceScore})`)
               }
-            } else {
-              totalSkipped++
             }
           } catch (error) {
-            console.error(`❌ Error processing article from ${source.name}:`, error)
-            totalSkipped++
+            console.error(`❌ Error processing item from ${source.name}:`, error)
+            skippedArticles++
           }
         }
         
@@ -101,8 +92,8 @@ export class ContentIngestionService {
       }
     }
     
-    console.log(`🎉 Enhanced ingestion complete: ${totalArticles} added, ${totalSkipped} skipped`)
-    return { articles: totalArticles, skipped: totalSkipped }
+    console.log(`🎉 RSS ingestion complete! Articles: ${totalArticles}, Skipped: ${skippedArticles}`)
+    return { articles: totalArticles, skipped: skippedArticles }
   }
   
   private async evaluateArticleWithAI(article: ParsedArticle): Promise<ArticleEvaluation> {
@@ -377,22 +368,26 @@ Respond in JSON format:
   }
   
   private async saveArticle(articleData: ParsedArticle): Promise<void> {
-    await prisma.article.create({
-      data: {
-        title: articleData.title,
-        summary: articleData.summary,
-        sourceUrl: articleData.sourceUrl,
-        sourceName: articleData.sourceName,
-        whyItMatters: articleData.whyItMatters || 'Relevant industry development that could impact marketing strategies.',
-        talkTrack: articleData.talkTrack || 'Use this as a conversation starter about recent industry trends.',
-        category: articleData.category,
-        vertical: articleData.vertical,
-        priority: articleData.priority,
-        status: 'PUBLISHED',
-        publishedAt: articleData.publishedAt,
-        expiresAt: new Date(Date.now() + CONTENT_SCHEDULE.maxAgeHours * 60 * 60 * 1000)
-      }
-    })
+    try {
+      await prisma.article.create({
+        data: {
+          title: articleData.title,
+          summary: articleData.summary,
+          sourceUrl: articleData.sourceUrl,
+          sourceName: articleData.sourceName,
+          publishedAt: articleData.publishedAt,
+          category: articleData.category,
+          vertical: articleData.vertical,
+          priority: articleData.priority,
+          whyItMatters: articleData.whyItMatters || 'Industry development with potential business impact.',
+          talkTrack: articleData.talkTrack || 'Use as conversation starter about recent industry developments.',
+          status: 'PUBLISHED'
+        }
+      })
+    } catch (error) {
+      console.error('Error saving article:', error)
+      throw error
+    }
   }
   
   async cleanupExpiredContent(): Promise<number> {
@@ -437,5 +432,35 @@ Respond in JSON format:
       expiredArticles: expired,
       recentArticles: recent
     }
+  }
+
+  private isMetricsArticle(title: string, content: string): boolean {
+    const text = `${title} ${content}`.toLowerCase()
+    
+    // Keywords that indicate metrics/data articles
+    const metricsKeywords = [
+      'survey', 'study', 'research', 'report', 'data', 'statistics', 'stats',
+      'percent', 'percentage', '%', 'growth', 'increase', 'decrease', 'decline',
+      'forecast', 'prediction', 'projection', 'trend', 'analysis', 'insights',
+      'findings', 'results', 'benchmark', 'measurement', 'metric', 'kpi',
+      'roi', 'revenue', 'spend', 'budget', 'investment', 'market size',
+      'adoption rate', 'usage', 'engagement', 'conversion', 'performance',
+      'emarketer', 'gartner', 'forrester', 'idc', 'nielsen', 'comscore',
+      'statista', 'ipsos', 'kantar', 'salesforce research', 'hubspot research'
+    ]
+    
+    // Number patterns that suggest data
+    const hasNumbers = /\d+[\.\d]*\s*(%|percent|billion|million|thousand|k\b|m\b|b\b)/i.test(text)
+    const hasMetricKeywords = metricsKeywords.some(keyword => text.includes(keyword))
+    
+    // Title patterns that indicate research/data
+    const titlePatterns = [
+      /survey|study|research|report|data|findings/i,
+      /\d+[\.\d]*\s*%/,
+      /\d+[\.\d]*\s*(billion|million)/i
+    ]
+    const titleHasMetricPattern = titlePatterns.some(pattern => pattern.test(title))
+    
+    return (hasNumbers && hasMetricKeywords) || titleHasMetricPattern
   }
 } 
