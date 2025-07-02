@@ -3,11 +3,11 @@ import { Suspense } from 'react'
 import { Metadata } from 'next'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
-import WeeklyContentWithFilter from '@/components/WeeklyContentWithFilter'
+import DailyContent from '@/components/DailyContent'
 import LoadingSpinner from '@/components/LoadingSpinner'
 
 export const metadata: Metadata = {
-  title: 'Today\'s Topline',
+  title: "Today's Topline",
   description: 'Daily sales intelligence and market insights for enterprise sales professionals',
 }
 
@@ -23,19 +23,20 @@ export default function HomePage() {
             Today's <span className="text-primary-600">Topline</span>
           </h1>
           <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-            Daily curated sales intelligence for enterprise professionals in media, CRM, marketing intelligence, and CDP solutions. 
-            Fresh insights from the last 24 hours, ready for your customer conversations.
+            Daily sales intelligence for enterprise professionals in marketing, media, and technology. 
+            Sharp insights, strategic interpretation, ready for customer conversations.
           </p>
         </div>
 
-        {/* Weekly Content */}
         <Suspense fallback={<LoadingSpinner />}>
-          <WeeklyContentWithFilter />
+          <DailyContent />
         </Suspense>
 
         {/* Use Cases Section */}
         <section className="mt-8 mb-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4 text-center">How Sales Professionals Use Topline</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-4 text-center">
+            How Sales Professionals Use Topline
+          </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="card">
               <div className="text-primary-600 text-lg font-semibold mb-2">Account Executives</div>
@@ -43,7 +44,7 @@ export default function HomePage() {
             </div>
             <div className="card">
               <div className="text-primary-600 text-lg font-semibold mb-2">Sales Managers</div>
-              <p className="text-gray-600">Weekly team huddle material</p>
+              <p className="text-gray-600">Daily team huddle material</p>
             </div>
             <div className="card">
               <div className="text-primary-600 text-lg font-semibold mb-2">Sales Enablement</div>

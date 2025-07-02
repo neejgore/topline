@@ -6,7 +6,7 @@ import { Newspaper, TrendingUp } from 'lucide-react'
 // Import verticals from VerticalFilter to ensure consistency
 import { VERTICALS } from './VerticalFilter'
 
-export default async function WeeklyContent() {
+export default async function DailyContent() {
   const [articles, metrics] = await Promise.all([
     getPublishedArticlesDirect(),
     getPublishedMetricsDirect()
@@ -22,48 +22,26 @@ export default async function WeeklyContent() {
       <section>
         <div className="flex items-center mb-6">
           <Newspaper className="h-6 w-6 text-primary-600 mr-2" />
-          <h2 className="text-xl font-bold text-gray-900">📰 Today's Insights</h2>
-          <span className="ml-2 text-sm text-gray-500">({limitedArticles.length}/12)</span>
+          <h2 className="text-xl font-bold text-gray-900">Today's Articles</h2>
         </div>
-        
-        {limitedArticles.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-min">
-            {limitedArticles.map((article: any) => (
-              <div key={article.id} className="break-inside-avoid">
-                <ArticleCard article={article} />
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-12 bg-gray-50 rounded-lg">
-            <p className="text-gray-500">
-              No articles published in the last 24 hours. Check back soon for fresh insights!
-            </p>
-          </div>
-        )}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {limitedArticles.map((article) => (
+            <ArticleCard key={article.id} article={article} />
+          ))}
+        </div>
       </section>
 
       {/* Metrics Grid Section */}
       <section>
         <div className="flex items-center mb-6">
-          <TrendingUp className="h-6 w-6 text-accent-600 mr-2" />
-          <h2 className="text-xl font-bold text-gray-900">📊 Key Market Metrics</h2>
-          <span className="ml-2 text-sm text-gray-500">({limitedMetrics.length}/6)</span>
+          <TrendingUp className="h-6 w-6 text-primary-600 mr-2" />
+          <h2 className="text-xl font-bold text-gray-900">Key Metrics</h2>
         </div>
-        
-        {limitedMetrics.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {limitedMetrics.map((metric: any) => (
-              <MetricCard key={metric.id} metric={metric} />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-12 bg-gray-50 rounded-lg">
-            <p className="text-gray-500">
-              No metrics published in the last 24 hours. Check back soon for fresh data insights!
-            </p>
-          </div>
-        )}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {limitedMetrics.map((metric) => (
+            <MetricCard key={metric.id} metric={metric} />
+          ))}
+        </div>
       </section>
 
       {/* Sales Context Section */}
