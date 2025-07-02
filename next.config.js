@@ -1,10 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
-    appDir: true,
+    serverActions: true,
   },
   images: {
-    domains: ['images.unsplash.com', 'via.placeholder.com'],
+    domains: ['images.unsplash.com'],
   },
   env: {
     NEXTAUTH_URL: process.env.NEXTAUTH_URL,
