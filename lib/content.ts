@@ -3,14 +3,14 @@ import { diverseContentIngestionService } from './diverse-content-ingestion'
 
 export async function getPublishedArticles() {
   try {
-    const oneWeekAgo = new Date()
-    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
+    const last24Hours = new Date()
+    last24Hours.setHours(last24Hours.getHours() - 24)
 
     const articles = await prisma.article.findMany({
       where: {
         status: 'PUBLISHED',
         publishedAt: {
-          gte: oneWeekAgo,
+          gte: last24Hours,
         },
         OR: [
           { expiresAt: null },
@@ -21,7 +21,7 @@ export async function getPublishedArticles() {
         { priority: 'desc' },
         { publishedAt: 'desc' }
       ],
-      take: 10, // Limit to top 10 as per spec
+      take: 12, // Limit to top 12 for daily view
       include: {
         tags: {
           include: {

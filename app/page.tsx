@@ -7,8 +7,8 @@ import WeeklyContentWithFilter from '@/components/WeeklyContentWithFilter'
 import LoadingSpinner from '@/components/LoadingSpinner'
 
 export const metadata: Metadata = {
-  title: 'This Week\'s Topline',
-  description: 'The latest sales intelligence and market insights for enterprise sales professionals',
+  title: 'Today\'s Topline',
+  description: 'Daily sales intelligence and market insights for enterprise sales professionals',
 }
 
 export default function HomePage() {
@@ -20,15 +20,13 @@ export default function HomePage() {
         {/* Hero Section */}
         <div className="text-center mb-6">
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-            This Week's <span className="text-primary-600">Topline</span>
+            Today's <span className="text-primary-600">Topline</span>
           </h1>
           <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-            Curated sales intelligence for enterprise professionals in marketing, media, and technology. 
-            Sharp insights, strategic interpretation, ready for customer conversations.
+            Daily curated sales intelligence for enterprise professionals in media, CRM, marketing intelligence, and CDP solutions. 
+            Fresh insights from the last 24 hours, ready for your customer conversations.
           </p>
         </div>
-
-
 
         {/* Weekly Content */}
         <Suspense fallback={<LoadingSpinner />}>

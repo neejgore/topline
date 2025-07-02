@@ -12,7 +12,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    console.log('🔄 Starting weekly content refresh...')
+    console.log('🔄 Starting daily content refresh...')
     const contentService = new ContentIngestionService()
     
     // Clean up expired content first
@@ -41,7 +41,7 @@ export async function GET(request: Request) {
       }
     }
     
-    console.log('✅ Weekly content refresh completed:', response)
+    console.log('✅ Daily content refresh completed:', response)
     return NextResponse.json(response)
     
   } catch (error) {

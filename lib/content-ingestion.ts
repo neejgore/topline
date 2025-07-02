@@ -36,42 +36,48 @@ export class ContentIngestionService {
     let totalArticles = 0
     let skippedArticles = 0
     
-    // Get cutoff date - only articles from last 6 days
+    // Get cutoff date - only articles from last 24 hours
     const cutoffDate = new Date()
     cutoffDate.setHours(cutoffDate.getHours() - CONTENT_SCHEDULE.maxAgeHours)
     
     console.log(`📅 Processing articles newer than: ${cutoffDate.toISOString()}`)
     
-    // **OPTIMIZATION 1: Process sources in parallel batches**
-    const BATCH_SIZE = 6 // Process 6 sources at once to avoid overwhelming
-    const sources = CONTENT_SOURCES.rssFeeds
+    // Clean up expired content first
+    await this.cleanupExpiredContent()
+    
+    // Process sources in parallel batches
+    const BATCH_SIZE = 6
+    const sources = CONTENT_SOURCES.rssFeeds.filter(source => {
+      // Only include sources that match our publication list
+      return source.category === 'Technology & Media' || 
+             source.category === 'Consumer & Retail' ||
+             source.category === 'Financial Services' ||
+             source.category === 'Healthcare';
+    })
     
     for (let i = 0; i < sources.length; i += BATCH_SIZE) {
       const batch = sources.slice(i, i + BATCH_SIZE)
       console.log(`🚀 Processing batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(sources.length / BATCH_SIZE)} (${batch.length} sources)`)
       
-      // Process this batch of sources in parallel
       const batchPromises = batch.map(source => this.processSourceOptimized(source, cutoffDate))
       const batchResults = await Promise.allSettled(batchPromises)
       
-      // Collect results from this batch
       for (const result of batchResults) {
         if (result.status === 'fulfilled') {
           totalArticles += result.value.articles
           skippedArticles += result.value.skipped
         } else {
           console.error('❌ Source processing failed:', result.reason)
-          skippedArticles += 5 // Estimate skipped articles for failed source
+          skippedArticles += 1
         }
       }
       
-      // Brief pause between batches to avoid overwhelming the system
       if (i + BATCH_SIZE < sources.length) {
         await new Promise(resolve => setTimeout(resolve, 1000))
       }
     }
     
-    console.log(`🎉 OPTIMIZED RSS ingestion complete! Articles: ${totalArticles}, Skipped: ${skippedArticles}`)
+    console.log(`🎉 Daily content refresh complete! Articles: ${totalArticles}, Skipped: ${skippedArticles}`)
     return { articles: totalArticles, skipped: skippedArticles }
   }
 

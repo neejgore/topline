@@ -1,4 +1,5 @@
 import { CONTENT_SOURCES } from './content-sources'
+import OpenAI from 'openai'
 
 interface ContentInsights {
   whyItMatters: string
@@ -15,35 +16,72 @@ interface ArticleAnalysis {
   fullContent?: string
 }
 
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+})
+
 export class ContentAnalysisService {
   
   /**
    * Analyzes article content to generate meaningful business insights
    */
-  async generateInsights(article: ArticleAnalysis): Promise<ContentInsights> {
-    // Combine title and summary for comprehensive analysis
-    const fullText = `${article.title}\n\n${article.summary}`.toLowerCase()
-    
-    // Extract key topics and themes
-    const keyTopics = this.extractKeyTopics(fullText)
-    const businessContext = this.analyzeBusinessContext(fullText, keyTopics)
-    const urgencyLevel = this.determineUrgency(fullText, keyTopics)
-    
-    // Generate contextual insights based on actual content
-    const insights = this.generateContextualInsights(
-      article.title,
-      article.summary,
-      keyTopics,
-      businessContext,
-      article.sourceName
-    )
-    
-    return {
-      whyItMatters: insights.whyItMatters,
-      talkTrack: insights.talkTrack,
-      businessImpact: insights.businessImpact,
-      urgencyLevel,
-      keyTopics
+  async generateInsights({ title, summary, sourceName }: { 
+    title: string;
+    summary: string;
+    sourceName: string;
+  }): Promise<{ whyItMatters: string; status: string }> {
+    try {
+      const prompt = `
+        Analyze this article for enterprise sales professionals selling media, CRM, marketing intelligence, and CDP solutions:
+        
+        Title: ${title}
+        Summary: ${summary}
+        Source: ${sourceName}
+        
+        Create a concise, specific "Why It Matters" insight that:
+        1. Focuses on implications for media buying, customer data management, or marketing technology
+        2. Highlights specific opportunities or challenges for enterprise sellers
+        3. Connects to broader industry trends in marketing technology, data privacy, or digital advertising
+        4. Provides actionable context for sales conversations
+        5. Uses concrete numbers or specifics when available
+        
+        Format:
+        - Single paragraph
+        - 2-3 sentences maximum
+        - Focus on business impact
+        - Be specific and actionable
+        - No generic statements
+      `
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4-turbo-preview",
+        messages: [
+          { 
+            role: "system", 
+            content: "You are an expert in marketing technology, media, and enterprise sales. Generate specific, actionable insights for sales professionals."
+          },
+          { 
+            role: "user", 
+            content: prompt 
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 150
+      })
+
+      const whyItMatters = completion.choices[0]?.message?.content?.trim() || 
+        "This development signals shifting dynamics in the marketing technology landscape, with implications for enterprise solution providers."
+
+      return {
+        whyItMatters,
+        status: 'PUBLISHED'
+      }
+    } catch (error) {
+      console.error('Error generating insights:', error)
+      return {
+        whyItMatters: "This development represents a notable shift in the marketing technology landscape.",
+        status: 'PUBLISHED'
+      }
     }
   }
   

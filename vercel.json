@@ -6,7 +6,7 @@
   "crons": [
     {
       "path": "/api/cron/refresh-content",
-      "schedule": "0 8 * * 2"
+      "schedule": "0 0 * * *"
     }
   ],
   "env": {

@@ -329,18 +329,18 @@ export const CONTENT_SOURCES = {
 }
 
 export const CONTENT_SCHEDULE = {
-  // Tuesday 12:00 AM EST (UTC-5, or UTC-4 during DST)
-  refreshDay: 'TUESDAY',
+  // Daily at 12:00 AM EST
+  refreshDay: 'DAILY',
   refreshTime: '00:00',
   timezone: 'America/New_York',
   
-  // Content age limits - 6 day lookback window
-  maxAgeHours: 144, // 6 days
-  preferredAgeHours: 144, // Prefer content within 6 days
+  // Content age limits - 24 hour lookback window
+  maxAgeHours: 24, // 1 day
+  preferredAgeHours: 24, // Prefer content within 24 hours
   
-  // Content limits per week
-  maxArticles: 50, // Increased for comprehensive coverage
-  maxMetrics: 15
+  // Content limits per day
+  maxArticles: 25, // Adjusted for daily coverage
+  maxMetrics: 10
 }
 
 export const METRICS_SOURCES = [
