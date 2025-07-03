@@ -56,7 +56,7 @@ export default function NewsletterSignup() {
     <div className="card max-w-md mx-auto">
       <div className="text-center mb-6">
         <Mail className="h-12 w-12 text-primary-600 mx-auto mb-4" />
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">Get Topline Weekly</h3>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Get Topline Daily</h3>
         <p className="text-gray-600">
           Every Monday at 7am - delivered to your inbox for scan-then-click convenience.
         </p>
