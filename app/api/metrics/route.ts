@@ -78,6 +78,11 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('Error fetching metrics:', error)
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : null,
+      name: error instanceof Error ? error.name : null
+    })
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
@@ -89,9 +94,13 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     
+    // Generate a UUID for the id field
+    const id = crypto.randomUUID()
+    
     const { error } = await supabase
       .from('metrics')
       .insert({
+        id: id,
         title: body.title,
         value: body.value,
         source: body.source,
@@ -103,7 +112,8 @@ export async function POST(request: NextRequest) {
         priority: body.priority || 'MEDIUM',
         status: body.status || 'PUBLISHED',
         publishedAt: new Date().toISOString(),
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       })
 
     if (error) {
@@ -117,6 +127,11 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error creating metric:', error)
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : null,
+      name: error instanceof Error ? error.name : null
+    })
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
