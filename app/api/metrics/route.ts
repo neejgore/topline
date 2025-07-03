@@ -19,30 +19,49 @@ export async function GET(request: NextRequest) {
     // Get today's date for daily limit tracking
     const today = new Date().toISOString().split('T')[0]
 
-    // Build the query with 90-day filter and exclusion of already viewed metrics
+    // Check if lastViewedAt column exists by testing a simple query
+    let hasViewTrackingColumn = false
+    try {
+      await supabase
+        .from('metrics')
+        .select('lastViewedAt')
+        .limit(1)
+      hasViewTrackingColumn = true
+    } catch (e) {
+      console.log('lastViewedAt column not found, using fallback mode')
+      hasViewTrackingColumn = false
+    }
+
+    // Build the select string based on column availability
+    const selectColumns = `
+      id,
+      title,
+      value,
+      source,
+      sourceUrl,
+      whyItMatters,
+      talkTrack,
+      vertical,
+      category,
+      priority,
+      status,
+      publishedAt,
+      createdAt${hasViewTrackingColumn ? ', lastViewedAt' : ''}
+    `
+
+    // Build the query with 90-day filter and conditional duplicate prevention
     let query = supabase
       .from('metrics')
-      .select(`
-        id,
-        title,
-        value,
-        source,
-        sourceUrl,
-        whyItMatters,
-        talkTrack,
-        vertical,
-        category,
-        priority,
-        status,
-        publishedAt,
-        createdAt,
-        lastViewedAt
-      `)
+      .select(selectColumns)
       .eq('status', status)
       .gte('publishedAt', ninetyDaysAgo.toISOString())
-      .or(`lastViewedAt.is.null,lastViewedAt.lt.${today}`)
       .order('publishedAt', { ascending: false })
       .range(skip, skip + limit - 1)
+
+    // Add duplicate prevention filter only if column exists
+    if (hasViewTrackingColumn) {
+      query = query.or(`lastViewedAt.is.null,lastViewedAt.lt.${today}`)
+    }
 
     // Add vertical filter if specified
     if (vertical !== 'ALL') {
@@ -55,7 +74,11 @@ export async function GET(request: NextRequest) {
       .select('*', { count: 'exact', head: true })
       .eq('status', status)
       .gte('publishedAt', ninetyDaysAgo.toISOString())
-      .or(`lastViewedAt.is.null,lastViewedAt.lt.${today}`)
+
+    // Add duplicate prevention filter only if column exists
+    if (hasViewTrackingColumn) {
+      countQuery = countQuery.or(`lastViewedAt.is.null,lastViewedAt.lt.${today}`)
+    }
 
     if (vertical !== 'ALL') {
       countQuery = countQuery.eq('vertical', vertical)
@@ -77,9 +100,9 @@ export async function GET(request: NextRequest) {
     const metrics = metricsResult.data
     const total = countResult.count || 0
 
-    // Mark these metrics as viewed for today
-    if (metrics.length > 0) {
-      const metricIds = metrics.map(m => m.id)
+    // Mark these metrics as viewed for today (only if column exists)
+    if (hasViewTrackingColumn && metrics && metrics.length > 0) {
+      const metricIds = metrics.map((m: any) => m.id)
       await supabase
         .from('metrics')
         .update({ lastViewedAt: new Date().toISOString() })
@@ -97,7 +120,8 @@ export async function GET(request: NextRequest) {
       },
       timeWindow: '90 days',
       dailyLimit: 3,
-      viewedToday: metrics.length
+      viewedToday: metrics.length,
+      duplicatePrevention: hasViewTrackingColumn
     })
 
   } catch (error) {
@@ -121,25 +145,43 @@ export async function POST(request: NextRequest) {
     // Generate a UUID for the id field
     const id = crypto.randomUUID()
     
+    // Check if lastViewedAt column exists
+    let hasViewTrackingColumn = false
+    try {
+      await supabase
+        .from('metrics')
+        .select('lastViewedAt')
+        .limit(1)
+      hasViewTrackingColumn = true
+    } catch (e) {
+      hasViewTrackingColumn = false
+    }
+    
+    const insertData: any = {
+      id: id,
+      title: body.title,
+      value: body.value,
+      source: body.source,
+      sourceUrl: body.sourceUrl,
+      whyItMatters: body.whyItMatters,
+      talkTrack: body.talkTrack,
+      vertical: body.vertical,
+      category: body.category || 'METRICS',
+      priority: body.priority || 'MEDIUM',
+      status: body.status || 'PUBLISHED',
+      publishedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+    
+    // Only add lastViewedAt if column exists
+    if (hasViewTrackingColumn) {
+      insertData.lastViewedAt = null
+    }
+    
     const { error } = await supabase
       .from('metrics')
-      .insert({
-        id: id,
-        title: body.title,
-        value: body.value,
-        source: body.source,
-        sourceUrl: body.sourceUrl,
-        whyItMatters: body.whyItMatters,
-        talkTrack: body.talkTrack,
-        vertical: body.vertical,
-        category: body.category || 'METRICS',
-        priority: body.priority || 'MEDIUM',
-        status: body.status || 'PUBLISHED',
-        publishedAt: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        lastViewedAt: null
-      })
+      .insert(insertData)
 
     if (error) {
       throw error
