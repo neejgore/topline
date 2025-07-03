@@ -4,7 +4,6 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Menu, X } from 'lucide-react'
-import NewsletterSignup from './NewsletterSignup'
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -45,7 +44,6 @@ export default function Header() {
                 {item.name}
               </Link>
             ))}
-            <NewsletterSignup />
           </div>
 
           {/* Mobile menu button */}
@@ -86,7 +84,6 @@ export default function Header() {
                 {item.name}
               </Link>
             ))}
-            <NewsletterSignup />
           </div>
         </div>
       </nav>
