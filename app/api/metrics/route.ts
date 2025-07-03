@@ -12,7 +12,11 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20')
     const skip = (page - 1) * limit
 
-    // Build the query
+    // Calculate 48 hours ago
+    const fortyEightHoursAgo = new Date()
+    fortyEightHoursAgo.setHours(fortyEightHoursAgo.getHours() - 48)
+
+    // Build the query with 48-hour filter
     let query = supabase
       .from('metrics')
       .select(`
@@ -31,6 +35,7 @@ export async function GET(request: NextRequest) {
         createdAt
       `)
       .eq('status', status)
+      .gte('publishedAt', fortyEightHoursAgo.toISOString())
       .order('publishedAt', { ascending: false })
       .range(skip, skip + limit - 1)
 
@@ -39,11 +44,12 @@ export async function GET(request: NextRequest) {
       query = query.eq('vertical', vertical)
     }
 
-    // Get metrics and count
+    // Get metrics and count with 48-hour filter
     let countQuery = supabase
       .from('metrics')
       .select('*', { count: 'exact', head: true })
       .eq('status', status)
+      .gte('publishedAt', fortyEightHoursAgo.toISOString())
 
     if (vertical !== 'ALL') {
       countQuery = countQuery.eq('vertical', vertical)
@@ -73,7 +79,8 @@ export async function GET(request: NextRequest) {
         limit,
         total,
         totalPages: Math.ceil(total / limit)
-      }
+      },
+      timeWindow: '48 hours'
     })
 
   } catch (error) {
