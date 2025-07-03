@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { Priority, Status } from '@prisma/client'
 
 export async function POST() {
   try {
@@ -28,8 +29,8 @@ export async function POST() {
         talkTrack: 'Ask: "What percentage of your media budget goes to retail media networks?" Position as essential for reaching purchase-ready audiences.',
         category: 'NEWS',
         vertical: 'Consumer & Retail',
-        priority: 'HIGH',
-        status: 'PUBLISHED'
+        priority: Priority.HIGH,
+        status: Status.PUBLISHED
       },
       {
         id: 'art-new-2',
@@ -41,8 +42,8 @@ export async function POST() {
         talkTrack: 'Ask: "What percentage of your media buying is still manual?" Position AI automation as competitive necessity, not luxury.',
         category: 'NEWS',
         vertical: 'Technology & Media',
-        priority: 'HIGH',
-        status: 'PUBLISHED'
+        priority: Priority.HIGH,
+        status: Status.PUBLISHED
       },
       {
         id: 'art-new-3',
@@ -54,8 +55,8 @@ export async function POST() {
         talkTrack: 'Ask: "How do you currently measure marketing\'s impact on revenue?" Position pipeline velocity tracking as evolution beyond outdated MQL systems.',
         category: 'NEWS',
         vertical: 'Technology & Media',
-        priority: 'MEDIUM',
-        status: 'PUBLISHED'
+        priority: Priority.MEDIUM,
+        status: Status.PUBLISHED
       },
       {
         id: 'art-new-4',
@@ -67,8 +68,8 @@ export async function POST() {
         talkTrack: 'Ask: "What\'s your current personalization ROI?" Highlight the 19% revenue lift as the competitive benchmark.',
         category: 'NEWS',
         vertical: 'Consumer & Retail',
-        priority: 'MEDIUM',
-        status: 'PUBLISHED'
+        priority: Priority.MEDIUM,
+        status: Status.PUBLISHED
       },
       {
         id: 'art-new-5',
@@ -80,8 +81,8 @@ export async function POST() {
         talkTrack: 'Ask: "How long does your current marketing compliance review process take?" Position automation as speed and risk reduction.',
         category: 'NEWS',
         vertical: 'Financial Services',
-        priority: 'MEDIUM',
-        status: 'PUBLISHED'
+        priority: Priority.MEDIUM,
+        status: Status.PUBLISHED
       },
       {
         id: 'art-new-6',
@@ -93,8 +94,8 @@ export async function POST() {
         talkTrack: 'Ask: "How do you currently measure marketing ROI while maintaining HIPAA compliance?" Position first-party data as the solution.',
         category: 'NEWS',
         vertical: 'Healthcare',
-        priority: 'MEDIUM',
-        status: 'PUBLISHED'
+        priority: Priority.MEDIUM,
+        status: Status.PUBLISHED
       }
     ]
 
