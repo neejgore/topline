@@ -1,193 +1,149 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Search, Filter } from 'lucide-react'
 import ArticleCard from './ArticleCard'
-import MetricCard from './MetricCard'
+import VerticalFilter, { VERTICALS } from './VerticalFilter'
 import LoadingSpinner from './LoadingSpinner'
 
-type Article = {
+type Vertical = typeof VERTICALS[number]
+
+interface Article {
   id: string
   title: string
-  summary?: string | null
+  summary: string
   sourceUrl: string
   sourceName: string
-  whyItMatters?: string | null
-  talkTrack?: string | null
-  publishedAt?: Date | null
-  vertical?: string | null
+  publishedAt: Date | null
+  whyItMatters: string
+  talkTrack: string
+  vertical: string
+  category: string
+  priority: string
+  status: string
+  views: number
+  clicks: number
+  shares: number
 }
 
-type Metric = {
-  id: string
-  title: string
-  value: string
-  description?: string | null
-  source: string
-  sourceUrl?: string | null
-  howToUse?: string | null
-  talkTrack?: string | null
-  vertical?: string | null
+interface PaginationData {
+  page: number
+  limit: number
+  total: number
+  totalPages: number
 }
 
 export default function ArchiveContent() {
   const [articles, setArticles] = useState<Article[]>([])
-  const [metrics, setMetrics] = useState<Metric[]>([])
   const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [activeTab, setActiveTab] = useState<'all' | 'articles' | 'metrics'>('all')
+  const [error, setError] = useState('')
+  const [selectedVertical, setSelectedVertical] = useState<Vertical>('All')
+  const [pagination, setPagination] = useState<PaginationData>({
+    page: 1,
+    limit: 20,
+    total: 0,
+    totalPages: 0
+  })
 
   useEffect(() => {
-    fetchArchiveContent()
-  }, [])
+    fetchArchivedContent()
+  }, [selectedVertical, pagination.page])
 
-  const fetchArchiveContent = async () => {
+  const fetchArchivedContent = async () => {
     try {
-      const response = await fetch('/api/content/archive')
-      if (response.ok) {
-        const data = await response.json()
-        setArticles(data.articles || [])
-        setMetrics(data.metrics || [])
+      setLoading(true)
+      const params = new URLSearchParams({
+        vertical: selectedVertical,
+        status: 'ARCHIVED',
+        page: pagination.page.toString(),
+        limit: pagination.limit.toString()
+      })
+
+      const response = await fetch(`/api/content?${params}`)
+      const data = await response.json()
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to fetch archived content')
       }
-    } catch (error) {
-      console.error('Error fetching archive content:', error)
+
+      // Convert publishedAt strings to Date objects
+      const articlesWithDates = data.content.map((article: any) => ({
+        ...article,
+        publishedAt: article.publishedAt ? new Date(article.publishedAt) : null
+      }))
+
+      setArticles(articlesWithDates)
+      setPagination(data.pagination)
+      setError('')
+    } catch (err) {
+      setError('Failed to load archived content. Please try again later.')
+      console.error('Error fetching archived content:', err)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) {
-      fetchArchiveContent()
-      return
-    }
-
-    setLoading(true)
-    try {
-      const response = await fetch(`/api/content/search?q=${encodeURIComponent(searchQuery)}`)
-      if (response.ok) {
-        const data = await response.json()
-        setArticles(data.articles || [])
-        setMetrics(data.metrics || [])
-      }
-    } catch (error) {
-      console.error('Error searching content:', error)
-    } finally {
-      setLoading(false)
-    }
+  const handleVerticalChange = (vertical: Vertical) => {
+    setSelectedVertical(vertical)
+    setPagination(prev => ({ ...prev, page: 1 }))
   }
 
-  const filteredArticles = articles.filter(article =>
-    searchQuery === '' || 
-    article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    article.summary?.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const handlePageChange = (newPage: number) => {
+    setPagination(prev => ({ ...prev, page: newPage }))
+  }
 
-  const filteredMetrics = metrics.filter(metric =>
-    searchQuery === '' ||
-    metric.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    metric.description?.toLowerCase().includes(searchQuery.toLowerCase())
-  )
-
-  if (loading) {
-    return <LoadingSpinner />
+  if (error) {
+    return (
+      <div className="text-red-500 text-center py-8">
+        {error}
+      </div>
+    )
   }
 
   return (
     <div className="space-y-8">
-      {/* Search and Filter */}
-      <div className="card">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search articles and metrics..."
-                className="input pl-10"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+      <VerticalFilter
+        selectedVertical={selectedVertical}
+        onVerticalChange={handleVerticalChange}
+      />
+      
+      {loading ? (
+        <LoadingSpinner />
+      ) : (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {articles.map(article => (
+              <ArticleCard
+                key={article.id}
+                article={article}
               />
+            ))}
+          </div>
+
+          {/* Pagination */}
+          {pagination.totalPages > 1 && (
+            <div className="flex justify-center space-x-2 mt-8">
+              {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map(page => (
+                <button
+                  key={page}
+                  onClick={() => handlePageChange(page)}
+                  className={`px-4 py-2 rounded ${
+                    page === pagination.page
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-200 hover:bg-gray-300'
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
             </div>
-          </div>
-          <button
-            onClick={handleSearch}
-            className="btn btn-primary"
-          >
-            Search
-          </button>
-        </div>
+          )}
 
-        {/* Tabs */}
-        <div className="flex border-b border-gray-200 mt-6">
-          <button
-            className={`py-2 px-4 font-medium text-sm ${
-              activeTab === 'all'
-                ? 'border-b-2 border-primary-500 text-primary-600'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-            onClick={() => setActiveTab('all')}
-          >
-            All Content ({filteredArticles.length + filteredMetrics.length})
-          </button>
-          <button
-            className={`py-2 px-4 font-medium text-sm ${
-              activeTab === 'articles'
-                ? 'border-b-2 border-primary-500 text-primary-600'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-            onClick={() => setActiveTab('articles')}
-          >
-            Articles ({filteredArticles.length})
-          </button>
-          <button
-            className={`py-2 px-4 font-medium text-sm ${
-              activeTab === 'metrics'
-                ? 'border-b-2 border-primary-500 text-primary-600'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-            onClick={() => setActiveTab('metrics')}
-          >
-            Metrics ({filteredMetrics.length})
-          </button>
-        </div>
-      </div>
-
-      {/* Content */}
-      {(activeTab === 'all' || activeTab === 'articles') && filteredArticles.length > 0 && (
-        <section>
-          <h2 className="section-title">Articles</h2>
-          <div className="space-y-6">
-            {filteredArticles.map((article) => (
-              <ArticleCard key={article.id} article={article} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {(activeTab === 'all' || activeTab === 'metrics') && filteredMetrics.length > 0 && (
-        <section>
-          <h2 className="section-title">Metrics</h2>
-          <div className="grid md:grid-cols-2 gap-6">
-            {filteredMetrics.map((metric) => (
-              <MetricCard key={metric.id} metric={metric} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Empty State */}
-      {filteredArticles.length === 0 && filteredMetrics.length === 0 && (
-        <div className="card text-center py-12">
-          <p className="text-gray-500 text-lg mb-2">No content found</p>
-          <p className="text-gray-400">
-            {searchQuery 
-              ? `No results for "${searchQuery}". Try a different search term.`
-              : 'No archived content available yet. Check back soon!'
-            }
-          </p>
-        </div>
+          {articles.length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              No archived content found for the selected vertical.
+            </div>
+          )}
+        </>
       )}
     </div>
   )

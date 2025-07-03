@@ -1,55 +1,26 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
+import { supabase } from '@/lib/db'
 import Parser from 'rss-parser'
 import { CONTENT_SOURCES, RELEVANT_KEYWORDS, EXCLUDE_KEYWORDS } from '@/lib/content-sources'
-import { Priority, Status } from '@prisma/client'
 
-export async function GET(request: Request) {
-  // Verify this is a legitimate cron request
-  const authHeader = request.headers.get('authorization')
-  const cronSecret = process.env.CRON_SECRET
-  
-  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
-    console.log('❌ Unauthorized cron request')
-    return new Response('Unauthorized', { status: 401 })
-  }
+export const dynamic = 'force-dynamic'
 
+interface RSSItem {
+  title?: string
+  link?: string
+  pubDate?: string
+  contentSnippet?: string
+  content?: string
+}
+
+export async function POST() {
   try {
-    console.log('🔄 Starting daily content refresh...')
-    
-    // First, archive old content
-    const cutoffDate = new Date()
-    cutoffDate.setHours(cutoffDate.getHours() - 24) // Archive content older than 24 hours
-
-    const articlesToArchive = await prisma.article.findMany({
-      where: {
-        status: 'PUBLISHED',
-        publishedAt: {
-          lt: cutoffDate
-        }
-      }
-    })
-
-    if (articlesToArchive.length > 0) {
-      await prisma.article.updateMany({
-        where: {
-          id: {
-            in: articlesToArchive.map(a => a.id)
-          }
-        },
-        data: {
-          status: 'ARCHIVED'
-        }
-      })
-    }
-
-    console.log(`🧹 Archived ${articlesToArchive.length} old articles`)
-    
-    // Now fetch new content
+    console.log('🔄 Starting content refresh...')
     const parser = new Parser()
     let totalArticles = 0
     let skippedArticles = 0
 
+    // Process each RSS feed
     for (const source of CONTENT_SOURCES) {
       try {
         console.log(`📰 Fetching from ${source.name}...`)
@@ -58,20 +29,20 @@ export async function GET(request: Request) {
 
         for (const item of items) {
           try {
+            // Skip if no title or URL
             if (!item.title || !item.link) {
               skippedArticles++
               continue
             }
 
+            // Skip if content contains excluded keywords
             const text = `${item.title} ${item.contentSnippet || ''}`.toLowerCase()
-            
-            // Skip excluded content
             if (EXCLUDE_KEYWORDS.some(keyword => text.includes(keyword.toLowerCase()))) {
               skippedArticles++
               continue
             }
 
-            // Check relevance
+            // Check if content is relevant
             const isRelevant = RELEVANT_KEYWORDS.some(keyword => text.includes(keyword.toLowerCase()))
             if (!isRelevant) {
               skippedArticles++
@@ -79,19 +50,19 @@ export async function GET(request: Request) {
             }
 
             // Check for duplicates
-            const existingArticle = await prisma.article.findFirst({
-              where: {
-                OR: [
-                  { sourceUrl: item.link },
-                  { 
-                    AND: [
-                      { title: item.title },
-                      { sourceName: source.name }
-                    ]
-                  }
-                ]
-              }
-            })
+            const { data: existingArticle, error: duplicateError } = await supabase
+              .from('articles')
+              .select('id')
+              .or(`sourceUrl.eq.${item.link},and(title.eq.${item.title},sourceName.eq.${source.name})`)
+              .limit(1)
+              .single()
+
+            if (duplicateError && duplicateError.code !== 'PGRST116') {
+              // PGRST116 is "no rows returned", which is what we want
+              console.error('Error checking for duplicates:', duplicateError)
+              skippedArticles++
+              continue
+            }
 
             if (existingArticle) {
               skippedArticles++
@@ -99,16 +70,17 @@ export async function GET(request: Request) {
             }
 
             // Create new article
-            await prisma.article.create({
-              data: {
+            const { error: insertError } = await supabase
+              .from('articles')
+              .insert({
                 title: item.title,
                 summary: item.contentSnippet || item.content || null,
                 sourceUrl: item.link,
                 sourceName: source.name,
-                publishedAt: item.pubDate ? new Date(item.pubDate) : new Date(),
+                publishedAt: item.pubDate ? new Date(item.pubDate).toISOString() : new Date().toISOString(),
                 vertical: source.vertical,
-                status: 'PUBLISHED' as Status,
-                priority: source.priority as Priority,
+                status: 'PUBLISHED',
+                priority: source.priority,
                 category: 'NEWS',
                 whyItMatters: generateWhyItMatters(item.title, item.contentSnippet || ''),
                 talkTrack: generateTalkTrack(item.title, source.vertical),
@@ -116,8 +88,13 @@ export async function GET(request: Request) {
                 views: 0,
                 clicks: 0,
                 shares: 0
-              }
-            })
+              })
+
+            if (insertError) {
+              console.error('Error inserting article:', insertError)
+              skippedArticles++
+              continue
+            }
 
             totalArticles++
 
@@ -132,54 +109,49 @@ export async function GET(request: Request) {
       }
     }
 
-    // Get stats
-    const [totalCount, publishedCount, recentCount] = await Promise.all([
-      prisma.article.count(),
-      prisma.article.count({ where: { status: 'PUBLISHED' } }),
-      prisma.article.count({
-        where: {
-          publishedAt: {
-            gte: new Date(Date.now() - 24 * 60 * 60 * 1000)
-          }
-        }
-      })
-    ])
+    // Get updated content stats
+    const { count: totalPublishedArticles, error: countError } = await supabase
+      .from('articles')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'PUBLISHED')
+
+    if (countError) {
+      console.error('Error getting article count:', countError)
+    }
+
+    console.log('✅ Content refresh completed')
     
-    const response = {
+    return NextResponse.json({
       success: true,
-      timestamp: new Date().toISOString(),
       results: {
         articlesAdded: totalArticles,
-        articlesSkipped: skippedArticles,
-        expiredArticlesRemoved: articlesToArchive.length
+        articlesSkipped: skippedArticles
       },
       stats: {
-        totalArticles: totalCount,
-        publishedArticles: publishedCount,
-        recentArticles: recentCount
-      }
-    }
-    
-    console.log('✅ Daily content refresh completed:', response)
-    return NextResponse.json(response)
-    
+        totalPublishedArticles: totalPublishedArticles || 0
+      },
+      timestamp: new Date().toISOString()
+    })
+
   } catch (error) {
     console.error('❌ Content refresh failed:', error)
-    
-    const errorResponse = {
+    return NextResponse.json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString()
-    }
-    
-    return NextResponse.json(errorResponse, { status: 500 })
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
   }
 }
 
-// Helper functions
+// Also allow GET requests to trigger refresh
+export async function GET() {
+  return POST()
+}
+
+// Helper function to generate "Why It Matters" content
 function generateWhyItMatters(title: string, content: string): string {
   const text = `${title} ${content}`.toLowerCase()
   
+  // Check for key themes and return relevant context
   if (text.includes('ai') || text.includes('artificial intelligence')) {
     return 'AI and automation are transforming marketing technology. Understanding these developments helps position solutions in the context of the industry\'s future.'
   }
@@ -196,10 +168,15 @@ function generateWhyItMatters(title: string, content: string): string {
     return 'Data strategy is central to modern marketing. This development shows how the industry is evolving in its approach to customer insights.'
   }
   
+  // Default response for other content
   return 'This industry development signals important changes in how enterprises approach marketing and customer engagement.'
 }
 
+// Helper function to generate talk tracks
 function generateTalkTrack(title: string, vertical: string): string {
+  const text = title.toLowerCase()
+  
+  // Vertical-specific talk tracks
   switch (vertical) {
     case 'Technology & Media':
       return `How is your team thinking about these technology changes? What impact do you see this having on your marketing strategy?`
@@ -216,9 +193,4 @@ function generateTalkTrack(title: string, vertical: string): string {
     default:
       return `How do you see these industry changes affecting your business? What opportunities or challenges do they present?`
   }
-}
-
-// Also support POST for manual triggers
-export async function POST(request: Request) {
-  return GET(request)
 } 

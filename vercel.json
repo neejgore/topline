@@ -6,16 +6,11 @@
   "crons": [
     {
       "path": "/api/cron/refresh-content",
-      "schedule": "0 0 * * *"
+      "schedule": "0 5 * * *"
     }
   ],
   "env": {
     "NEXT_PUBLIC_APP_NAME": "Topline"
-  },
-  "build": {
-    "env": {
-      "PRISMA_GENERATE_SKIP_AUTOINSTALL": "true"
-    }
   },
   "functions": {
     "app/api/**/*.ts": {

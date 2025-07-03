@@ -1,46 +1,20 @@
-import { PrismaClient } from '@prisma/client'
+import { createClient } from '@supabase/supabase-js'
 
+// Supabase configuration
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+
+// Create Supabase client
+export const supabase = createClient(supabaseUrl, supabaseKey)
+
+// For backward compatibility, export the same client
+export const db = supabase
+
+// For development, use a single instance to avoid too many connections
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }
 
-// Enhanced DATABASE_URL configuration for Vercel serverless
-const getDatabaseUrl = () => {
-  const baseUrl = process.env.DATABASE_URL || ''
-  
-  if (process.env.NODE_ENV === 'production') {
-    // Vercel-optimized connection parameters
-    const separator = baseUrl.includes('?') ? '&' : '?'
-    return `${baseUrl}${separator}pgbouncer=true&prepared_statements=false&connection_limit=1&pool_timeout=0`
-  }
-  
-  return baseUrl
-}
-
-// Create Prisma client with Vercel serverless optimizations
-const createPrismaClient = () => {
-  return new PrismaClient({
-    log: process.env.NODE_ENV === 'development' ? ['query', 'error'] : ['error'],
-    datasources: {
-      db: {
-        url: getDatabaseUrl(),
-      },
-    },
-    // Optimize for serverless
-    ...(process.env.NODE_ENV === 'production' && {
-      errorFormat: 'minimal',
-    }),
-  })
-}
-
-export const prisma = globalForPrisma.prisma ?? createPrismaClient()
-
-// Only cache in development to avoid memory leaks in serverless
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = prisma
-}
-
-// Ensure proper cleanup in serverless environment
 if (process.env.NODE_ENV === 'production') {
   // Set connection timeout for serverless
   prisma.$connect().catch(() => {

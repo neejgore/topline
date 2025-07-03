@@ -9,16 +9,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "db:generate": "prisma generate",
-    "db:push": "prisma db push",
-    "db:studio": "prisma studio",
-    "db:seed": "node scripts/seed.js",
-    "db:reset": "prisma migrate reset --force",
     "check-setup": "node scripts/check-setup.js",
     "fetch-content": "node scripts/fetch-real-content.js"
   },
   "dependencies": {
-    "@prisma/client": "^5.22.0",
+    "@supabase/supabase-js": "^2.39.0",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
@@ -30,18 +25,15 @@
     "next": "14.2.30",
     "node-fetch": "^3.3.2",
     "openai": "^4.68.4",
-    "pg": "^8.13.1",
     "postcss": "^8",
-    "prisma": "^5.22.0",
     "react": "^18",
     "react-dom": "^18",
     "rss-parser": "^3.13.0",
     "tailwindcss": "^3.3.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "zod": "^3.25.71"
   },
-  "devDependencies": {
-    "@types/pg": "^8.11.10"
-  },
+  "devDependencies": {},
   "engines": {
     "node": ">=18.0.0"
   },

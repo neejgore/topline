@@ -10,6 +10,9 @@ export const metadata: Metadata = {
   description: 'Browse past editions of Topline sales intelligence content',
 }
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default function ArchivePage() {
   return (
     <div className="min-h-screen bg-gray-50">

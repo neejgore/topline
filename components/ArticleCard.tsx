@@ -1,135 +1,155 @@
-import Link from 'next/link'
-import { ExternalLink, Calendar, Tag } from 'lucide-react'
+'use client'
 
-type Article = {
+import { useState } from 'react'
+import { ExternalLink, Calendar, Building2, TrendingUp, MessageCircle } from 'lucide-react'
+
+interface Article {
   id: string
   title: string
   summary?: string | null
-  sourceUrl: string
-  sourceName: string
+  sourceUrl?: string | null
+  sourceName?: string | null
+  publishedAt?: Date | null
   whyItMatters?: string | null
   talkTrack?: string | null
-  publishedAt?: Date | string | null
   vertical?: string | null
+  priority?: string
+  category?: string
 }
 
 interface ArticleCardProps {
   article: Article
 }
 
-// Function to format date without external dependencies
-const formatDate = (dateInput: Date | string | null): string => {
-  if (!dateInput) return 'Today'
-  
-  const date = new Date(dateInput)
-  if (isNaN(date.getTime())) return 'Today'
-  
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-  
-  return `${months[date.getMonth()]} ${date.getDate()}`
-}
-
-// Function to get vertical tag styling
-const getVerticalStyling = (vertical: string | null | undefined) => {
-  if (!vertical) return { bg: 'bg-gray-100', text: 'text-gray-600', dot: 'bg-gray-400' }
-  
-  const styles: { [key: string]: { bg: string, text: string, dot: string } } = {
-    'Consumer & Retail': { bg: 'bg-pink-100', text: 'text-pink-800', dot: 'bg-pink-500' },
-    'Insurance': { bg: 'bg-blue-100', text: 'text-blue-800', dot: 'bg-blue-500' },
-    'Telecom': { bg: 'bg-purple-100', text: 'text-purple-800', dot: 'bg-purple-500' },
-    'Financial Services': { bg: 'bg-green-100', text: 'text-green-800', dot: 'bg-green-500' },
-    'Political Candidate & Advocacy': { bg: 'bg-red-100', text: 'text-red-800', dot: 'bg-red-500' },
-    'Services': { bg: 'bg-indigo-100', text: 'text-indigo-800', dot: 'bg-indigo-500' },
-    'Education': { bg: 'bg-yellow-100', text: 'text-yellow-800', dot: 'bg-yellow-500' },
-    'Travel & Hospitality': { bg: 'bg-orange-100', text: 'text-orange-800', dot: 'bg-orange-500' },
-    'Technology & Media': { bg: 'bg-cyan-100', text: 'text-cyan-800', dot: 'bg-cyan-500' },
-    'Healthcare': { bg: 'bg-emerald-100', text: 'text-emerald-800', dot: 'bg-emerald-500' },
-    'Automotive': { bg: 'bg-slate-100', text: 'text-slate-800', dot: 'bg-slate-500' },
-    'All': { bg: 'bg-violet-100', text: 'text-violet-800', dot: 'bg-violet-500' },
-    'Other': { bg: 'bg-gray-100', text: 'text-gray-600', dot: 'bg-gray-400' }
-  }
-  
-  return styles[vertical] || styles['Other']
-}
-
 export default function ArticleCard({ article }: ArticleCardProps) {
-  const verticalStyle = getVerticalStyling(article.vertical)
-  
-  return (
-    <article className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 border border-gray-100 overflow-hidden">
-      {/* Vertical Tag Header */}
-      <div className={`${verticalStyle.bg} px-4 py-2 flex items-center justify-between`}>
-        <div className="flex items-center space-x-2">
-          <div className={`w-2 h-2 rounded-full ${verticalStyle.dot}`}></div>
-          <span className={`text-xs font-semibold uppercase tracking-wide ${verticalStyle.text}`}>
-            {article.vertical || 'Other'}
-          </span>
-        </div>
-        <div className="flex items-center text-xs text-gray-500">
-          <Calendar className="h-3 w-3 mr-1" />
-          {article.publishedAt 
-            ? formatDate(article.publishedAt)
-            : 'Today'
-          }
-        </div>
-      </div>
+  const [isExpanded, setIsExpanded] = useState(false)
 
-      {/* Card Content */}
-      <div className="p-4">
-        <h3 className="text-lg font-semibold text-gray-900 leading-tight mb-3">
+  const formatDate = (date: Date | null) => {
+    if (!date) return 'Recently'
+    return new Date(date).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
+
+  const getPriorityColor = (priority?: string) => {
+    switch (priority) {
+      case 'HIGH': return 'bg-red-100 text-red-800'
+      case 'MEDIUM': return 'bg-yellow-100 text-yellow-800'
+      case 'LOW': return 'bg-green-100 text-green-800'
+      default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const getVerticalColor = (vertical?: string | null) => {
+    switch (vertical) {
+      case 'Technology & Media': return 'bg-blue-100 text-blue-800'
+      case 'Consumer & Retail': return 'bg-purple-100 text-purple-800'
+      case 'Financial Services': return 'bg-green-100 text-green-800'
+      case 'Healthcare': return 'bg-pink-100 text-pink-800'
+      default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 overflow-hidden group">
+      {/* Header */}
+      <div className="p-6 pb-4">
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <Calendar className="h-4 w-4" />
+                         <span>{formatDate(article.publishedAt || null)}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            {article.priority && (
+              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(article.priority)}`}>
+                {article.priority}
+              </span>
+            )}
+            {article.vertical && (
+              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getVerticalColor(article.vertical)}`}>
+                {article.vertical}
+              </span>
+            )}
+          </div>
+        </div>
+
+        <h3 className="text-lg font-semibold text-gray-900 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors">
           {article.title}
         </h3>
 
-        {/* Summary */}
         {article.summary && (
-          <p className="text-gray-600 text-sm mb-4 leading-relaxed">
+          <p className="text-gray-600 text-sm mb-4 line-clamp-3">
             {article.summary}
           </p>
         )}
 
-        {/* Why It Matters */}
-        {article.whyItMatters && (
-          <div className="bg-blue-50 border-l-4 border-blue-400 p-3 mb-3 rounded-r">
-            <h4 className="font-semibold text-blue-800 mb-1 text-sm flex items-center">
-              <span className="mr-1">➡️</span> Why it matters
-            </h4>
-            <p className="text-blue-700 text-xs leading-relaxed">
-              {article.whyItMatters}
-            </p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <Building2 className="h-4 w-4" />
+            <span>{article.sourceName || 'Unknown Source'}</span>
           </div>
-        )}
-
-        {/* Talk Track */}
-        {article.talkTrack && (
-          <div className="bg-green-50 border-l-4 border-green-400 p-3 mb-4 rounded-r">
-            <h4 className="font-semibold text-green-800 mb-1 text-sm flex items-center">
-              <span className="mr-1">💬</span> Talk Track
-            </h4>
-            <p className="text-green-700 text-xs leading-relaxed">
-              {article.talkTrack}
-            </p>
-          </div>
-        )}
-
-        {/* Footer */}
-        <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-          <span className="text-xs text-gray-500 truncate">
-            {article.sourceName}
-          </span>
-
-          <a
-            href={article.sourceUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center text-xs text-blue-600 hover:text-blue-800 font-medium hover:underline relative z-10 cursor-pointer"
-            style={{ pointerEvents: 'all' }}
-          >
-            Read More
-            <ExternalLink className="h-3 w-3 ml-1" />
-          </a>
+          
+          {article.sourceUrl && (
+            <a
+              href={article.sourceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors"
+            >
+              Read more
+              <ExternalLink className="h-3 w-3" />
+            </a>
+          )}
         </div>
       </div>
-    </article>
+
+      {/* Expandable Content */}
+      {(article.whyItMatters || article.talkTrack) && (
+        <div className="border-t border-gray-100">
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="w-full px-6 py-3 text-left text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-between"
+          >
+            <span>Sales Intelligence</span>
+            <div className={`transform transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </button>
+
+          {isExpanded && (
+            <div className="px-6 pb-6 space-y-4 bg-gray-50">
+              {article.whyItMatters && (
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <TrendingUp className="h-4 w-4 text-blue-600" />
+                    <h4 className="font-medium text-gray-900">Why It Matters</h4>
+                  </div>
+                  <p className="text-sm text-gray-600 pl-6">
+                    {article.whyItMatters}
+                  </p>
+                </div>
+              )}
+
+              {article.talkTrack && (
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <MessageCircle className="h-4 w-4 text-green-600" />
+                    <h4 className="font-medium text-gray-900">Talk Track</h4>
+                  </div>
+                  <p className="text-sm text-gray-600 pl-6">
+                    {article.talkTrack}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   )
 } 
