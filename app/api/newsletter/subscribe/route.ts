@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
+import { supabase } from '@/lib/db'
 import { z } from 'zod'
 
 const subscribeSchema = z.object({
@@ -13,9 +13,20 @@ export async function POST(request: NextRequest) {
     const { email, name } = subscribeSchema.parse(body)
 
     // Check if subscriber already exists
-    const existingSubscriber = await prisma.newsletterSubscriber.findUnique({
-      where: { email }
-    })
+    const { data: existingSubscriber, error: findError } = await supabase
+      .from('newsletter_subscribers')
+      .select('*')
+      .eq('email', email)
+      .single()
+
+    if (findError && findError.code !== 'PGRST116') {
+      // PGRST116 means "no rows returned", which is fine
+      console.error('Error checking existing subscriber:', findError)
+      return NextResponse.json(
+        { message: 'Failed to check subscription status. Please try again.' },
+        { status: 500 }
+      )
+    }
 
     if (existingSubscriber) {
       if (existingSubscriber.isActive) {
@@ -25,14 +36,22 @@ export async function POST(request: NextRequest) {
         )
       } else {
         // Reactivate existing subscriber
-        await prisma.newsletterSubscriber.update({
-          where: { email },
-          data: { 
+        const { error: updateError } = await supabase
+          .from('newsletter_subscribers')
+          .update({ 
             isActive: true,
             unsubscribedAt: null,
             name: name || existingSubscriber.name
-          }
-        })
+          })
+          .eq('email', email)
+
+        if (updateError) {
+          console.error('Error reactivating subscriber:', updateError)
+          return NextResponse.json(
+            { message: 'Failed to reactivate subscription. Please try again.' },
+            { status: 500 }
+          )
+        }
         
         return NextResponse.json(
           { message: 'Welcome back! Your subscription has been reactivated.' },
@@ -42,13 +61,22 @@ export async function POST(request: NextRequest) {
     }
 
     // Create new subscriber
-    await prisma.newsletterSubscriber.create({
-      data: {
+    const { error: insertError } = await supabase
+      .from('newsletter_subscribers')
+      .insert({
         email,
         name,
         isActive: true,
-      }
-    })
+        subscribedAt: new Date().toISOString()
+      })
+
+    if (insertError) {
+      console.error('Error creating subscriber:', insertError)
+      return NextResponse.json(
+        { message: 'Failed to subscribe. Please try again.' },
+        { status: 500 }
+      )
+    }
 
     // TODO: Send welcome email
     // await sendWelcomeEmail(email)

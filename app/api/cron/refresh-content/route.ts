@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
+import { supabase } from '@/lib/db'
 import Parser from 'rss-parser'
 import { CONTENT_SOURCES, RELEVANT_KEYWORDS, EXCLUDE_KEYWORDS } from '@/lib/content-sources'
-import { Priority, Status } from '@prisma/client'
 
 export async function GET(request: Request) {
   // Verify this is a legitimate cron request
@@ -21,29 +20,28 @@ export async function GET(request: Request) {
     const cutoffDate = new Date()
     cutoffDate.setHours(cutoffDate.getHours() - 24) // Archive content older than 24 hours
 
-    const articlesToArchive = await prisma.article.findMany({
-      where: {
-        status: 'PUBLISHED',
-        publishedAt: {
-          lt: cutoffDate
-        }
-      }
-    })
+    const { data: articlesToArchive, error: archiveError } = await supabase
+      .from('articles')
+      .select('id')
+      .eq('status', 'PUBLISHED')
+      .lt('publishedAt', cutoffDate.toISOString())
 
-    if (articlesToArchive.length > 0) {
-      await prisma.article.updateMany({
-        where: {
-          id: {
-            in: articlesToArchive.map(a => a.id)
-          }
-        },
-        data: {
-          status: 'ARCHIVED'
-        }
-      })
+    if (archiveError) {
+      console.error('Error finding articles to archive:', archiveError)
     }
 
-    console.log(`🧹 Archived ${articlesToArchive.length} old articles`)
+    if (articlesToArchive && articlesToArchive.length > 0) {
+      const { error: updateError } = await supabase
+        .from('articles')
+        .update({ status: 'ARCHIVED' })
+        .in('id', articlesToArchive.map(a => a.id))
+
+      if (updateError) {
+        console.error('Error archiving articles:', updateError)
+      }
+    }
+
+    console.log(`🧹 Archived ${articlesToArchive?.length || 0} old articles`)
     
     // Now fetch new content
     const parser = new Parser()
@@ -79,19 +77,18 @@ export async function GET(request: Request) {
             }
 
             // Check for duplicates
-            const existingArticle = await prisma.article.findFirst({
-              where: {
-                OR: [
-                  { sourceUrl: item.link },
-                  { 
-                    AND: [
-                      { title: item.title },
-                      { sourceName: source.name }
-                    ]
-                  }
-                ]
-              }
-            })
+            const { data: existingArticle, error: duplicateError } = await supabase
+              .from('articles')
+              .select('id')
+              .or(`sourceUrl.eq.${item.link},and(title.eq.${item.title},sourceName.eq.${source.name})`)
+              .limit(1)
+              .single()
+
+            if (duplicateError && duplicateError.code !== 'PGRST116') {
+              console.error('Error checking for duplicates:', duplicateError)
+              skippedArticles++
+              continue
+            }
 
             if (existingArticle) {
               skippedArticles++
@@ -99,16 +96,17 @@ export async function GET(request: Request) {
             }
 
             // Create new article
-            await prisma.article.create({
-              data: {
+            const { error: insertError } = await supabase
+              .from('articles')
+              .insert({
                 title: item.title,
                 summary: item.contentSnippet || item.content || null,
                 sourceUrl: item.link,
                 sourceName: source.name,
-                publishedAt: item.pubDate ? new Date(item.pubDate) : new Date(),
+                publishedAt: item.pubDate ? new Date(item.pubDate).toISOString() : new Date().toISOString(),
                 vertical: source.vertical,
-                status: 'PUBLISHED' as Status,
-                priority: source.priority as Priority,
+                status: 'PUBLISHED',
+                priority: source.priority,
                 category: 'NEWS',
                 whyItMatters: generateWhyItMatters(item.title, item.contentSnippet || ''),
                 talkTrack: generateTalkTrack(item.title, source.vertical),
@@ -116,8 +114,13 @@ export async function GET(request: Request) {
                 views: 0,
                 clicks: 0,
                 shares: 0
-              }
-            })
+              })
+
+            if (insertError) {
+              console.error('Error inserting article:', insertError)
+              skippedArticles++
+              continue
+            }
 
             totalArticles++
 
@@ -133,16 +136,10 @@ export async function GET(request: Request) {
     }
 
     // Get stats
-    const [totalCount, publishedCount, recentCount] = await Promise.all([
-      prisma.article.count(),
-      prisma.article.count({ where: { status: 'PUBLISHED' } }),
-      prisma.article.count({
-        where: {
-          publishedAt: {
-            gte: new Date(Date.now() - 24 * 60 * 60 * 1000)
-          }
-        }
-      })
+    const [totalCountResult, publishedCountResult, recentCountResult] = await Promise.all([
+      supabase.from('articles').select('*', { count: 'exact', head: true }),
+      supabase.from('articles').select('*', { count: 'exact', head: true }).eq('status', 'PUBLISHED'),
+      supabase.from('articles').select('*', { count: 'exact', head: true }).gte('publishedAt', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
     ])
     
     const response = {
@@ -151,12 +148,12 @@ export async function GET(request: Request) {
       results: {
         articlesAdded: totalArticles,
         articlesSkipped: skippedArticles,
-        expiredArticlesRemoved: articlesToArchive.length
+        expiredArticlesRemoved: articlesToArchive?.length || 0
       },
       stats: {
-        totalArticles: totalCount,
-        publishedArticles: publishedCount,
-        recentArticles: recentCount
+        totalArticles: totalCountResult.count || 0,
+        publishedArticles: publishedCountResult.count || 0,
+        recentArticles: recentCountResult.count || 0
       }
     }
     
@@ -200,6 +197,8 @@ function generateWhyItMatters(title: string, content: string): string {
 }
 
 function generateTalkTrack(title: string, vertical: string): string {
+  const text = title.toLowerCase()
+  
   switch (vertical) {
     case 'Technology & Media':
       return `How is your team thinking about these technology changes? What impact do you see this having on your marketing strategy?`
@@ -218,7 +217,6 @@ function generateTalkTrack(title: string, vertical: string): string {
   }
 }
 
-// Also support POST for manual triggers
 export async function POST(request: Request) {
   return GET(request)
 } 
