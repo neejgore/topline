@@ -110,7 +110,7 @@ export default function MetricsSection({ selectedVertical, selectedRelevance }: 
     <section>
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-900">
-          Key Metrics
+          Need-to-Know Metrics for {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
         </h2>
         <div className="text-right">
           <span className="text-sm text-gray-500 block">

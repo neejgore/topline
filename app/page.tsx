@@ -59,7 +59,7 @@ export default function HomePage() {
       {/* Content Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">Today's Intelligence</h2>
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">Top Intelligence for {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</h2>
           <p className="text-lg text-gray-600">
             Fresh insights and metrics to fuel your sales conversations
           </p>
