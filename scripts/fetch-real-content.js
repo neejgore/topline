@@ -1,5 +1,6 @@
 const { CONTENT_SOURCES } = require('../lib/content-sources.js')
 const { prisma } = require('../lib/db')
+const { generateAIContent } = require('../lib/ai-content-generator.js')
 const Parser = require('rss-parser')
 const parser = new Parser()
 
@@ -18,14 +19,24 @@ async function main() {
       if (feed.items) {
         for (const item of feed.items.slice(0, 2)) { // Limit to 2 per source
           try {
+            console.log(`🤖 Generating AI content for: ${item.title}`)
+            
+            // Generate AI-powered content
+            const aiContent = await generateAIContent(
+              item.title, 
+              item.contentSnippet || 'No summary available', 
+              source.name, 
+              source.category || 'Technology & Media'
+            )
+            
             await prisma.article.create({
               data: {
                 title: item.title,
                 summary: item.contentSnippet?.substring(0, 300) || 'No summary available',
                 sourceUrl: item.link,
                 sourceName: source.name,
-                whyItMatters: 'This article provides important industry insights for sales professionals.',
-                talkTrack: 'Use this information to understand current market trends and engage prospects.',
+                whyItMatters: aiContent.whyItMatters,
+                talkTrack: aiContent.talkTrack,
                 category: 'NEWS',
                 vertical: source.category || 'Technology & Media',
                 priority: source.priority || 'MEDIUM',
@@ -34,7 +45,11 @@ async function main() {
               }
             })
             totalArticles++
-            console.log(`✅ Added: ${item.title}`)
+            console.log(`✅ Added with AI content: ${item.title}`)
+            
+            // Small delay to avoid overwhelming the AI API
+            await new Promise(resolve => setTimeout(resolve, 1000))
+            
           } catch (error) {
             console.error(`❌ Error adding article: ${error.message}`)
           }

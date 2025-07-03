@@ -1,5 +1,6 @@
 const { createClient } = require('@supabase/supabase-js')
 const Parser = require('rss-parser')
+const { generateAIContent } = require('../lib/ai-content-generator.js')
 
 // Content sources from the TypeScript file
 const CONTENT_SOURCES = [
@@ -199,195 +200,161 @@ function generateTalkTrack(title, vertical) {
 
 function getImportanceScore(title, content) {
   const text = `${title} ${content}`.toLowerCase()
-  let score = 5 // Base score
+  let score = 0
   
-  // High impact keywords
-  if (text.includes('acquisition') || text.includes('merger')) score += 3
-  if (text.includes('ai') || text.includes('artificial intelligence')) score += 2
-  if (text.includes('privacy') || text.includes('gdpr')) score += 2
-  if (text.includes('growth') || text.includes('revenue')) score += 1
+  // Higher importance for AI/ML topics
+  if (text.includes('ai') || text.includes('artificial intelligence') || text.includes('machine learning')) {
+    score += 3
+  }
   
-  return Math.min(score, 10) // Cap at 10
+  // Higher importance for privacy/cookie topics
+  if (text.includes('privacy') || text.includes('cookie') || text.includes('gdpr')) {
+    score += 3
+  }
+  
+  // Higher importance for business changes
+  if (text.includes('merger') || text.includes('acquisition') || text.includes('funding')) {
+    score += 2
+  }
+  
+  // Higher importance for retail/commerce
+  if (text.includes('retail') || text.includes('commerce') || text.includes('marketplace')) {
+    score += 2
+  }
+  
+  return Math.min(score, 5) // Cap at 5
 }
 
 async function fetchRealContent() {
-  console.log('🚀 Starting manual content refresh...')
-  console.log(`📡 Testing ${CONTENT_SOURCES.length} RSS sources...`)
+  console.log('🚀 Starting real content fetch...')
   
-  const parser = new Parser({
-    timeout: 10000,
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; ToplineBot/1.0; +https://topline.com)'
-    }
-  })
-  
+  const parser = new Parser()
   let totalArticles = 0
   let skippedArticles = 0
-  let sourceResults = []
   
-  for (const source of CONTENT_SOURCES) {
+  // Limit to first 8 sources to avoid overwhelming the system
+  const sourcesToProcess = CONTENT_SOURCES.slice(0, 8)
+  
+  for (const source of sourcesToProcess) {
     try {
-      console.log(`\n📰 Fetching from ${source.name}...`)
+      console.log(`📰 Fetching from ${source.name}...`)
       const feed = await parser.parseURL(source.rssUrl)
       const items = feed.items || []
       
-      console.log(`   Found ${items.length} articles`)
+      console.log(`Found ${items.length} items from ${source.name}`)
       
-      let sourceArticles = 0
-      const recentItems = items.slice(0, 5) // Take first 5 from each source
-      
-      for (const item of recentItems) {
+      // Process up to 3 items per source
+      for (const item of items.slice(0, 3)) {
         try {
+          // Skip if no title or URL
           if (!item.title || !item.link) {
             skippedArticles++
             continue
           }
-
-          const text = `${item.title} ${item.contentSnippet || ''}`.toLowerCase()
           
-          // Skip excluded content
+          // Clean and prepare content
+          const title = item.title.trim()
+          const content = item.contentSnippet || item.content || ''
+          const cleanContent = content.substring(0, 500) // Limit content length
+          
+          // Check if content is relevant
+          const text = `${title} ${cleanContent}`.toLowerCase()
+          
+          // Skip if content contains excluded keywords
           if (EXCLUDE_KEYWORDS.some(keyword => text.includes(keyword.toLowerCase()))) {
             skippedArticles++
             continue
           }
-
-          // Check relevance (be more permissive for manual refresh)
-          const isRelevant = RELEVANT_KEYWORDS.some(keyword => text.includes(keyword.toLowerCase())) ||
-                           text.includes('marketing') || text.includes('advertising') || 
-                           text.includes('business') || text.includes('technology')
           
+          // Check if content is relevant
+          const isRelevant = RELEVANT_KEYWORDS.some(keyword => text.includes(keyword.toLowerCase()))
           if (!isRelevant) {
             skippedArticles++
             continue
           }
-
+          
           // Check for duplicates
-          const { data: existingArticle, error: duplicateError } = await supabase
+          const { data: existingArticle } = await supabase
             .from('articles')
             .select('id')
-            .eq('sourceUrl', item.link)
+            .or(`sourceUrl.eq.${item.link},and(title.eq.${title},sourceName.eq.${source.name})`)
             .limit(1)
             .single()
-
-          if (duplicateError && duplicateError.code !== 'PGRST116') {
-            console.error('Error checking for duplicates:', duplicateError)
-            skippedArticles++
-            continue
-          }
-
+          
           if (existingArticle) {
             skippedArticles++
             continue
           }
-
-          // Generate UUID for article
-          const id = crypto.randomUUID ? crypto.randomUUID() : 
-                     'xxxx-xxxx-4xxx-yxxx'.replace(/[xy]/g, function(c) {
-                       const r = Math.random() * 16 | 0
-                       const v = c === 'x' ? r : (r & 0x3 | 0x8)
-                       return v.toString(16)
-                     })
-
-          // Create new article
-          const articleData = {
-            id: id,
-            title: item.title.substring(0, 200), // Limit title length
-            summary: (item.contentSnippet || item.content || '').substring(0, 500),
-            sourceUrl: item.link,
-            sourceName: source.name,
-            publishedAt: item.pubDate ? new Date(item.pubDate).toISOString() : new Date().toISOString(),
-            vertical: source.vertical,
-            status: 'PUBLISHED',
-            priority: source.priority,
-            category: 'NEWS',
-            whyItMatters: generateWhyItMatters(item.title, item.contentSnippet || ''),
-            talkTrack: generateTalkTrack(item.title, source.vertical),
-            importanceScore: getImportanceScore(item.title, item.contentSnippet || ''),
-            views: 0,
-            clicks: 0,
-            shares: 0,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          }
-
-          const { error: insertError } = await supabase
+          
+          console.log(`🤖 Generating AI content for: ${title}`)
+          
+          // Generate AI-powered content
+          const aiContent = await generateAIContent(title, cleanContent, source.name, source.vertical)
+          
+          // Create the article with AI-generated content
+          const { error } = await supabase
             .from('articles')
-            .insert(articleData)
-
-          if (insertError) {
-            console.error('Error inserting article:', insertError)
+            .insert({
+              id: crypto.randomUUID(),
+              title: title,
+              summary: cleanContent || null,
+              sourceUrl: item.link,
+              sourceName: source.name,
+              publishedAt: item.pubDate ? new Date(item.pubDate).toISOString() : new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              vertical: source.vertical,
+              status: 'PUBLISHED',
+              priority: source.priority,
+              category: 'NEWS',
+              whyItMatters: aiContent.whyItMatters,
+              talkTrack: aiContent.talkTrack,
+              importanceScore: getImportanceScore(title, cleanContent),
+              views: 0,
+              clicks: 0,
+              shares: 0
+            })
+          
+          if (error) {
+            console.error(`❌ Error inserting article: ${error.message}`)
             skippedArticles++
             continue
           }
-
-          sourceArticles++
+          
           totalArticles++
-          console.log(`   ✅ Added: ${item.title.substring(0, 60)}...`)
-
+          console.log(`✅ Added with AI content: ${title}`)
+          
+          // Small delay to avoid overwhelming the AI API
+          await new Promise(resolve => setTimeout(resolve, 1000))
+          
         } catch (itemError) {
-          console.error('Error processing item:', itemError)
+          console.error(`❌ Error processing item: ${itemError.message}`)
           skippedArticles++
         }
       }
       
-      sourceResults.push({
-        name: source.name,
-        articlesAdded: sourceArticles,
-        status: 'SUCCESS'
-      })
-      
     } catch (sourceError) {
-      console.error(`❌ Error fetching from ${source.name}:`, sourceError.message)
-      sourceResults.push({
-        name: source.name,
-        articlesAdded: 0,
-        status: 'FAILED',
-        error: sourceError.message
-      })
+      console.error(`❌ Error fetching from ${source.name}: ${sourceError.message}`)
     }
   }
   
-  // Print summary
-  console.log('\n' + '='.repeat(60))
-  console.log('📊 CONTENT REFRESH SUMMARY')
-  console.log('='.repeat(60))
-  console.log(`✅ Total articles added: ${totalArticles}`)
-  console.log(`⏭️  Articles skipped: ${skippedArticles}`)
-  console.log(`📡 Sources tested: ${CONTENT_SOURCES.length}`)
+  console.log(`🎉 Content fetch complete!`)
+  console.log(`📊 Added ${totalArticles} articles, skipped ${skippedArticles}`)
   
-  const workingSources = sourceResults.filter(s => s.status === 'SUCCESS' && s.articlesAdded > 0)
-  const brokenSources = sourceResults.filter(s => s.status === 'FAILED')
-  
-  console.log(`\n✅ Working sources (${workingSources.length}):`)
-  workingSources.forEach(source => {
-    console.log(`   ${source.name}: ${source.articlesAdded} articles`)
-  })
-  
-  if (brokenSources.length > 0) {
-    console.log(`\n❌ Failed sources (${brokenSources.length}):`)
-    brokenSources.forEach(source => {
-      console.log(`   ${source.name}: ${source.error}`)
-    })
-  }
-  
-  // Get final database stats
-  const { count: finalCount, error: countError } = await supabase
+  // Get current stats
+  const { count } = await supabase
     .from('articles')
     .select('*', { count: 'exact', head: true })
     .eq('status', 'PUBLISHED')
   
-  if (!countError) {
-    console.log(`\n📈 Total articles in database: ${finalCount}`)
-  }
-  
-  console.log('\n🎉 Manual content refresh completed!')
+  console.log(`📈 Total articles in database: ${count}`)
   
   return {
     success: true,
-    articlesAdded: totalArticles,
-    articlesSkipped: skippedArticles,
-    sourcesWorking: workingSources.length,
-    sourcesFailed: brokenSources.length
+    results: {
+      articlesAdded: totalArticles,
+      articlesSkipped: skippedArticles,
+      totalArticles: count
+    }
   }
 }
 

@@ -3,6 +3,8 @@ import { supabase } from '@/lib/db'
 import Parser from 'rss-parser'
 import { CONTENT_SOURCES, RELEVANT_KEYWORDS, EXCLUDE_KEYWORDS } from '@/lib/content-sources'
 
+const { generateAIContent } = require('@/lib/ai-content-generator.js')
+
 export const dynamic = 'force-dynamic'
 
 interface RSSItem {
@@ -69,6 +71,16 @@ export async function POST() {
               continue
             }
 
+            console.log(`🤖 Generating AI content for: ${item.title}`)
+            
+            // Generate AI-powered content
+            const aiContent = await generateAIContent(
+              item.title, 
+              item.contentSnippet || item.content || '', 
+              source.name, 
+              source.vertical
+            )
+
             // Create new article
             const { error: insertError } = await supabase
               .from('articles')
@@ -82,8 +94,8 @@ export async function POST() {
                 status: 'PUBLISHED',
                 priority: source.priority,
                 category: 'NEWS',
-                whyItMatters: generateWhyItMatters(item.title, item.contentSnippet || ''),
-                talkTrack: generateTalkTrack(item.title, source.vertical),
+                whyItMatters: aiContent.whyItMatters,
+                talkTrack: aiContent.talkTrack,
                 importanceScore: 0,
                 views: 0,
                 clicks: 0,
@@ -97,6 +109,10 @@ export async function POST() {
             }
 
             totalArticles++
+            console.log(`✅ Added with AI content: ${item.title}`)
+
+            // Small delay to avoid overwhelming the AI API
+            await new Promise(resolve => setTimeout(resolve, 1000))
 
           } catch (itemError) {
             console.error('Error processing item:', itemError)
@@ -145,52 +161,4 @@ export async function POST() {
 // Also allow GET requests to trigger refresh
 export async function GET() {
   return POST()
-}
-
-// Helper function to generate "Why It Matters" content
-function generateWhyItMatters(title: string, content: string): string {
-  const text = `${title} ${content}`.toLowerCase()
-  
-  // Check for key themes and return relevant context
-  if (text.includes('ai') || text.includes('artificial intelligence')) {
-    return 'AI and automation are transforming marketing technology. Understanding these developments helps position solutions in the context of the industry\'s future.'
-  }
-  
-  if (text.includes('privacy') || text.includes('cookie') || text.includes('gdpr')) {
-    return 'Privacy changes are reshaping digital marketing. This impacts how brands think about customer data and personalization strategies.'
-  }
-  
-  if (text.includes('retail') || text.includes('commerce')) {
-    return 'The retail and commerce landscape is rapidly evolving. This affects how brands approach customer acquisition and retention.'
-  }
-  
-  if (text.includes('data') || text.includes('analytics')) {
-    return 'Data strategy is central to modern marketing. This development shows how the industry is evolving in its approach to customer insights.'
-  }
-  
-  // Default response for other content
-  return 'This industry development signals important changes in how enterprises approach marketing and customer engagement.'
-}
-
-// Helper function to generate talk tracks
-function generateTalkTrack(title: string, vertical: string): string {
-  const text = title.toLowerCase()
-  
-  // Vertical-specific talk tracks
-  switch (vertical) {
-    case 'Technology & Media':
-      return `How is your team thinking about these technology changes? What impact do you see this having on your marketing strategy?`
-    
-    case 'Consumer & Retail':
-      return `How are these retail industry changes affecting your customer engagement strategy? What opportunities do you see?`
-    
-    case 'Financial Services':
-      return `How is your institution adapting to these market changes? What role does technology play in your strategy?`
-    
-    case 'Healthcare':
-      return `How are these healthcare industry developments impacting your patient engagement approach? What challenges are you facing?`
-    
-    default:
-      return `How do you see these industry changes affecting your business? What opportunities or challenges do they present?`
-  }
 } 
