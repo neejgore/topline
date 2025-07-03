@@ -34,13 +34,23 @@ export default function ArticleCard({ article }: ArticleCardProps) {
     })
   }
 
-  const getPriorityColor = (priority?: string) => {
-    switch (priority) {
-      case 'HIGH': return 'bg-red-100 text-red-800'
-      case 'MEDIUM': return 'bg-orange-100 text-orange-800'
-      case 'LOW': return 'bg-gray-100 text-gray-800'
-      default: return 'bg-gray-100 text-gray-800'
-    }
+  const getPriorityStars = (priority?: string) => {
+    const starCount = priority === 'HIGH' ? 3 : priority === 'MEDIUM' ? 2 : priority === 'LOW' ? 1 : 0;
+    const starColor = priority === 'HIGH' ? 'text-red-500' : priority === 'MEDIUM' ? 'text-orange-500' : 'text-gray-400';
+    
+    if (starCount === 0) return null;
+    
+    return (
+      <div className="flex items-center gap-0.5">
+        {[...Array(3)].map((_, i) => (
+          <Star
+            key={i}
+            className={`w-4 h-4 ${i < starCount ? starColor : 'text-gray-200'}`}
+            fill="currentColor"
+          />
+        ))}
+      </div>
+    );
   }
 
   const getVerticalColor = (vertical?: string | null) => {
@@ -63,11 +73,7 @@ export default function ArticleCard({ article }: ArticleCardProps) {
             <span>{formatDate(article.publishedAt || null)}</span>
           </div>
           <div className="flex items-center gap-2">
-            {article.priority && (
-              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(article.priority)}`}>
-                {article.priority}
-              </span>
-            )}
+            {article.priority && getPriorityStars(article.priority)}
             {article.vertical && (
               <span className={`px-2 py-1 rounded-full text-xs font-medium ${getVerticalColor(article.vertical)}`}>
                 {article.vertical}
@@ -152,4 +158,4 @@ export default function ArticleCard({ article }: ArticleCardProps) {
       )}
     </div>
   )
-} 
+}
