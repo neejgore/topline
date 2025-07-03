@@ -9,14 +9,17 @@ export async function GET(request: NextRequest) {
     const vertical = searchParams.get('vertical') || 'ALL'
     const status = searchParams.get('status') || 'PUBLISHED'
     const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '20')
+    const limit = parseInt(searchParams.get('limit') || '3') // Default to 3 metrics
     const skip = (page - 1) * limit
 
-    // Calculate 48 hours ago
-    const fortyEightHoursAgo = new Date()
-    fortyEightHoursAgo.setHours(fortyEightHoursAgo.getHours() - 48)
+    // Calculate 90 days ago
+    const ninetyDaysAgo = new Date()
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90)
 
-    // Build the query with 48-hour filter
+    // Get today's date for daily limit tracking
+    const today = new Date().toISOString().split('T')[0]
+
+    // Build the query with 90-day filter and exclusion of already viewed metrics
     let query = supabase
       .from('metrics')
       .select(`
@@ -32,10 +35,12 @@ export async function GET(request: NextRequest) {
         priority,
         status,
         publishedAt,
-        createdAt
+        createdAt,
+        lastViewedAt
       `)
       .eq('status', status)
-      .gte('publishedAt', fortyEightHoursAgo.toISOString())
+      .gte('publishedAt', ninetyDaysAgo.toISOString())
+      .or(`lastViewedAt.is.null,lastViewedAt.lt.${today}`)
       .order('publishedAt', { ascending: false })
       .range(skip, skip + limit - 1)
 
@@ -44,12 +49,13 @@ export async function GET(request: NextRequest) {
       query = query.eq('vertical', vertical)
     }
 
-    // Get metrics and count with 48-hour filter
+    // Get metrics and count with 90-day filter
     let countQuery = supabase
       .from('metrics')
       .select('*', { count: 'exact', head: true })
       .eq('status', status)
-      .gte('publishedAt', fortyEightHoursAgo.toISOString())
+      .gte('publishedAt', ninetyDaysAgo.toISOString())
+      .or(`lastViewedAt.is.null,lastViewedAt.lt.${today}`)
 
     if (vertical !== 'ALL') {
       countQuery = countQuery.eq('vertical', vertical)
@@ -71,6 +77,15 @@ export async function GET(request: NextRequest) {
     const metrics = metricsResult.data
     const total = countResult.count || 0
 
+    // Mark these metrics as viewed for today
+    if (metrics.length > 0) {
+      const metricIds = metrics.map(m => m.id)
+      await supabase
+        .from('metrics')
+        .update({ lastViewedAt: new Date().toISOString() })
+        .in('id', metricIds)
+    }
+
     return NextResponse.json({
       success: true,
       metrics,
@@ -80,7 +95,9 @@ export async function GET(request: NextRequest) {
         total,
         totalPages: Math.ceil(total / limit)
       },
-      timeWindow: '48 hours'
+      timeWindow: '90 days',
+      dailyLimit: 3,
+      viewedToday: metrics.length
     })
 
   } catch (error) {
@@ -120,7 +137,8 @@ export async function POST(request: NextRequest) {
         status: body.status || 'PUBLISHED',
         publishedAt: new Date().toISOString(),
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
+        lastViewedAt: null
       })
 
     if (error) {

@@ -27,6 +27,8 @@ export default function MetricsSection({ selectedVertical }: MetricsSectionProps
   const [metrics, setMetrics] = useState<Metric[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [viewedToday, setViewedToday] = useState(0)
+  const [dailyLimit] = useState(3)
 
   useEffect(() => {
     fetchMetrics()
@@ -37,7 +39,7 @@ export default function MetricsSection({ selectedVertical }: MetricsSectionProps
       setLoading(true)
       const params = new URLSearchParams({
         status: 'PUBLISHED',
-        limit: '12'
+        limit: '3' // Always request 3 metrics max
       })
       
       if (selectedVertical !== 'All') {
@@ -65,6 +67,7 @@ export default function MetricsSection({ selectedVertical }: MetricsSectionProps
       }))
 
       setMetrics(mappedMetrics)
+      setViewedToday(data.viewedToday || mappedMetrics.length)
       setError('')
     } catch (err) {
       setError('Failed to load metrics. Please try again later.')
@@ -100,9 +103,14 @@ export default function MetricsSection({ selectedVertical }: MetricsSectionProps
         <h2 className="text-2xl font-bold text-gray-900">
           Key Metrics
         </h2>
-        <span className="text-sm text-gray-500">
-          {metrics.length} metrics
-        </span>
+        <div className="text-right">
+          <span className="text-sm text-gray-500 block">
+            {metrics.length} of {dailyLimit} daily metrics
+          </span>
+          <span className="text-xs text-gray-400">
+            90-day lookback • No repeats
+          </span>
+        </div>
       </div>
       
       {metrics.length > 0 ? (
@@ -114,7 +122,13 @@ export default function MetricsSection({ selectedVertical }: MetricsSectionProps
       ) : (
         <div className="text-center py-8">
           <div className="text-gray-500 mb-4">
-            No metrics available for the selected vertical.
+            {selectedVertical === 'All' 
+              ? "You've seen all available metrics for today. Check back tomorrow for fresh insights!"
+              : `No new metrics available for ${selectedVertical} today. Try selecting "All" or check back tomorrow.`
+            }
+          </div>
+          <div className="text-xs text-gray-400">
+            Metrics refresh daily • 90-day window • No duplicates
           </div>
         </div>
       )}
