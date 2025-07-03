@@ -49,10 +49,28 @@ export const CONTENT_SOURCES = [
     priority: 'HIGH'
   },
   {
-    name: 'Adweek',
-    rssUrl: 'https://www.adweek.com/feed/',
+    name: 'Search Engine Land',
+    rssUrl: 'https://searchengineland.com/feed',
     vertical: 'Technology & Media',
     priority: 'HIGH'
+  },
+  {
+    name: 'Content Marketing Institute',
+    rssUrl: 'https://contentmarketinginstitute.com/feed/',
+    vertical: 'Technology & Media',
+    priority: 'HIGH'
+  },
+  {
+    name: 'MarketingProfs',
+    rssUrl: 'https://www.marketingprofs.com/feed.xml',
+    vertical: 'Technology & Media',
+    priority: 'MEDIUM'
+  },
+  {
+    name: 'HubSpot Marketing Blog',
+    rssUrl: 'https://blog.hubspot.com/marketing/rss.xml',
+    vertical: 'Technology & Media',
+    priority: 'MEDIUM'
   },
   {
     name: 'TechCrunch',
