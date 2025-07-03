@@ -99,9 +99,6 @@ export default function DailyContent() {
         <LoadingSpinner />
       ) : (
         <div className="space-y-12">
-          {/* Metrics Section */}
-          <MetricsSection selectedVertical={selectedVertical} />
-          
           {/* Articles Section */}
           {regularArticles.length > 0 && (
             <section>
@@ -120,6 +117,9 @@ export default function DailyContent() {
               </div>
             </section>
           )}
+          
+          {/* Metrics Section */}
+          <MetricsSection selectedVertical={selectedVertical} />
 
                      {/* Empty State */}
            {regularArticles.length === 0 && (
