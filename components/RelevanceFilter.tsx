@@ -22,11 +22,11 @@ interface RelevanceFilterProps {
 
 // Function to get relevance styling
 const getRelevanceStyling = (relevance: RelevanceLevel) => {
-  const styles: { [key: string]: { bg: string, text: string, icon: string, activeBg: string, activeText: string } } = {
-    'High': { bg: 'bg-red-100', text: 'text-red-800', icon: 'text-red-500', activeBg: 'bg-red-500', activeText: 'text-white' },
-    'Medium': { bg: 'bg-orange-100', text: 'text-orange-800', icon: 'text-orange-500', activeBg: 'bg-orange-500', activeText: 'text-white' },
-    'Low': { bg: 'bg-gray-100', text: 'text-gray-800', icon: 'text-gray-500', activeBg: 'bg-gray-500', activeText: 'text-white' },
-    'All': { bg: 'bg-blue-100', text: 'text-blue-800', icon: 'text-blue-500', activeBg: 'bg-blue-500', activeText: 'text-white' }
+  const styles: { [key: string]: { bg: string, text: string, activeBg: string, activeText: string } } = {
+    'High': { bg: 'bg-red-100', text: 'text-red-800', activeBg: 'bg-red-500', activeText: 'text-white' },
+    'Medium': { bg: 'bg-orange-100', text: 'text-orange-800', activeBg: 'bg-orange-500', activeText: 'text-white' },
+    'Low': { bg: 'bg-gray-100', text: 'text-gray-800', activeBg: 'bg-gray-500', activeText: 'text-white' },
+    'All': { bg: 'bg-blue-100', text: 'text-blue-800', activeBg: 'bg-blue-500', activeText: 'text-white' }
   }
   
   return styles[relevance] || styles['All']
@@ -39,6 +39,18 @@ const getStarCount = (relevance: RelevanceLevel) => {
     case 'Medium': return 2
     case 'Low': return 1
     default: return 0
+  }
+}
+
+// Function to get star color based on relevance
+const getStarColor = (relevance: RelevanceLevel, isSelected: boolean) => {
+  if (isSelected) return 'text-white'
+  
+  switch (relevance) {
+    case 'High': return 'text-red-600'
+    case 'Medium': return 'text-orange-600'
+    case 'Low': return 'text-gray-600'
+    default: return 'text-blue-600'
   }
 }
 
@@ -88,13 +100,13 @@ export default function RelevanceFilter({ selectedRelevance, onRelevanceChange, 
               >
                 <div className="flex items-center space-x-1">
                   {relevance === 'All' ? (
-                    <Star className={`h-3 w-3 ${isSelected ? 'text-white' : style.icon}`} />
+                    <Star className={`h-3 w-3 ${getStarColor(relevance, isSelected)}`} />
                   ) : (
                     <div className="flex space-x-0.5">
                       {[...Array(starCount)].map((_, i) => (
                         <Star 
                           key={i} 
-                          className={`h-3 w-3 ${isSelected ? 'text-white' : style.icon}`} 
+                          className={`h-3 w-3 ${getStarColor(relevance, isSelected)}`} 
                           fill="currentColor"
                         />
                       ))}

@@ -43,24 +43,6 @@ export default function ArticleCard({ article }: ArticleCardProps) {
     }
   }
 
-  const getStarCount = (priority?: string) => {
-    switch (priority) {
-      case 'HIGH': return 3
-      case 'MEDIUM': return 2
-      case 'LOW': return 1
-      default: return 0
-    }
-  }
-
-  const getStarColor = (priority?: string) => {
-    switch (priority) {
-      case 'HIGH': return 'text-red-600'
-      case 'MEDIUM': return 'text-orange-600'
-      case 'LOW': return 'text-gray-600'
-      default: return 'text-gray-400'
-    }
-  }
-
   const getVerticalColor = (vertical?: string | null) => {
     switch (vertical) {
       case 'Technology & Media': return 'bg-blue-100 text-blue-800'
@@ -82,18 +64,9 @@ export default function ArticleCard({ article }: ArticleCardProps) {
           </div>
           <div className="flex items-center gap-2">
             {article.priority && (
-              <div className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(article.priority)} flex items-center gap-1`}>
-                <div className="flex items-center space-x-0.5">
-                  {[...Array(getStarCount(article.priority))].map((_, i) => (
-                    <Star 
-                      key={i} 
-                      className={`h-3 w-3 ${getStarColor(article.priority)}`} 
-                      fill="currentColor"
-                    />
-                  ))}
-                </div>
-                <span>{article.priority}</span>
-              </div>
+              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(article.priority)}`}>
+                {article.priority}
+              </span>
             )}
             {article.vertical && (
               <span className={`px-2 py-1 rounded-full text-xs font-medium ${getVerticalColor(article.vertical)}`}>
