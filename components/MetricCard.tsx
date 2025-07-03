@@ -1,4 +1,4 @@
-import { ExternalLink, TrendingUp, Tag, Star } from 'lucide-react'
+import { ExternalLink, TrendingUp, Star } from 'lucide-react'
 
 type Metric = {
   id: string
@@ -40,22 +40,23 @@ const getVerticalStyling = (vertical: string | null | undefined) => {
   return styles[vertical] || styles['Other']
 }
 
-const getStarCount = (priority?: string | null) => {
-  switch (priority) {
-    case 'HIGH': return 3
-    case 'MEDIUM': return 2
-    case 'LOW': return 1
-    default: return 0
-  }
-}
-
-const getStarColor = (priority?: string | null) => {
-  switch (priority) {
-    case 'HIGH': return 'text-red-600'
-    case 'MEDIUM': return 'text-orange-600'
-    case 'LOW': return 'text-gray-600'
-    default: return 'text-gray-400'
-  }
+const getPriorityStars = (priority?: string | null) => {
+  const starCount = priority === 'HIGH' ? 3 : priority === 'MEDIUM' ? 2 : priority === 'LOW' ? 1 : 0;
+  const starColor = priority === 'HIGH' ? 'text-red-500' : priority === 'MEDIUM' ? 'text-orange-500' : 'text-gray-400';
+  
+  if (starCount === 0) return null;
+  
+  return (
+    <div className="flex items-center gap-0.5">
+      {[...Array(3)].map((_, i) => (
+        <Star
+          key={i}
+          className={`w-4 h-4 ${i < starCount ? starColor : 'text-gray-200'}`}
+          fill="currentColor"
+        />
+      ))}
+    </div>
+  );
 }
 
 export default function MetricCard({ metric }: MetricCardProps) {
@@ -72,17 +73,7 @@ export default function MetricCard({ metric }: MetricCardProps) {
           </span>
         </div>
         <div className="flex items-center space-x-2">
-          {metric.priority && (
-            <div className="flex items-center space-x-0.5">
-              {[...Array(getStarCount(metric.priority))].map((_, i) => (
-                <Star 
-                  key={i} 
-                  className={`h-3 w-3 ${getStarColor(metric.priority)}`} 
-                  fill="currentColor"
-                />
-              ))}
-            </div>
-          )}
+          {metric.priority && getPriorityStars(metric.priority)}
           <TrendingUp className="h-3 w-3 text-gray-500" />
         </div>
       </div>
@@ -150,4 +141,4 @@ export default function MetricCard({ metric }: MetricCardProps) {
       </div>
     </div>
   )
-} 
+}
