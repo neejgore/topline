@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react'
 import MetricCard from './MetricCard'
 import LoadingSpinner from './LoadingSpinner'
 import { VERTICALS } from './VerticalFilter'
+import { RELEVANCE_LEVELS } from './RelevanceFilter'
 
 type Vertical = typeof VERTICALS[number]
+type RelevanceLevel = typeof RELEVANCE_LEVELS[number]
 
 interface Metric {
   id: string
@@ -17,13 +19,15 @@ interface Metric {
   howToUse?: string | null
   talkTrack?: string | null
   vertical?: string | null
+  priority?: string | null
 }
 
 interface MetricsSectionProps {
   selectedVertical: Vertical
+  selectedRelevance: RelevanceLevel
 }
 
-export default function MetricsSection({ selectedVertical }: MetricsSectionProps) {
+export default function MetricsSection({ selectedVertical, selectedRelevance }: MetricsSectionProps) {
   const [metrics, setMetrics] = useState<Metric[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -32,7 +36,7 @@ export default function MetricsSection({ selectedVertical }: MetricsSectionProps
 
   useEffect(() => {
     fetchMetrics()
-  }, [selectedVertical])
+  }, [selectedVertical, selectedRelevance])
 
   const fetchMetrics = async () => {
     try {
@@ -44,6 +48,10 @@ export default function MetricsSection({ selectedVertical }: MetricsSectionProps
       
       if (selectedVertical !== 'All') {
         params.append('vertical', selectedVertical)
+      }
+
+      if (selectedRelevance !== 'All') {
+        params.append('priority', selectedRelevance)
       }
 
       const response = await fetch(`/api/metrics?${params}`)
@@ -63,7 +71,8 @@ export default function MetricsSection({ selectedVertical }: MetricsSectionProps
         sourceUrl: metric.sourceUrl,
         howToUse: metric.whyItMatters,
         talkTrack: metric.talkTrack,
-        vertical: metric.vertical
+        vertical: metric.vertical,
+        priority: metric.priority
       }))
 
       setMetrics(mappedMetrics)
@@ -122,9 +131,9 @@ export default function MetricsSection({ selectedVertical }: MetricsSectionProps
       ) : (
         <div className="text-center py-8">
           <div className="text-gray-500 mb-4">
-            {selectedVertical === 'All' 
+            {selectedVertical === 'All' && selectedRelevance === 'All'
               ? "You've seen all available metrics for today. Check back tomorrow for fresh insights!"
-              : `No new metrics available for ${selectedVertical} today. Try selecting "All" or check back tomorrow.`
+              : `No new metrics available for the selected filters today. Try adjusting your filters or check back tomorrow.`
             }
           </div>
           <div className="text-xs text-gray-400">

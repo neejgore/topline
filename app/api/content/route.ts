@@ -7,6 +7,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const vertical = searchParams.get('vertical') || 'ALL'
+    const priority = searchParams.get('priority') || 'ALL'
     const status = searchParams.get('status') || 'PUBLISHED'
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '20')
@@ -41,6 +42,11 @@ export async function GET(request: NextRequest) {
       query = query.eq('vertical', vertical)
     }
 
+    // Add priority filter if specified
+    if (priority !== 'ALL') {
+      query = query.eq('priority', priority.toUpperCase())
+    }
+
     // Get content and count
     let countQuery = supabase
       .from('articles')
@@ -49,6 +55,10 @@ export async function GET(request: NextRequest) {
 
     if (vertical !== 'ALL') {
       countQuery = countQuery.eq('vertical', vertical)
+    }
+
+    if (priority !== 'ALL') {
+      countQuery = countQuery.eq('priority', priority.toUpperCase())
     }
 
     const [contentResult, countResult] = await Promise.all([

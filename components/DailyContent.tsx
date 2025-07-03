@@ -4,9 +4,11 @@ import { useState, useEffect } from 'react'
 import ArticleCard from './ArticleCard'
 import MetricsSection from './MetricsSection'
 import VerticalFilter, { VERTICALS } from './VerticalFilter'
+import RelevanceFilter, { RELEVANCE_LEVELS } from './RelevanceFilter'
 import LoadingSpinner from './LoadingSpinner'
 
 type Vertical = typeof VERTICALS[number]
+type RelevanceLevel = typeof RELEVANCE_LEVELS[number]
 
 interface Article {
   id: string
@@ -31,10 +33,11 @@ export default function DailyContent() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [selectedVertical, setSelectedVertical] = useState<Vertical>('All')
+  const [selectedRelevance, setSelectedRelevance] = useState<RelevanceLevel>('All')
 
   useEffect(() => {
     fetchContent()
-  }, [selectedVertical])
+  }, [selectedVertical, selectedRelevance])
 
   const fetchContent = async () => {
     try {
@@ -46,6 +49,10 @@ export default function DailyContent() {
       
       if (selectedVertical !== 'All') {
         params.append('vertical', selectedVertical)
+      }
+
+      if (selectedRelevance !== 'All') {
+        params.append('priority', selectedRelevance)
       }
 
       const response = await fetch(`/api/content?${params}`)
@@ -69,6 +76,10 @@ export default function DailyContent() {
     setSelectedVertical(vertical)
   }
 
+  const handleRelevanceChange = (relevance: RelevanceLevel) => {
+    setSelectedRelevance(relevance)
+  }
+
   // Filter articles only
   const regularArticles = articles
 
@@ -90,10 +101,17 @@ export default function DailyContent() {
 
   return (
     <div className="space-y-8">
-      <VerticalFilter
-        selectedVertical={selectedVertical}
-        onVerticalChange={handleVerticalChange}
-      />
+      <div className="space-y-4">
+        <VerticalFilter
+          selectedVertical={selectedVertical}
+          onVerticalChange={handleVerticalChange}
+        />
+        
+        <RelevanceFilter
+          selectedRelevance={selectedRelevance}
+          onRelevanceChange={handleRelevanceChange}
+        />
+      </div>
       
       {loading ? (
         <LoadingSpinner />
@@ -119,22 +137,33 @@ export default function DailyContent() {
           )}
           
           {/* Metrics Section */}
-          <MetricsSection selectedVertical={selectedVertical} />
+          <MetricsSection 
+            selectedVertical={selectedVertical} 
+            selectedRelevance={selectedRelevance}
+          />
 
-                     {/* Empty State */}
-           {regularArticles.length === 0 && (
-             <div className="text-center py-12">
-               <div className="text-gray-500 mb-4">
-                 No content available for the selected vertical.
-               </div>
-               <button
-                 onClick={() => setSelectedVertical('All')}
-                 className="text-blue-600 hover:text-blue-700 font-medium"
-               >
-                 View all content
-               </button>
-             </div>
-           )}
+          {/* Empty State */}
+          {regularArticles.length === 0 && (
+            <div className="text-center py-12">
+              <div className="text-gray-500 mb-4">
+                No content available for the selected filters.
+              </div>
+              <div className="space-x-4">
+                <button
+                  onClick={() => setSelectedVertical('All')}
+                  className="text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  Clear Industry Filter
+                </button>
+                <button
+                  onClick={() => setSelectedRelevance('All')}
+                  className="text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  Clear Relevance Filter
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

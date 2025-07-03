@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ExternalLink, Calendar, Building2, TrendingUp, MessageCircle } from 'lucide-react'
+import { ExternalLink, Calendar, Building2, TrendingUp, MessageCircle, Star } from 'lucide-react'
 
 interface Article {
   id: string
@@ -37,9 +37,27 @@ export default function ArticleCard({ article }: ArticleCardProps) {
   const getPriorityColor = (priority?: string) => {
     switch (priority) {
       case 'HIGH': return 'bg-red-100 text-red-800'
-      case 'MEDIUM': return 'bg-yellow-100 text-yellow-800'
-      case 'LOW': return 'bg-green-100 text-green-800'
+      case 'MEDIUM': return 'bg-orange-100 text-orange-800'
+      case 'LOW': return 'bg-gray-100 text-gray-800'
       default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const getStarCount = (priority?: string) => {
+    switch (priority) {
+      case 'HIGH': return 3
+      case 'MEDIUM': return 2
+      case 'LOW': return 1
+      default: return 0
+    }
+  }
+
+  const getStarColor = (priority?: string) => {
+    switch (priority) {
+      case 'HIGH': return 'text-red-600'
+      case 'MEDIUM': return 'text-orange-600'
+      case 'LOW': return 'text-gray-600'
+      default: return 'text-gray-400'
     }
   }
 
@@ -60,13 +78,22 @@ export default function ArticleCard({ article }: ArticleCardProps) {
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-2 text-sm text-gray-500">
             <Calendar className="h-4 w-4" />
-                         <span>{formatDate(article.publishedAt || null)}</span>
+            <span>{formatDate(article.publishedAt || null)}</span>
           </div>
           <div className="flex items-center gap-2">
             {article.priority && (
-              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(article.priority)}`}>
-                {article.priority}
-              </span>
+              <div className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(article.priority)} flex items-center gap-1`}>
+                <div className="flex items-center space-x-0.5">
+                  {[...Array(getStarCount(article.priority))].map((_, i) => (
+                    <Star 
+                      key={i} 
+                      className={`h-3 w-3 ${getStarColor(article.priority)}`} 
+                      fill="currentColor"
+                    />
+                  ))}
+                </div>
+                <span>{article.priority}</span>
+              </div>
             )}
             {article.vertical && (
               <span className={`px-2 py-1 rounded-full text-xs font-medium ${getVerticalColor(article.vertical)}`}>

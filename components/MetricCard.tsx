@@ -1,4 +1,4 @@
-import { ExternalLink, TrendingUp, Tag } from 'lucide-react'
+import { ExternalLink, TrendingUp, Tag, Star } from 'lucide-react'
 
 type Metric = {
   id: string
@@ -10,6 +10,7 @@ type Metric = {
   howToUse?: string | null
   talkTrack?: string | null
   vertical?: string | null
+  priority?: string | null
 }
 
 interface MetricCardProps {
@@ -39,6 +40,34 @@ const getVerticalStyling = (vertical: string | null | undefined) => {
   return styles[vertical] || styles['Other']
 }
 
+// Function to get priority styling
+const getPriorityColor = (priority?: string | null) => {
+  switch (priority) {
+    case 'HIGH': return 'bg-red-100 text-red-800'
+    case 'MEDIUM': return 'bg-orange-100 text-orange-800'
+    case 'LOW': return 'bg-gray-100 text-gray-800'
+    default: return 'bg-gray-100 text-gray-800'
+  }
+}
+
+const getStarCount = (priority?: string | null) => {
+  switch (priority) {
+    case 'HIGH': return 3
+    case 'MEDIUM': return 2
+    case 'LOW': return 1
+    default: return 0
+  }
+}
+
+const getStarColor = (priority?: string | null) => {
+  switch (priority) {
+    case 'HIGH': return 'text-red-600'
+    case 'MEDIUM': return 'text-orange-600'
+    case 'LOW': return 'text-gray-600'
+    default: return 'text-gray-400'
+  }
+}
+
 export default function MetricCard({ metric }: MetricCardProps) {
   const verticalStyle = getVerticalStyling(metric.vertical)
   
@@ -52,7 +81,23 @@ export default function MetricCard({ metric }: MetricCardProps) {
             {metric.vertical || 'Other'}
           </span>
         </div>
-        <TrendingUp className="h-3 w-3 text-gray-500" />
+        <div className="flex items-center space-x-2">
+          {metric.priority && (
+            <div className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(metric.priority)} flex items-center gap-1`}>
+              <div className="flex items-center space-x-0.5">
+                {[...Array(getStarCount(metric.priority))].map((_, i) => (
+                  <Star 
+                    key={i} 
+                    className={`h-3 w-3 ${getStarColor(metric.priority)}`} 
+                    fill="currentColor"
+                  />
+                ))}
+              </div>
+              <span>{metric.priority}</span>
+            </div>
+          )}
+          <TrendingUp className="h-3 w-3 text-gray-500" />
+        </div>
       </div>
 
       {/* Card Content */}
