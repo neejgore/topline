@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { Priority, Status } from '@prisma/client'
 
 export async function POST() {
   try {
@@ -19,8 +20,8 @@ export async function POST() {
         whyItMatters: 'Sustained double-digit growth indicates continued advertiser confidence in digital channels despite economic headwinds.',
         talkTrack: 'Ask: "What percentage of your media budget is digital vs traditional?" Position digital transformation as competitive necessity.',
         vertical: 'Technology & Media',
-        priority: 'HIGH',
-        status: 'PUBLISHED'
+        priority: Priority.HIGH,
+        status: Status.PUBLISHED
       },
       {
         title: 'AI Marketing Tool Adoption Rate',
@@ -32,8 +33,8 @@ export async function POST() {
         whyItMatters: 'AI adoption is accelerating rapidly, creating competitive advantages for early adopters and risks for laggards.',
         talkTrack: 'Ask: "Which AI marketing tools is your team currently using?" Position AI as table stakes, not innovation.',
         vertical: 'Technology & Media',
-        priority: 'HIGH',
-        status: 'PUBLISHED'
+        priority: Priority.HIGH,
+        status: Status.PUBLISHED
       },
       {
         title: 'Retail Media Network Revenue',
@@ -45,8 +46,8 @@ export async function POST() {
         whyItMatters: 'Retail media is the fastest-growing advertising category, offering first-party data and closed-loop attribution.',
         talkTrack: 'Ask: "What percentage of your budget goes to retail media vs traditional digital?" Position as essential for attribution.',
         vertical: 'Consumer & Retail',
-        priority: 'HIGH',
-        status: 'PUBLISHED'
+        priority: Priority.HIGH,
+        status: Status.PUBLISHED
       },
       {
         title: 'Marketing Compliance Review Time',
@@ -58,8 +59,8 @@ export async function POST() {
         whyItMatters: 'Faster compliance reviews enable financial firms to respond more quickly to market opportunities and competitive threats.',
         talkTrack: 'Ask: "How long do your marketing compliance reviews currently take?" Position automation as speed advantage.',
         vertical: 'Financial Services',
-        priority: 'MEDIUM',
-        status: 'PUBLISHED'
+        priority: Priority.MEDIUM,
+        status: Status.PUBLISHED
       },
       {
         title: 'Healthcare Marketing ROI Attribution',
@@ -71,8 +72,8 @@ export async function POST() {
         whyItMatters: 'HIPAA-compliant attribution methods are essential for healthcare marketers to demonstrate campaign effectiveness.',
         talkTrack: 'Ask: "How do you currently measure marketing ROI while maintaining HIPAA compliance?" Position first-party data solutions.',
         vertical: 'Healthcare',
-        priority: 'MEDIUM',
-        status: 'PUBLISHED'
+        priority: Priority.MEDIUM,
+        status: Status.PUBLISHED
       },
       {
         title: 'B2B Pipeline Velocity Improvement',
@@ -84,8 +85,8 @@ export async function POST() {
         whyItMatters: 'Pipeline velocity metrics provide better revenue predictability than traditional lead-based measurements.',
         talkTrack: 'Ask: "Are you still measuring MQLs or have you moved to pipeline velocity?" Position velocity tracking as competitive advantage.',
         vertical: 'Technology & Media',
-        priority: 'MEDIUM',
-        status: 'PUBLISHED'
+        priority: Priority.MEDIUM,
+        status: Status.PUBLISHED
       }
     ]
 
