@@ -10,14 +10,4 @@ export const supabase = createClient(supabaseUrl, supabaseKey)
 // For backward compatibility, export the same client
 export const db = supabase
 
-// For development, use a single instance to avoid too many connections
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined
-}
-
-if (process.env.NODE_ENV === 'production') {
-  // Set connection timeout for serverless
-  prisma.$connect().catch(() => {
-    // Ignore connection errors during initialization
-  })
-} 
+ 
