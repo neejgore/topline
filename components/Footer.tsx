@@ -36,7 +36,7 @@ export default function Footer() {
             <ul className="space-y-2">
               <li>
                 <a href="/" className="text-gray-300 hover:text-white transition-colors">
-                  Top Intelligence for {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                  Topline for {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                 </a>
               </li>
               <li>

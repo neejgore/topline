@@ -122,7 +122,7 @@ export default function DailyContent() {
             <section>
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold text-gray-900">
-                  Latest Articles
+                  Latest Intelligence
                 </h2>
                 <span className="text-sm text-gray-500">
                   {regularArticles.length} articles
