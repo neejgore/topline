@@ -135,6 +135,15 @@ export async function GET(request: Request) {
       }
     }
 
+    // Refresh daily metrics selection
+    console.log('📊 Starting metrics refresh...')
+    const metricsRefreshResult = await refreshDailyMetrics()
+    
+    // Check if metrics pool needs replenishment
+    console.log('🔄 Checking metrics pool status...')
+    const poolStatus = await checkAndReplenishMetricsPool()
+    console.log(`📊 Metrics pool status: ${poolStatus.message}`)
+
     // Get stats
     const [totalCountResult, publishedCountResult, recentCountResult] = await Promise.all([
       supabase.from('articles').select('*', { count: 'exact', head: true }),
@@ -214,6 +223,300 @@ function generateTalkTrack(title: string, vertical: string): string {
     
     default:
       return `How do you see these industry changes affecting your business? What opportunities or challenges do they present?`
+  }
+}
+
+async function refreshDailyMetrics() {
+  try {
+    const { createClient } = await import('@supabase/supabase-js')
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+
+    // First, archive currently published metrics
+    const { error: archiveError } = await supabase
+      .from('metrics')
+      .update({ 
+        status: 'ARCHIVED',
+        lastViewedAt: new Date().toISOString()
+      })
+      .eq('status', 'PUBLISHED')
+
+    if (archiveError) {
+      console.error('Error archiving current metrics:', archiveError)
+    }
+
+    // Get metrics from the last 90 days that haven't been recently viewed
+    const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
+    const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
+
+    const { data: availableMetrics, error: fetchError } = await supabase
+      .from('metrics')
+      .select('*')
+      .gte('publishedAt', ninetyDaysAgo.toISOString())
+      .or(`lastViewedAt.is.null,lastViewedAt.lt.${threeDaysAgo.toISOString()}`)
+      .order('publishedAt', { ascending: false })
+
+    if (fetchError) {
+      console.error('Error fetching available metrics:', fetchError)
+      return { newMetricsSelected: 0, totalActiveMetrics: 0 }
+    }
+
+    if (!availableMetrics || availableMetrics.length === 0) {
+      console.log('No available metrics to select from')
+      return { newMetricsSelected: 0, totalActiveMetrics: 0 }
+    }
+
+    // Select 3 metrics with industry diversity
+    const selectedMetrics = selectDiverseMetrics(availableMetrics, 3)
+
+    // Update selected metrics to PUBLISHED
+    const { error: publishError } = await supabase
+      .from('metrics')
+      .update({ 
+        status: 'PUBLISHED',
+        lastViewedAt: new Date().toISOString()
+      })
+      .in('id', selectedMetrics.map(m => m.id))
+
+    if (publishError) {
+      console.error('Error publishing selected metrics:', publishError)
+      return { newMetricsSelected: 0, totalActiveMetrics: 0 }
+    }
+
+    console.log(`📊 Selected ${selectedMetrics.length} new metrics for today`)
+    
+    return {
+      newMetricsSelected: selectedMetrics.length,
+      totalActiveMetrics: selectedMetrics.length
+    }
+
+  } catch (error) {
+    console.error('Error in refreshDailyMetrics:', error)
+    return { newMetricsSelected: 0, totalActiveMetrics: 0 }
+  }
+}
+
+function selectDiverseMetrics(metrics: any[], count: number): any[] {
+  const verticals = ['Technology & Media', 'Consumer & Retail', 'Financial Services', 'Healthcare & Life Sciences', 'Energy & Utilities']
+  const selected: any[] = []
+
+  // First pass: one metric per vertical
+  for (const vertical of verticals) {
+    if (selected.length >= count) break
+    
+    const verticalMetrics = metrics.filter(m => m.vertical === vertical && !selected.includes(m))
+    if (verticalMetrics.length > 0) {
+      const randomMetric = verticalMetrics[Math.floor(Math.random() * verticalMetrics.length)]
+      selected.push(randomMetric)
+    }
+  }
+
+  // Second pass: fill remaining slots with any available metrics
+  while (selected.length < count && selected.length < metrics.length) {
+    const remainingMetrics = metrics.filter(m => !selected.includes(m))
+    if (remainingMetrics.length === 0) break
+    
+    const randomMetric = remainingMetrics[Math.floor(Math.random() * remainingMetrics.length)]
+    selected.push(randomMetric)
+  }
+
+  return selected
+}
+
+async function checkAndReplenishMetricsPool() {
+  try {
+    const { createClient } = await import('@supabase/supabase-js')
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+
+    // Check available metrics in the pool
+    const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
+    const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
+
+    const { data: availableMetrics, error: fetchError } = await supabase
+      .from('metrics')
+      .select('*')
+      .gte('publishedAt', ninetyDaysAgo.toISOString())
+      .or(`lastViewedAt.is.null,lastViewedAt.lt.${threeDaysAgo.toISOString()}`)
+      .neq('status', 'PUBLISHED')
+
+    if (fetchError) {
+      console.error('Error checking metrics pool:', fetchError)
+      return { message: 'Error checking pool', poolSize: 0 }
+    }
+
+    const poolSize = availableMetrics?.length || 0
+    
+    if (poolSize < 10) {
+      console.log(`⚠️  Metrics pool low (${poolSize} available). Auto-replenishment needed.`)
+      
+      return { 
+        message: `Pool low (${poolSize} available) - replenishment needed`, 
+        poolSize,
+        needsReplenishment: true
+      }
+    }
+
+    return { 
+      message: `Pool healthy (${poolSize} available)`, 
+      poolSize,
+      needsReplenishment: false
+    }
+
+  } catch (error) {
+    console.error('Error in checkAndReplenishMetricsPool:', error)
+    return { message: 'Error checking pool', poolSize: 0 }
+  }
+}
+
+async function refreshDailyMetrics() {
+  try {
+    const { createClient } = await import('@supabase/supabase-js')
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+
+    // First, archive currently published metrics
+    const { error: archiveError } = await supabase
+      .from('metrics')
+      .update({ 
+        status: 'ARCHIVED',
+        lastViewedAt: new Date().toISOString()
+      })
+      .eq('status', 'PUBLISHED')
+
+    if (archiveError) {
+      console.error('Error archiving current metrics:', archiveError)
+    }
+
+    // Get metrics from the last 90 days that haven't been recently viewed
+    const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
+    const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
+
+    const { data: availableMetrics, error: fetchError } = await supabase
+      .from('metrics')
+      .select('*')
+      .gte('publishedAt', ninetyDaysAgo.toISOString())
+      .or(`lastViewedAt.is.null,lastViewedAt.lt.${threeDaysAgo.toISOString()}`)
+      .order('publishedAt', { ascending: false })
+
+    if (fetchError) {
+      console.error('Error fetching available metrics:', fetchError)
+      return { newMetricsSelected: 0, totalActiveMetrics: 0 }
+    }
+
+    if (!availableMetrics || availableMetrics.length === 0) {
+      console.log('No available metrics to select from')
+      return { newMetricsSelected: 0, totalActiveMetrics: 0 }
+    }
+
+    // Select 3 metrics with industry diversity
+    const selectedMetrics = selectDiverseMetrics(availableMetrics, 3)
+
+    // Update selected metrics to PUBLISHED
+    const { error: publishError } = await supabase
+      .from('metrics')
+      .update({ 
+        status: 'PUBLISHED',
+        lastViewedAt: new Date().toISOString()
+      })
+      .in('id', selectedMetrics.map(m => m.id))
+
+    if (publishError) {
+      console.error('Error publishing selected metrics:', publishError)
+      return { newMetricsSelected: 0, totalActiveMetrics: 0 }
+    }
+
+    console.log(`📊 Selected ${selectedMetrics.length} new metrics for today`)
+    
+    return {
+      newMetricsSelected: selectedMetrics.length,
+      totalActiveMetrics: selectedMetrics.length
+    }
+
+  } catch (error) {
+    console.error('Error in refreshDailyMetrics:', error)
+    return { newMetricsSelected: 0, totalActiveMetrics: 0 }
+  }
+}
+
+function selectDiverseMetrics(metrics: any[], count: number): any[] {
+  const verticals = ['Technology & Media', 'Consumer & Retail', 'Financial Services', 'Healthcare & Life Sciences', 'Energy & Utilities']
+  const selected: any[] = []
+
+  // First pass: one metric per vertical
+  for (const vertical of verticals) {
+    if (selected.length >= count) break
+    
+    const verticalMetrics = metrics.filter(m => m.vertical === vertical && !selected.includes(m))
+    if (verticalMetrics.length > 0) {
+      const randomMetric = verticalMetrics[Math.floor(Math.random() * verticalMetrics.length)]
+      selected.push(randomMetric)
+    }
+  }
+
+  // Second pass: fill remaining slots with any available metrics
+  while (selected.length < count && selected.length < metrics.length) {
+    const remainingMetrics = metrics.filter(m => !selected.includes(m))
+    if (remainingMetrics.length === 0) break
+    
+    const randomMetric = remainingMetrics[Math.floor(Math.random() * remainingMetrics.length)]
+    selected.push(randomMetric)
+  }
+
+  return selected
+}
+
+async function checkAndReplenishMetricsPool() {
+  try {
+    const { createClient } = await import('@supabase/supabase-js')
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+
+    // Check available metrics in the pool
+    const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
+    const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
+
+    const { data: availableMetrics, error: fetchError } = await supabase
+      .from('metrics')
+      .select('*')
+      .gte('publishedAt', ninetyDaysAgo.toISOString())
+      .or(`lastViewedAt.is.null,lastViewedAt.lt.${threeDaysAgo.toISOString()}`)
+      .neq('status', 'PUBLISHED')
+
+    if (fetchError) {
+      console.error('Error checking metrics pool:', fetchError)
+      return { message: 'Error checking pool', poolSize: 0 }
+    }
+
+    const poolSize = availableMetrics?.length || 0
+    
+    if (poolSize < 10) {
+      console.log(`⚠️  Metrics pool low (${poolSize} available). Auto-replenishment needed.`)
+      
+      return { 
+        message: `Pool low (${poolSize} available) - replenishment needed`, 
+        poolSize,
+        needsReplenishment: true
+      }
+    }
+
+    return { 
+      message: `Pool healthy (${poolSize} available)`, 
+      poolSize,
+      needsReplenishment: false
+    }
+
+  } catch (error) {
+    console.error('Error in checkAndReplenishMetricsPool:', error)
+    return { message: 'Error checking pool', poolSize: 0 }
   }
 }
 
