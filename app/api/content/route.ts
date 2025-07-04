@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
       .range(skip, skip + limit - 1)
 
     // Add vertical filter if specified
-    if (vertical !== 'ALL') {
+    if (vertical !== 'ALL' && vertical !== 'All') {
       query = query.eq('vertical', vertical)
     }
 
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
       .select('*', { count: 'exact', head: true })
       .eq('status', status)
 
-    if (vertical !== 'ALL') {
+    if (vertical !== 'ALL' && vertical !== 'All') {
       countQuery = countQuery.eq('vertical', vertical)
     }
 
