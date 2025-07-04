@@ -117,7 +117,7 @@ export default function MetricsSection({ selectedVertical, selectedRelevance }: 
             {metrics.length} of {dailyLimit} daily metrics
           </span>
           <span className="text-xs text-gray-400">
-            90-day lookback • No repeats
+            Newest first • No repeats • 90-day lookback
           </span>
         </div>
       </div>
@@ -132,12 +132,12 @@ export default function MetricsSection({ selectedVertical, selectedRelevance }: 
         <div className="text-center py-8">
           <div className="text-gray-500 mb-4">
             {selectedVertical === 'All' && selectedRelevance === 'All'
-              ? "You've seen all available metrics for today. Check back tomorrow for fresh insights!"
-              : `No new metrics available for the selected filters today. Try adjusting your filters or check back tomorrow.`
+              ? "You've seen all available metrics for today. New metrics are added nightly and shown first - check back tomorrow for fresh insights!"
+              : `No new metrics available for the selected filters today. Try adjusting your filters or check back tomorrow for new content.`
             }
           </div>
           <div className="text-xs text-gray-400">
-            Metrics refresh daily • 90-day window • No duplicates
+            New metrics added nightly • Shown once • Archived after viewing • 90-day lookback
           </div>
         </div>
       )}

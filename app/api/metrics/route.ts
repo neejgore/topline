@@ -60,10 +60,10 @@ export async function GET(request: NextRequest) {
       .range(skip, skip + limit - 1)
 
     // Add duplicate prevention filter only if column exists
-    // DISABLED: Allows users to see all metrics without daily viewing limits
-    // if (hasViewTrackingColumn) {
-    //   query = query.or(`lastViewedAt.is.null,lastViewedAt.lt.${today}`)
-    // }
+    // ENABLED: Prevents showing metrics that have already been viewed
+    if (hasViewTrackingColumn) {
+      query = query.or(`lastViewedAt.is.null,lastViewedAt.lt.${today}`)
+    }
 
     // Add vertical filter if specified
     if (vertical !== 'ALL') {
@@ -83,10 +83,10 @@ export async function GET(request: NextRequest) {
       .gte('publishedAt', ninetyDaysAgo.toISOString())
 
     // Add duplicate prevention filter only if column exists
-    // DISABLED: Allows users to see all metrics without daily viewing limits
-    // if (hasViewTrackingColumn) {
-    //   countQuery = countQuery.or(`lastViewedAt.is.null,lastViewedAt.lt.${today}`)
-    // }
+    // ENABLED: Prevents showing metrics that have already been viewed
+    if (hasViewTrackingColumn) {
+      countQuery = countQuery.or(`lastViewedAt.is.null,lastViewedAt.lt.${today}`)
+    }
 
     if (vertical !== 'ALL') {
       countQuery = countQuery.eq('vertical', vertical)
@@ -113,14 +113,14 @@ export async function GET(request: NextRequest) {
     const total = countResult.count || 0
 
     // Mark these metrics as viewed for today (only if column exists)
-    // DISABLED: Since duplicate prevention is off, don't mark as viewed
-    // if (hasViewTrackingColumn && metrics && metrics.length > 0) {
-    //   const metricIds = metrics.map((m: any) => m.id)
-    //   await supabase
-    //     .from('metrics')
-    //     .update({ lastViewedAt: new Date().toISOString() })
-    //     .in('id', metricIds)
-    // }
+    // ENABLED: Mark metrics as viewed so they don't appear again
+    if (hasViewTrackingColumn && metrics && metrics.length > 0) {
+      const metricIds = metrics.map((m: any) => m.id)
+      await supabase
+        .from('metrics')
+        .update({ lastViewedAt: new Date().toISOString() })
+        .in('id', metricIds)
+    }
 
     return NextResponse.json({
       success: true,
@@ -134,7 +134,7 @@ export async function GET(request: NextRequest) {
       timeWindow: '90 days',
       dailyLimit: 3,
       viewedToday: metrics.length,
-      duplicatePrevention: false // DISABLED for better user experience
+      duplicatePrevention: hasViewTrackingColumn // ENABLED when column exists
     })
 
   } catch (error) {

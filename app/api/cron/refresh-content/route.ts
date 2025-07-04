@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/db'
 import Parser from 'rss-parser'
 import { CONTENT_SOURCES, RELEVANT_KEYWORDS, EXCLUDE_KEYWORDS } from '@/lib/content-sources'
+import alertService from '@/lib/alert-service'
 
 export async function GET(request: Request) {
   // Verify this is a legitimate cron request
@@ -157,12 +158,15 @@ export async function GET(request: Request) {
       results: {
         articlesAdded: totalArticles,
         articlesSkipped: skippedArticles,
-        expiredArticlesRemoved: articlesToArchive?.length || 0
+        expiredArticlesRemoved: articlesToArchive?.length || 0,
+        metricsRefreshed: metricsRefreshResult.newMetricsSelected || 0
       },
       stats: {
         totalArticles: totalCountResult.count || 0,
         publishedArticles: publishedCountResult.count || 0,
-        recentArticles: recentCountResult.count || 0
+        recentArticles: recentCountResult.count || 0,
+        activeMetrics: metricsRefreshResult.totalActiveMetrics || 0,
+        metricsPoolSize: poolStatus.poolSize || 0
       }
     }
     
@@ -171,6 +175,9 @@ export async function GET(request: Request) {
     
   } catch (error) {
     console.error('❌ Content refresh failed:', error)
+    
+    // Send alert about cron job failure
+    await alertService.alertCronJobFailed('daily-content-refresh', error as Error)
     
     const errorResponse = {
       success: false,
@@ -234,54 +241,97 @@ async function refreshDailyMetrics() {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    // First, archive currently published metrics
-    const { error: archiveError } = await supabase
+    // Check if lastViewedAt column exists
+    let hasViewTrackingColumn = false
+    try {
+      await supabase
+        .from('metrics')
+        .select('lastViewedAt')
+        .limit(1)
+      hasViewTrackingColumn = true
+    } catch (e) {
+      console.log('lastViewedAt column not found, using fallback mode')
+      hasViewTrackingColumn = false
+    }
+
+    // First, archive metrics that have been viewed (move to archive like content does)
+    const archiveData: any = { status: 'ARCHIVED' }
+    
+    let archiveQuery = supabase
       .from('metrics')
-      .update({ 
-        status: 'ARCHIVED',
-        lastViewedAt: new Date().toISOString()
-      })
+      .update(archiveData)
       .eq('status', 'PUBLISHED')
+
+    // If we have view tracking, also archive metrics that have been viewed
+    if (hasViewTrackingColumn) {
+      // Archive metrics that have been viewed (have lastViewedAt set)
+      const { error: archiveViewedError } = await supabase
+        .from('metrics')
+        .update(archiveData)
+        .not('lastViewedAt', 'is', null)
+        .eq('status', 'PUBLISHED')
+
+      if (archiveViewedError) {
+        console.error('Error archiving viewed metrics:', archiveViewedError)
+        await alertService.alertDatabaseError(archiveViewedError)
+      }
+    }
+
+    // Archive any remaining published metrics
+    const { error: archiveError } = await archiveQuery
 
     if (archiveError) {
       console.error('Error archiving current metrics:', archiveError)
+      await alertService.alertDatabaseError(archiveError)
     }
 
     // Get metrics from the last 90 days that haven't been recently viewed
     const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
     const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
 
-    const { data: availableMetrics, error: fetchError } = await supabase
+    let metricsQuery = supabase
       .from('metrics')
       .select('*')
       .gte('publishedAt', ninetyDaysAgo.toISOString())
-      .or(`lastViewedAt.is.null,lastViewedAt.lt.${threeDaysAgo.toISOString()}`)
-      .order('publishedAt', { ascending: false })
+      .neq('status', 'PUBLISHED') // Don't select already published metrics
+      .order('publishedAt', { ascending: false }) // Prioritize newer metrics
+
+    // Add view tracking filter only if column exists
+    if (hasViewTrackingColumn) {
+      metricsQuery = metricsQuery.or(`lastViewedAt.is.null,lastViewedAt.lt.${threeDaysAgo.toISOString()}`)
+    }
+
+    const { data: availableMetrics, error: fetchError } = await metricsQuery
 
     if (fetchError) {
       console.error('Error fetching available metrics:', fetchError)
+      await alertService.alertDatabaseError(fetchError)
       return { newMetricsSelected: 0, totalActiveMetrics: 0 }
     }
 
     if (!availableMetrics || availableMetrics.length === 0) {
       console.log('No available metrics to select from')
+      await alertService.alertMetricsPoolLow(0)
       return { newMetricsSelected: 0, totalActiveMetrics: 0 }
     }
 
-    // Select 3 metrics with industry diversity
-    const selectedMetrics = selectDiverseMetrics(availableMetrics, 3)
+    // Select 3 metrics with industry diversity, prioritizing newer ones
+    const selectedMetrics = selectDiverseMetricsWithPriority(availableMetrics, 3)
 
     // Update selected metrics to PUBLISHED
+    const publishData: any = { status: 'PUBLISHED' }
+    if (hasViewTrackingColumn) {
+      publishData.lastViewedAt = new Date().toISOString()
+    }
+
     const { error: publishError } = await supabase
       .from('metrics')
-      .update({ 
-        status: 'PUBLISHED',
-        lastViewedAt: new Date().toISOString()
-      })
-      .in('id', selectedMetrics.map(m => m.id))
+      .update(publishData)
+      .in('id', selectedMetrics.map((m: any) => m.id))
 
     if (publishError) {
       console.error('Error publishing selected metrics:', publishError)
+      await alertService.alertDatabaseError(publishError)
       return { newMetricsSelected: 0, totalActiveMetrics: 0 }
     }
 
@@ -294,6 +344,7 @@ async function refreshDailyMetrics() {
 
   } catch (error) {
     console.error('Error in refreshDailyMetrics:', error)
+    await alertService.alertCronJobFailed('refreshDailyMetrics', error as Error)
     return { newMetricsSelected: 0, totalActiveMetrics: 0 }
   }
 }
@@ -325,148 +376,31 @@ function selectDiverseMetrics(metrics: any[], count: number): any[] {
   return selected
 }
 
-async function checkAndReplenishMetricsPool() {
-  try {
-    const { createClient } = await import('@supabase/supabase-js')
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
-
-    // Check available metrics in the pool
-    const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
-    const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
-
-    const { data: availableMetrics, error: fetchError } = await supabase
-      .from('metrics')
-      .select('*')
-      .gte('publishedAt', ninetyDaysAgo.toISOString())
-      .or(`lastViewedAt.is.null,lastViewedAt.lt.${threeDaysAgo.toISOString()}`)
-      .neq('status', 'PUBLISHED')
-
-    if (fetchError) {
-      console.error('Error checking metrics pool:', fetchError)
-      return { message: 'Error checking pool', poolSize: 0 }
-    }
-
-    const poolSize = availableMetrics?.length || 0
-    
-    if (poolSize < 10) {
-      console.log(`⚠️  Metrics pool low (${poolSize} available). Auto-replenishment needed.`)
-      
-      return { 
-        message: `Pool low (${poolSize} available) - replenishment needed`, 
-        poolSize,
-        needsReplenishment: true
-      }
-    }
-
-    return { 
-      message: `Pool healthy (${poolSize} available)`, 
-      poolSize,
-      needsReplenishment: false
-    }
-
-  } catch (error) {
-    console.error('Error in checkAndReplenishMetricsPool:', error)
-    return { message: 'Error checking pool', poolSize: 0 }
-  }
-}
-
-async function refreshDailyMetrics() {
-  try {
-    const { createClient } = await import('@supabase/supabase-js')
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
-
-    // First, archive currently published metrics
-    const { error: archiveError } = await supabase
-      .from('metrics')
-      .update({ 
-        status: 'ARCHIVED',
-        lastViewedAt: new Date().toISOString()
-      })
-      .eq('status', 'PUBLISHED')
-
-    if (archiveError) {
-      console.error('Error archiving current metrics:', archiveError)
-    }
-
-    // Get metrics from the last 90 days that haven't been recently viewed
-    const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
-    const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
-
-    const { data: availableMetrics, error: fetchError } = await supabase
-      .from('metrics')
-      .select('*')
-      .gte('publishedAt', ninetyDaysAgo.toISOString())
-      .or(`lastViewedAt.is.null,lastViewedAt.lt.${threeDaysAgo.toISOString()}`)
-      .order('publishedAt', { ascending: false })
-
-    if (fetchError) {
-      console.error('Error fetching available metrics:', fetchError)
-      return { newMetricsSelected: 0, totalActiveMetrics: 0 }
-    }
-
-    if (!availableMetrics || availableMetrics.length === 0) {
-      console.log('No available metrics to select from')
-      return { newMetricsSelected: 0, totalActiveMetrics: 0 }
-    }
-
-    // Select 3 metrics with industry diversity
-    const selectedMetrics = selectDiverseMetrics(availableMetrics, 3)
-
-    // Update selected metrics to PUBLISHED
-    const { error: publishError } = await supabase
-      .from('metrics')
-      .update({ 
-        status: 'PUBLISHED',
-        lastViewedAt: new Date().toISOString()
-      })
-      .in('id', selectedMetrics.map(m => m.id))
-
-    if (publishError) {
-      console.error('Error publishing selected metrics:', publishError)
-      return { newMetricsSelected: 0, totalActiveMetrics: 0 }
-    }
-
-    console.log(`📊 Selected ${selectedMetrics.length} new metrics for today`)
-    
-    return {
-      newMetricsSelected: selectedMetrics.length,
-      totalActiveMetrics: selectedMetrics.length
-    }
-
-  } catch (error) {
-    console.error('Error in refreshDailyMetrics:', error)
-    return { newMetricsSelected: 0, totalActiveMetrics: 0 }
-  }
-}
-
-function selectDiverseMetrics(metrics: any[], count: number): any[] {
+function selectDiverseMetricsWithPriority(metrics: any[], count: number): any[] {
   const verticals = ['Technology & Media', 'Consumer & Retail', 'Financial Services', 'Healthcare & Life Sciences', 'Energy & Utilities']
   const selected: any[] = []
 
-  // First pass: one metric per vertical
+  // Sort metrics by publishedAt (newest first) - they should already be sorted but ensure it
+  const sortedMetrics = metrics.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
+
+  // First pass: one newest metric per vertical
   for (const vertical of verticals) {
     if (selected.length >= count) break
     
-    const verticalMetrics = metrics.filter(m => m.vertical === vertical && !selected.includes(m))
+    const verticalMetrics = sortedMetrics.filter(m => m.vertical === vertical && !selected.includes(m))
     if (verticalMetrics.length > 0) {
-      const randomMetric = verticalMetrics[Math.floor(Math.random() * verticalMetrics.length)]
-      selected.push(randomMetric)
+      // Take the newest metric from this vertical
+      selected.push(verticalMetrics[0])
     }
   }
 
-  // Second pass: fill remaining slots with any available metrics
-  while (selected.length < count && selected.length < metrics.length) {
-    const remainingMetrics = metrics.filter(m => !selected.includes(m))
+  // Second pass: fill remaining slots with newest available metrics
+  while (selected.length < count && selected.length < sortedMetrics.length) {
+    const remainingMetrics = sortedMetrics.filter(m => !selected.includes(m))
     if (remainingMetrics.length === 0) break
     
-    const randomMetric = remainingMetrics[Math.floor(Math.random() * remainingMetrics.length)]
-    selected.push(randomMetric)
+    // Take the newest remaining metric
+    selected.push(remainingMetrics[0])
   }
 
   return selected
@@ -480,31 +414,87 @@ async function checkAndReplenishMetricsPool() {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
+    // Check if lastViewedAt column exists
+    let hasViewTrackingColumn = false
+    try {
+      await supabase
+        .from('metrics')
+        .select('lastViewedAt')
+        .limit(1)
+      hasViewTrackingColumn = true
+    } catch (e) {
+      hasViewTrackingColumn = false
+    }
+
     // Check available metrics in the pool
     const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
     const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
 
-    const { data: availableMetrics, error: fetchError } = await supabase
+    let poolQuery = supabase
       .from('metrics')
       .select('*')
       .gte('publishedAt', ninetyDaysAgo.toISOString())
-      .or(`lastViewedAt.is.null,lastViewedAt.lt.${threeDaysAgo.toISOString()}`)
       .neq('status', 'PUBLISHED')
+
+    // Add view tracking filter only if column exists
+    if (hasViewTrackingColumn) {
+      poolQuery = poolQuery.or(`lastViewedAt.is.null,lastViewedAt.lt.${threeDaysAgo.toISOString()}`)
+    }
+
+    const { data: availableMetrics, error: fetchError } = await poolQuery
 
     if (fetchError) {
       console.error('Error checking metrics pool:', fetchError)
+      await alertService.alertDatabaseError(fetchError)
       return { message: 'Error checking pool', poolSize: 0 }
     }
 
     const poolSize = availableMetrics?.length || 0
     
     if (poolSize < 10) {
-      console.log(`⚠️  Metrics pool low (${poolSize} available). Auto-replenishment needed.`)
+      console.log(`⚠️  Metrics pool low (${poolSize} available). Sending alert.`)
       
-      return { 
-        message: `Pool low (${poolSize} available) - replenishment needed`, 
-        poolSize,
-        needsReplenishment: true
+      // Send alert about low pool
+      await alertService.alertMetricsPoolLow(poolSize)
+      
+      // Try to trigger auto-replenishment by calling the populate API
+      try {
+        console.log('🔄 Attempting auto-replenishment...')
+        const populateResponse = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/populate-metrics`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.CRON_SECRET}`
+          }
+        })
+
+        const populateResult = await populateResponse.json()
+        
+        if (populateResult.success) {
+          console.log('✅ Auto-replenishment successful')
+          return { 
+            message: `Pool was low (${poolSize} available) - auto-replenished successfully`, 
+            poolSize: populateResult.totalMetrics || poolSize,
+            needsReplenishment: false,
+            autoReplenished: true
+          }
+        } else {
+          console.error('❌ Auto-replenishment failed:', populateResult.error)
+          return { 
+            message: `Pool low (${poolSize} available) - auto-replenishment failed`, 
+            poolSize,
+            needsReplenishment: true,
+            autoReplenishmentError: populateResult.error
+          }
+        }
+      } catch (replenishError) {
+        console.error('❌ Auto-replenishment error:', replenishError)
+        return { 
+          message: `Pool low (${poolSize} available) - auto-replenishment error`, 
+          poolSize,
+          needsReplenishment: true,
+          autoReplenishmentError: replenishError
+        }
       }
     }
 
@@ -516,6 +506,7 @@ async function checkAndReplenishMetricsPool() {
 
   } catch (error) {
     console.error('Error in checkAndReplenishMetricsPool:', error)
+    await alertService.alertCronJobFailed('checkAndReplenishMetricsPool', error as Error)
     return { message: 'Error checking pool', poolSize: 0 }
   }
 }

@@ -277,6 +277,16 @@ function generateTalkTrack(title: string, vertical: string): string {
 
 export async function POST(request: NextRequest) {
   try {
+    // Check authentication for cron job calls
+    const authHeader = request.headers.get('authorization')
+    const cronSecret = process.env.CRON_SECRET
+    
+    if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
+      console.log('🔄 Starting metrics pool population via cron job...')
+    } else {
+      console.log('🔄 Starting metrics pool population...')
+    }
+    
     console.log('🔄 Starting metrics pool population...')
     
     // Generate metrics across 90-day window
