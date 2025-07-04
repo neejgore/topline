@@ -349,33 +349,6 @@ async function refreshDailyMetrics() {
   }
 }
 
-function selectDiverseMetrics(metrics: any[], count: number): any[] {
-  const verticals = ['Technology & Media', 'Consumer & Retail', 'Financial Services', 'Healthcare & Life Sciences', 'Energy & Utilities']
-  const selected: any[] = []
-
-  // First pass: one metric per vertical
-  for (const vertical of verticals) {
-    if (selected.length >= count) break
-    
-    const verticalMetrics = metrics.filter(m => m.vertical === vertical && !selected.includes(m))
-    if (verticalMetrics.length > 0) {
-      const randomMetric = verticalMetrics[Math.floor(Math.random() * verticalMetrics.length)]
-      selected.push(randomMetric)
-    }
-  }
-
-  // Second pass: fill remaining slots with any available metrics
-  while (selected.length < count && selected.length < metrics.length) {
-    const remainingMetrics = metrics.filter(m => !selected.includes(m))
-    if (remainingMetrics.length === 0) break
-    
-    const randomMetric = remainingMetrics[Math.floor(Math.random() * remainingMetrics.length)]
-    selected.push(randomMetric)
-  }
-
-  return selected
-}
-
 function selectDiverseMetricsWithPriority(metrics: any[], count: number): any[] {
   const verticals = ['Technology & Media', 'Consumer & Retail', 'Financial Services', 'Healthcare & Life Sciences', 'Energy & Utilities']
   const selected: any[] = []
