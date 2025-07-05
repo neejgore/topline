@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
       createdAt${hasViewTrackingColumn ? ', lastViewedAt' : ''}
     `
 
-    // Build the query with 90-day filter and conditional duplicate prevention
+    // Build the query with 90-day filter
     let query = supabase
       .from('metrics')
       .select(selectColumns)
@@ -59,11 +59,9 @@ export async function GET(request: NextRequest) {
       .order('publishedAt', { ascending: false })
       .range(skip, skip + limit - 1)
 
-    // Add duplicate prevention filter only if column exists
-    // ENABLED: Prevents showing metrics that have already been viewed
-    if (hasViewTrackingColumn) {
-      query = query.or(`lastViewedAt.is.null,lastViewedAt.lt.${today}`)
-    }
+    // REMOVED: Duplicate prevention based on lastViewedAt
+    // Content should stay visible all day until daily refresh rotates it
+    // The cron job handles content rotation, not view tracking
 
     // Add vertical filter if specified
     if (vertical !== 'ALL') {
@@ -82,11 +80,8 @@ export async function GET(request: NextRequest) {
       .eq('status', status)
       .gte('publishedAt', ninetyDaysAgo.toISOString())
 
-    // Add duplicate prevention filter only if column exists
-    // ENABLED: Prevents showing metrics that have already been viewed
-    if (hasViewTrackingColumn) {
-      countQuery = countQuery.or(`lastViewedAt.is.null,lastViewedAt.lt.${today}`)
-    }
+    // REMOVED: Duplicate prevention based on lastViewedAt for count query
+    // Content should stay visible all day until daily refresh rotates it
 
     if (vertical !== 'ALL') {
       countQuery = countQuery.eq('vertical', vertical)
@@ -112,16 +107,10 @@ export async function GET(request: NextRequest) {
     const metrics = metricsResult.data
     const total = countResult.count || 0
 
-    // Mark these metrics as viewed for today (only if column exists)
-    // ENABLED: Mark metrics as viewed so they don't appear again
-    if (hasViewTrackingColumn && metrics && metrics.length > 0) {
-      const metricIds = metrics.map((m: any) => m.id)
-      await supabase
-        .from('metrics')
-        .update({ lastViewedAt: new Date().toISOString() })
-        .in('id', metricIds)
-    }
-
+    // REMOVED: Automatic view tracking on page visit
+    // Content should stay visible all day until daily refresh, not disappear when viewed
+    // The cron job handles the daily rotation, not user visits
+    
     return NextResponse.json({
       success: true,
       metrics,
@@ -134,7 +123,7 @@ export async function GET(request: NextRequest) {
       timeWindow: '90 days',
       dailyLimit: 3,
       viewedToday: metrics.length,
-      duplicatePrevention: hasViewTrackingColumn // ENABLED when column exists
+      duplicatePrevention: hasViewTrackingColumn // Column exists but not used for immediate hiding
     })
 
   } catch (error) {
