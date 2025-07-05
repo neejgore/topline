@@ -106,25 +106,22 @@ export default function MetricCard({ metric }: MetricCardProps) {
         </div>
       </div>
 
-      {/* Horizontal Content Layout */}
+      {/* 3-Column Content Layout */}
       <div className="p-6">
-        <div className="flex flex-col lg:flex-row lg:items-start lg:space-x-8 space-y-6 lg:space-y-0">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
-          {/* Left Side - Metric Value (Featured) */}
-          <div className="lg:w-1/3 flex-shrink-0">
-            <div className="text-center lg:text-left bg-gradient-to-r from-blue-50 to-orange-50 rounded-lg p-6">
-              <div className="text-4xl lg:text-5xl font-bold text-blue-600 mb-2">
+          {/* Left Column - Metric, Description, and Source */}
+          <div className="space-y-4">
+            {/* Metric Value */}
+            <div className="bg-gradient-to-r from-blue-50 to-orange-50 rounded-lg p-6 text-center">
+              <div className="text-4xl font-bold text-blue-600 mb-2">
                 {formatValueWithUnit(metric.value, metric.unit)}
               </div>
               <h3 className="text-lg font-semibold text-gray-900 leading-tight">
                 {metric.title}
               </h3>
             </div>
-          </div>
 
-          {/* Right Side - Content */}
-          <div className="lg:w-2/3 space-y-4">
-            
             {/* Description */}
             {metric.description && (
               <p className="text-gray-600 text-sm leading-relaxed">
@@ -132,20 +129,43 @@ export default function MetricCard({ metric }: MetricCardProps) {
               </p>
             )}
 
-            {/* How to Use */}
+            {/* Source */}
+            <div className="pt-4 border-t border-gray-100">
+              {metric.sourceUrl ? (
+                <a
+                  href={metric.sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center text-sm text-gray-500 hover:text-blue-600 font-medium hover:underline"
+                >
+                  {metric.source}
+                  <ExternalLink className="h-3 w-3 ml-1" />
+                </a>
+              ) : (
+                <span className="text-sm text-gray-500">
+                  {metric.source}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Middle Column - How to Use This */}
+          <div>
             {metric.howToUse && (
-              <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r">
-                <h4 className="font-semibold text-blue-800 mb-2 text-sm">How to Use This:</h4>
+              <div className="bg-blue-50 border-l-4 border-blue-400 p-6 rounded-r h-full">
+                <h4 className="font-semibold text-blue-800 mb-3 text-base">How to Use This:</h4>
                 <p className="text-blue-700 text-sm leading-relaxed">
                   {metric.howToUse}
                 </p>
               </div>
             )}
+          </div>
 
-            {/* Talk Track */}
+          {/* Right Column - Talk Track */}
+          <div>
             {metric.talkTrack && (
-              <div className="bg-green-50 border-l-4 border-green-400 p-4 rounded-r">
-                <h4 className="font-semibold text-green-800 mb-2 text-sm flex items-center">
+              <div className="bg-green-50 border-l-4 border-green-400 p-6 rounded-r h-full">
+                <h4 className="font-semibold text-green-800 mb-3 text-base flex items-center">
                   <span className="mr-2">💬</span> Talk Track
                 </h4>
                 <p className="text-green-700 text-sm leading-relaxed">
@@ -153,27 +173,8 @@ export default function MetricCard({ metric }: MetricCardProps) {
                 </p>
               </div>
             )}
-
-            {/* Footer */}
-            <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-              <span className="text-sm text-gray-500 truncate">
-                {metric.source}
-              </span>
-
-              {metric.sourceUrl && (
-                <a
-                  href={metric.sourceUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 font-medium hover:underline relative z-10 cursor-pointer"
-                  style={{ pointerEvents: 'all' }}
-                >
-                  View Source
-                  <ExternalLink className="h-4 w-4 ml-1" />
-                </a>
-              )}
-            </div>
           </div>
+
         </div>
       </div>
     </div>
