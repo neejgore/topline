@@ -287,8 +287,8 @@ async function refreshMetrics() {
       return
     }
     
-    // Select 3 diverse metrics
-    const selectedMetrics = selectDiverseMetrics(availableMetrics, 3)
+    // Select 1 metric (newest available)
+    const selectedMetrics = selectDiverseMetrics(availableMetrics, 1)
     
     // Publish selected metrics
     const { error: publishError } = await supabase
@@ -299,7 +299,7 @@ async function refreshMetrics() {
     if (publishError) {
       console.error('Error publishing metrics:', publishError)
     } else {
-      console.log(`📊 Published ${selectedMetrics.length} metrics`)
+      console.log(`📊 Published ${selectedMetrics.length} metric${selectedMetrics.length > 1 ? 's' : ''}`)
       selectedMetrics.forEach(m => console.log(`  - ${m.title}: ${m.value}`))
     }
     
@@ -312,6 +312,12 @@ function selectDiverseMetrics(metrics, count) {
   const verticals = ['Technology & Media', 'Consumer & Retail', 'Financial Services', 'Healthcare & Life Sciences']
   const selected = []
   
+  // For single metric selection, just take the newest available metric
+  if (count === 1) {
+    return metrics.slice(0, 1)
+  }
+  
+  // Original logic for multiple metrics (kept for future use)
   // Try to get one metric from each vertical
   for (const vertical of verticals) {
     if (selected.length >= count) break

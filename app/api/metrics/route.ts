@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     const priority = searchParams.get('priority') || 'ALL'
     const status = searchParams.get('status') || 'PUBLISHED'
     const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '3') // Default to 3 metrics
+    const limit = parseInt(searchParams.get('limit') || '1') // Default to 1 metric
     const skip = (page - 1) * limit
 
     // Calculate 90 days ago
@@ -121,7 +121,7 @@ export async function GET(request: NextRequest) {
         totalPages: Math.ceil(total / limit)
       },
       timeWindow: '90 days',
-      dailyLimit: 3,
+      dailyLimit: 1,
       viewedToday: metrics.length,
       duplicatePrevention: hasViewTrackingColumn // Column exists but not used for immediate hiding
     })

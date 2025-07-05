@@ -32,7 +32,7 @@ export default function MetricsSection({ selectedVertical, selectedRelevance }: 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [viewedToday, setViewedToday] = useState(0)
-  const [dailyLimit] = useState(3)
+  const [dailyLimit] = useState(1)
 
   useEffect(() => {
     fetchMetrics()
@@ -43,7 +43,7 @@ export default function MetricsSection({ selectedVertical, selectedRelevance }: 
       setLoading(true)
       const params = new URLSearchParams({
         status: 'PUBLISHED',
-        limit: '3' // Always request 3 metrics max
+        limit: '1' // Always request 1 metric max
       })
       
       if (selectedVertical !== 'All') {
@@ -86,6 +86,18 @@ export default function MetricsSection({ selectedVertical, selectedRelevance }: 
     }
   }
 
+  // Get current date for the title
+  const getCurrentDate = () => {
+    const today = new Date()
+    const options: Intl.DateTimeFormatOptions = { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    }
+    return today.toLocaleDateString('en-US', options)
+  }
+
   if (error) {
     return (
       <div className="text-center py-8">
@@ -110,11 +122,11 @@ export default function MetricsSection({ selectedVertical, selectedRelevance }: 
     <section>
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-900">
-          Need-to-Know Metrics
+          Need-to-know Metric for {getCurrentDate()}
         </h2>
         <div className="text-right">
           <span className="text-sm text-gray-500 block">
-            {metrics.length} of {dailyLimit} daily metrics
+            {metrics.length} of {dailyLimit} daily metric
           </span>
           <span className="text-xs text-gray-400">
             Newest first • No repeats • 90-day lookback
@@ -132,12 +144,12 @@ export default function MetricsSection({ selectedVertical, selectedRelevance }: 
         <div className="text-center py-8">
           <div className="text-gray-500 mb-4">
             {selectedVertical === 'All' && selectedRelevance === 'All'
-              ? "You've seen all available metrics for today. New metrics are added nightly and shown first - check back tomorrow for fresh insights!"
+              ? "You've seen all available metrics for today. A new metric is selected nightly and shown first - check back tomorrow for fresh insights!"
               : `No new metrics available for the selected filters today. Try adjusting your filters or check back tomorrow for new content.`
             }
           </div>
           <div className="text-xs text-gray-400">
-            New metrics added nightly • Shown once • Archived after viewing • 90-day lookback
+            New metric selected nightly • Shown once • Archived after viewing • 90-day lookback
           </div>
         </div>
       )}

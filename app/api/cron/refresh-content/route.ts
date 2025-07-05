@@ -138,6 +138,13 @@ export async function GET(request: Request) {
 
     // Refresh daily metrics selection
     console.log('📊 Starting metrics refresh...')
+    
+    // FIRST: Search for and add NEW metrics from external sources  
+    console.log('🔍 Searching for new metrics...')
+    const newMetricsResult = await discoverNewMetrics()
+    console.log(`📈 Discovered ${newMetricsResult.newMetricsAdded} new metrics`)
+    
+    // THEN: Select from available pool with proper no-reuse enforcement
     const metricsRefreshResult = await refreshDailyMetrics()
     
     // Check if metrics pool needs replenishment
@@ -254,38 +261,20 @@ async function refreshDailyMetrics() {
       hasViewTrackingColumn = false
     }
 
-    // First, archive metrics that have been viewed (move to archive like content does)
+    // First, archive current published metrics (daily rotation)
     const archiveData: any = { status: 'ARCHIVED' }
     
-    let archiveQuery = supabase
+    const { error: archiveError } = await supabase
       .from('metrics')
       .update(archiveData)
       .eq('status', 'PUBLISHED')
-
-    // If we have view tracking, also archive metrics that have been viewed
-    if (hasViewTrackingColumn) {
-      // Archive metrics that have been viewed (have lastViewedAt set)
-      const { error: archiveViewedError } = await supabase
-        .from('metrics')
-        .update(archiveData)
-        .not('lastViewedAt', 'is', null)
-        .eq('status', 'PUBLISHED')
-
-      if (archiveViewedError) {
-        console.error('Error archiving viewed metrics:', archiveViewedError)
-        await alertService.alertDatabaseError(archiveViewedError)
-      }
-    }
-
-    // Archive any remaining published metrics
-    const { error: archiveError } = await archiveQuery
 
     if (archiveError) {
       console.error('Error archiving current metrics:', archiveError)
       await alertService.alertDatabaseError(archiveError)
     }
 
-    // Get metrics from the last 90 days that haven't been recently viewed
+    // Get metrics from the last 90 days that haven't been recently used
     const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
     const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
 
@@ -293,10 +282,10 @@ async function refreshDailyMetrics() {
       .from('metrics')
       .select('*')
       .gte('publishedAt', ninetyDaysAgo.toISOString())
-      .neq('status', 'PUBLISHED') // Don't select already published metrics
+      .eq('status', 'ARCHIVED') // Only select archived metrics
       .order('publishedAt', { ascending: false }) // Prioritize newer metrics
 
-    // Add view tracking filter only if column exists
+    // Add 3-day cooldown filter only if column exists
     if (hasViewTrackingColumn) {
       metricsQuery = metricsQuery.or(`lastViewedAt.is.null,lastViewedAt.lt.${threeDaysAgo.toISOString()}`)
     }
@@ -310,16 +299,18 @@ async function refreshDailyMetrics() {
     }
 
     if (!availableMetrics || availableMetrics.length === 0) {
-      console.log('No available metrics to select from')
+      console.log('No available metrics to select from (all recently used)')
       await alertService.alertMetricsPoolLow(0)
       return { newMetricsSelected: 0, totalActiveMetrics: 0 }
     }
 
-    // Select 3 metrics with industry diversity, prioritizing newer ones
-    const selectedMetrics = selectDiverseMetricsWithPriority(availableMetrics, 3)
+    // Select 1 metric with industry diversity, prioritizing newer ones
+    const selectedMetrics = selectDiverseMetricsWithPriority(availableMetrics, 1)
 
-    // Update selected metrics to PUBLISHED
-    const publishData: any = { status: 'PUBLISHED' }
+    // Update selected metrics to PUBLISHED and mark as viewed
+    const publishData: any = { 
+      status: 'PUBLISHED'
+    }
     if (hasViewTrackingColumn) {
       publishData.lastViewedAt = new Date().toISOString()
     }
@@ -335,7 +326,7 @@ async function refreshDailyMetrics() {
       return { newMetricsSelected: 0, totalActiveMetrics: 0 }
     }
 
-    console.log(`📊 Selected ${selectedMetrics.length} new metrics for today`)
+    console.log(`✅ Selected ${selectedMetrics.length} metric for daily display`)
     
     return {
       newMetricsSelected: selectedMetrics.length,
@@ -356,13 +347,20 @@ function selectDiverseMetricsWithPriority(metrics: any[], count: number): any[] 
   // Sort metrics by publishedAt (newest first) - they should already be sorted but ensure it
   const sortedMetrics = metrics.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
 
+  // For single metric selection, just take the newest available metric
+  if (count === 1) {
+    // Try to find a metric from a different vertical than last time if possible
+    // For now, just take the newest metric
+    return sortedMetrics.slice(0, 1)
+  }
+
+  // Original logic for multiple metrics (kept for future use)
   // First pass: one newest metric per vertical
   for (const vertical of verticals) {
     if (selected.length >= count) break
     
     const verticalMetrics = sortedMetrics.filter(m => m.vertical === vertical && !selected.includes(m))
     if (verticalMetrics.length > 0) {
-      // Take the newest metric from this vertical
       selected.push(verticalMetrics[0])
     }
   }
@@ -371,12 +369,73 @@ function selectDiverseMetricsWithPriority(metrics: any[], count: number): any[] 
   while (selected.length < count && selected.length < sortedMetrics.length) {
     const remainingMetrics = sortedMetrics.filter(m => !selected.includes(m))
     if (remainingMetrics.length === 0) break
-    
-    // Take the newest remaining metric
     selected.push(remainingMetrics[0])
   }
 
   return selected
+}
+
+async function discoverNewMetrics() {
+  try {
+    console.log('🔍 Starting new metrics discovery...')
+    
+    // For now, this is a placeholder that simulates discovering new metrics
+    // In a real implementation, this would:
+    // 1. Scrape industry websites for new metrics
+    // 2. Use APIs to fetch latest industry data
+    // 3. Generate new metrics based on trending topics
+    
+    // Simulate discovering new metrics by checking if we need to populate the pool
+    const { createClient } = await import('@supabase/supabase-js')
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+
+    // Check current pool size
+    const { count: totalMetrics } = await supabase
+      .from('metrics')
+      .select('*', { count: 'exact', head: true })
+
+    // If pool is low, trigger auto-replenishment
+    if (!totalMetrics || totalMetrics < 50) {
+      console.log('📊 Pool size low, triggering auto-replenishment...')
+      
+      try {
+        const populateResponse = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/populate-metrics`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.CRON_SECRET}`
+          }
+        })
+
+        const populateResult = await populateResponse.json()
+        
+        if (populateResult.success) {
+          console.log('✅ Auto-replenishment successful')
+          return { 
+            newMetricsAdded: populateResult.totalMetrics - (totalMetrics || 0),
+            success: true 
+          }
+        } else {
+          console.error('❌ Auto-replenishment failed:', populateResult.error)
+          return { newMetricsAdded: 0, success: false }
+        }
+      } catch (replenishError) {
+        console.error('❌ Auto-replenishment error:', replenishError)
+        return { newMetricsAdded: 0, success: false }
+      }
+    }
+
+    // Pool is healthy, no new metrics needed
+    console.log('📊 Metrics pool healthy, no new metrics discovered')
+    return { newMetricsAdded: 0, success: true }
+
+  } catch (error) {
+    console.error('Error in discoverNewMetrics:', error)
+    return { newMetricsAdded: 0, success: false }
+  }
 }
 
 async function checkAndReplenishMetricsPool() {
