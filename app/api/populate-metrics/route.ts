@@ -309,14 +309,18 @@ export async function POST(request: NextRequest) {
         const variation = (Math.random() - 0.5) * 0.1 // ±5% variation
         const adjustedValue = baseValue > 0 ? (baseValue * (1 + variation)).toFixed(1) : baseMetric.value
         
+        // Add variation to title and source to avoid unique constraint
+        const titleVariation = v > 0 ? ` (${publishDate.toISOString().split('T')[0]})` : ''
+        const sourceVariation = v > 0 ? ` - ${publishDate.toISOString().split('T')[0]}` : ''
+        
         metricsToInsert.push({
           id: generateRandomId(),
-          title: baseMetric.title,
+          title: baseMetric.title + titleVariation,
           value: adjustedValue,
           unit: baseMetric.unit,
           vertical: baseMetric.vertical,
           context: baseMetric.context,
-          source: baseMetric.source,
+          source: baseMetric.source + sourceVariation,
           publishedAt: publishDate.toISOString(),
           status: 'ARCHIVED', // Start as archived, will be selected by refresh
           whyItMatters: generateWhyItMatters(baseMetric.title, baseMetric.vertical),
