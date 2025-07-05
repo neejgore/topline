@@ -13,6 +13,7 @@ interface Metric {
   id: string
   title: string
   value: string
+  unit?: string | null
   description?: string | null
   source: string
   sourceUrl?: string | null
@@ -66,6 +67,7 @@ export default function MetricsSection({ selectedVertical, selectedRelevance }: 
         id: metric.id,
         title: metric.title,
         value: metric.value,
+        unit: metric.unit,
         description: metric.whyItMatters,
         source: metric.source || 'Unknown',
         sourceUrl: metric.sourceUrl,

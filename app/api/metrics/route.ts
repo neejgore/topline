@@ -38,6 +38,7 @@ export async function GET(request: NextRequest) {
       id,
       title,
       value,
+      unit,
       source,
       sourceUrl,
       whyItMatters,

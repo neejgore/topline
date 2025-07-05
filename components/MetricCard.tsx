@@ -4,6 +4,7 @@ type Metric = {
   id: string
   title: string
   value: string
+  unit?: string | null
   description?: string | null
   source: string
   sourceUrl?: string | null
@@ -59,6 +60,33 @@ const getPriorityStars = (priority?: string | null) => {
   );
 }
 
+// Helper function to format value with unit
+const formatValueWithUnit = (value: string, unit?: string | null) => {
+  if (!unit) return value;
+  
+  // Handle common currency and percentage formats
+  if (unit.toLowerCase().includes('usd') || unit.toLowerCase().includes('dollar')) {
+    if (unit.toLowerCase().includes('billion')) {
+      return `$${value}B`;
+    } else if (unit.toLowerCase().includes('million')) {
+      return `$${value}M`;
+    } else if (unit.toLowerCase().includes('trillion')) {
+      return `$${value}T`;
+    } else {
+      return `$${value}`;
+    }
+  } else if (unit.toLowerCase().includes('percentage') || unit === '%') {
+    return `${value}%`;
+  } else if (unit.toLowerCase().includes('gwh')) {
+    return `${value} GWh`;
+  } else if (unit.toLowerCase().includes('million units')) {
+    return `${value}M units`;
+  } else {
+    // For any other unit, just append it
+    return `${value} ${unit}`;
+  }
+}
+
 export default function MetricCard({ metric }: MetricCardProps) {
   const verticalStyle = getVerticalStyling(metric.vertical)
   
@@ -83,7 +111,7 @@ export default function MetricCard({ metric }: MetricCardProps) {
         {/* Metric Value - Featured prominently */}
         <div className="text-center mb-4 bg-gradient-to-r from-blue-50 to-orange-50 rounded-lg p-4">
           <div className="text-2xl font-bold text-blue-600 mb-1">
-            {metric.value}
+            {formatValueWithUnit(metric.value, metric.unit)}
           </div>
           <h3 className="text-sm font-semibold text-gray-900">
             {metric.title}
