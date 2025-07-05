@@ -1,59 +1,16 @@
 const { createClient } = require('@supabase/supabase-js')
-const Parser = require('rss-parser')
+const { CONTENT_SOURCES } = require('../lib/content-sources.js')
+const { generateAIContent } = require('../lib/ai-content-generator.js')
 const { randomUUID } = require('crypto')
+const Parser = require('rss-parser')
 
-// Supabase connection
-const supabaseUrl = 'https://yuwuaadbqgywebfsbjcp.supabase.co'
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1d3VhYWRicWd5d2ViZnNiamNwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTIyOTgwMiwiZXhwIjoyMDY2ODA1ODAyfQ.tRlLoaBVZe4hpR1WNpSbyf6AwRr42NTPkFfowhuoY7c'
-const supabase = createClient(supabaseUrl, supabaseKey)
+// Initialize
+const supabase = createClient(
+  'https://yuwuaadbqgywebfsbjcp.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1d3VhYWRicWd5d2ViZnNiamNwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTIyOTgwMiwiZXhwIjoyMDY2ODA1ODAyfQ.tRlLoaBVZe4hpR1WNpSbyf6AwRr42NTPkFfowhuoY7c'
+)
 
 const parser = new Parser()
-
-// Content sources from the actual config
-const CONTENT_SOURCES = [
-  {
-    name: 'AdExchanger',
-    rssUrl: 'https://www.adexchanger.com/feed/',
-    vertical: 'Technology & Media',
-    priority: 'HIGH'
-  },
-  {
-    name: 'MarTech Today',
-    rssUrl: 'https://martech.org/feed/',
-    vertical: 'Technology & Media',
-    priority: 'HIGH'
-  },
-  {
-    name: 'Digiday',
-    rssUrl: 'https://digiday.com/feed/',
-    vertical: 'Technology & Media',
-    priority: 'HIGH'
-  },
-  {
-    name: 'Ad Age',
-    rssUrl: 'https://adage.com/rss.xml',
-    vertical: 'Technology & Media',
-    priority: 'HIGH'
-  },
-  {
-    name: 'Marketing Land',
-    rssUrl: 'https://marketingland.com/feed',
-    vertical: 'Technology & Media',
-    priority: 'HIGH'
-  },
-  {
-    name: 'TechCrunch',
-    rssUrl: 'https://techcrunch.com/feed/',
-    vertical: 'Technology & Media',
-    priority: 'MEDIUM'
-  },
-  {
-    name: 'Retail Dive',
-    rssUrl: 'https://www.retaildive.com/feeds/news/',
-    vertical: 'Consumer & Retail',
-    priority: 'MEDIUM'
-  }
-]
 
 // Keywords to identify relevant content
 const RELEVANT_KEYWORDS = [
@@ -97,49 +54,17 @@ function isRelevantContent(title, content) {
   return true // Default to including content from our curated sources
 }
 
-function generateWhyItMatters(title, vertical) {
-  if (title.toLowerCase().includes('ai') || title.toLowerCase().includes('artificial intelligence')) {
-    return `AI adoption in ${vertical} is accelerating rapidly, with early adopters gaining significant competitive advantages. This development signals where the market is heading and what capabilities will become table stakes.`
-  }
-  
-  if (title.toLowerCase().includes('privacy') || title.toLowerCase().includes('cookie')) {
-    return `Privacy regulations and data changes are forcing immediate strategic shifts in how brands collect and activate customer data. Companies that don't adapt quickly risk losing competitive positioning.`
-  }
-  
-  if (title.toLowerCase().includes('programmatic') || title.toLowerCase().includes('advertising')) {
-    return `The advertising technology landscape is evolving rapidly, with new formats and measurement capabilities creating opportunities for brands to reach customers more effectively.`
-  }
-  
-  return `This ${vertical} development represents a significant shift in industry dynamics that will impact how enterprises approach marketing technology strategy and vendor partnerships.`
-}
-
-function generateTalkTrack(title, vertical) {
-  if (title.toLowerCase().includes('ai') || title.toLowerCase().includes('artificial intelligence')) {
-    return `Reference this AI trend to discuss how your prospects' competitors might be leveraging similar technology, and position your solution in the context of this market evolution.`
-  }
-  
-  if (title.toLowerCase().includes('privacy') || title.toLowerCase().includes('cookie')) {
-    return `Use this development to discuss the urgency of building first-party data capabilities and ask prospects how they're preparing for these privacy changes.`
-  }
-  
-  return `Reference this trend to demonstrate your understanding of market forces affecting your prospects' business and position your solution as aligned with industry direction.`
-}
+// Generic functions removed - now using AI content generation for all articles!
 
 async function refreshContent() {
-  console.log('🔄 Starting manual content refresh...')
+  console.log('🚀 Starting autonomous AI content refresh...')
   
   try {
     // First, archive old content
-    console.log('🧹 Archiving old content...')
-    const cutoffDate = new Date()
-    cutoffDate.setHours(cutoffDate.getHours() - 24)
-    
     const { data: oldArticles, error: archiveError } = await supabase
       .from('articles')
       .update({ status: 'ARCHIVED' })
       .eq('status', 'PUBLISHED')
-      .lt('publishedAt', cutoffDate.toISOString())
-      .select()
     
     if (archiveError) {
       console.error('Error archiving old articles:', archiveError)
@@ -147,58 +72,61 @@ async function refreshContent() {
       console.log(`📦 Archived ${oldArticles?.length || 0} old articles`)
     }
     
-    // Fetch new content from RSS feeds
     let totalArticles = 0
     let skippedArticles = 0
     
-    for (const source of CONTENT_SOURCES.slice(0, 5)) { // Limit to first 5 sources for testing
+    // Process RSS feeds with AI content generation
+    for (const source of CONTENT_SOURCES.slice(0, 10)) {
       try {
         console.log(`📡 Fetching from ${source.name}...`)
-        
         const feed = await parser.parseURL(source.rssUrl)
-        console.log(`Found ${feed.items?.length || 0} items from ${source.name}`)
         
         if (feed.items) {
-          for (const item of feed.items.slice(0, 3)) { // Limit to 3 most recent per source
+          for (const item of feed.items.slice(0, 3)) {
             try {
-              const title = item.title || 'Untitled'
-              const content = item.contentSnippet || item.content || ''
-              const link = item.link || '#'
-              
-              // Skip if not relevant
-              if (!isRelevantContent(title, content)) {
+              if (!item.title || !item.link) {
                 skippedArticles++
                 continue
               }
               
-              // Check if already exists
-              const { data: existing } = await supabase
+              // Check for duplicates
+              const { data: existingArticle } = await supabase
                 .from('articles')
                 .select('id')
-                .eq('sourceUrl', link)
-                .limit(1)
+                .eq('sourceUrl', item.link)
+                .single()
               
-              if (existing && existing.length > 0) {
-                console.log(`⏭️  Skipping duplicate: ${title}`)
+              if (existingArticle) {
+                skippedArticles++
                 continue
               }
               
-              // Create new article
+              console.log(`🤖 Generating AI content for: ${item.title}`)
+              
+              // Generate AI-powered content (no more generic fallbacks!)
+              const aiContent = await generateAIContent(
+                item.title,
+                item.contentSnippet || item.content || '',
+                source.name,
+                source.vertical
+              )
+              
+              // Create new article with AI content
               const { error: insertError } = await supabase
                 .from('articles')
                 .insert({
                   id: randomUUID(),
-                  title: title,
-                  summary: content.substring(0, 300),
-                  sourceUrl: link,
+                  title: item.title,
+                  summary: (item.contentSnippet || item.content || '').substring(0, 300),
+                  sourceUrl: item.link,
                   sourceName: source.name,
                   publishedAt: item.pubDate ? new Date(item.pubDate).toISOString() : new Date().toISOString(),
                   vertical: source.vertical,
                   status: 'PUBLISHED',
                   priority: source.priority,
                   category: 'NEWS',
-                  whyItMatters: generateWhyItMatters(title, source.vertical),
-                  talkTrack: generateTalkTrack(title, source.vertical),
+                  whyItMatters: aiContent.whyItMatters,
+                  talkTrack: aiContent.talkTrack,
                   importanceScore: 0,
                   views: 0,
                   clicks: 0,
@@ -214,7 +142,10 @@ async function refreshContent() {
               }
               
               totalArticles++
-              console.log(`✅ Added: ${title}`)
+              console.log(`✅ Added with AI content: ${item.title}`)
+              
+              // Rate limit to avoid overwhelming AI API
+              await new Promise(resolve => setTimeout(resolve, 1000))
               
             } catch (itemError) {
               console.error('Error processing item:', itemError)
@@ -235,16 +166,9 @@ async function refreshContent() {
     console.log('📊 Refreshing metrics...')
     await refreshMetrics()
     
-    // Get final stats
-    const { count: totalCount } = await supabase
-      .from('articles')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'PUBLISHED')
-    
-    console.log(`\n🎉 Content refresh completed!`)
-    console.log(`📰 Added ${totalArticles} new articles`)
-    console.log(`⏭️  Skipped ${skippedArticles} articles`)
-    console.log(`📈 Total published articles: ${totalCount}`)
+    console.log(`\n🎉 Autonomous AI content refresh completed!`)
+    console.log(`📊 Total articles added: ${totalArticles}`)
+    console.log(`📊 Articles skipped: ${skippedArticles}`)
     
   } catch (error) {
     console.error('❌ Content refresh failed:', error)
@@ -341,10 +265,10 @@ function selectDiverseMetrics(metrics, count) {
 // Run the refresh
 refreshContent()
   .then(() => {
-    console.log('✅ Manual content refresh completed')
+    console.log('✅ Autonomous AI content refresh completed')
     process.exit(0)
   })
   .catch(error => {
-    console.error('❌ Manual content refresh failed:', error)
+    console.error('❌ Autonomous AI content refresh failed:', error)
     process.exit(1)
   }) 

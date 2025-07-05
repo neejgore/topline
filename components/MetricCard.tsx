@@ -91,80 +91,89 @@ export default function MetricCard({ metric }: MetricCardProps) {
   const verticalStyle = getVerticalStyling(metric.vertical)
   
   return (
-    <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 border border-gray-100 overflow-hidden h-fit">
+    <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 border border-gray-100 overflow-hidden w-full">
       {/* Vertical Tag Header */}
-      <div className={`${verticalStyle.bg} px-4 py-2 flex items-center justify-between`}>
-        <div className="flex items-center space-x-2">
+      <div className={`${verticalStyle.bg} px-6 py-3 flex items-center justify-between`}>
+        <div className="flex items-center space-x-3">
           <div className={`w-2 h-2 rounded-full ${verticalStyle.dot}`}></div>
-          <span className={`text-xs font-semibold uppercase tracking-wide ${verticalStyle.text}`}>
+          <span className={`text-sm font-semibold uppercase tracking-wide ${verticalStyle.text}`}>
             {metric.vertical || 'Other'}
           </span>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-3">
           {metric.priority && getPriorityStars(metric.priority)}
-          <TrendingUp className="h-3 w-3 text-gray-500" />
+          <TrendingUp className="h-4 w-4 text-gray-500" />
         </div>
       </div>
 
-      {/* Card Content */}
-      <div className="p-4">
-        {/* Metric Value - Featured prominently */}
-        <div className="text-center mb-4 bg-gradient-to-r from-blue-50 to-orange-50 rounded-lg p-4">
-          <div className="text-2xl font-bold text-blue-600 mb-1">
-            {formatValueWithUnit(metric.value, metric.unit)}
+      {/* Horizontal Content Layout */}
+      <div className="p-6">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:space-x-8 space-y-6 lg:space-y-0">
+          
+          {/* Left Side - Metric Value (Featured) */}
+          <div className="lg:w-1/3 flex-shrink-0">
+            <div className="text-center lg:text-left bg-gradient-to-r from-blue-50 to-orange-50 rounded-lg p-6">
+              <div className="text-4xl lg:text-5xl font-bold text-blue-600 mb-2">
+                {formatValueWithUnit(metric.value, metric.unit)}
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 leading-tight">
+                {metric.title}
+              </h3>
+            </div>
           </div>
-          <h3 className="text-sm font-semibold text-gray-900">
-            {metric.title}
-          </h3>
-        </div>
 
-        {/* Description */}
-        {metric.description && (
-          <p className="text-gray-600 text-xs mb-3 leading-relaxed">
-            {metric.description}
-          </p>
-        )}
+          {/* Right Side - Content */}
+          <div className="lg:w-2/3 space-y-4">
+            
+            {/* Description */}
+            {metric.description && (
+              <p className="text-gray-600 text-sm leading-relaxed">
+                {metric.description}
+              </p>
+            )}
 
-        {/* How to Use */}
-        {metric.howToUse && (
-          <div className="bg-blue-50 border-l-4 border-blue-400 p-3 mb-3 rounded-r">
-            <h4 className="font-semibold text-blue-800 mb-1 text-sm">How to Use This:</h4>
-            <p className="text-blue-700 text-xs leading-relaxed">
-              {metric.howToUse}
-            </p>
+            {/* How to Use */}
+            {metric.howToUse && (
+              <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r">
+                <h4 className="font-semibold text-blue-800 mb-2 text-sm">How to Use This:</h4>
+                <p className="text-blue-700 text-sm leading-relaxed">
+                  {metric.howToUse}
+                </p>
+              </div>
+            )}
+
+            {/* Talk Track */}
+            {metric.talkTrack && (
+              <div className="bg-green-50 border-l-4 border-green-400 p-4 rounded-r">
+                <h4 className="font-semibold text-green-800 mb-2 text-sm flex items-center">
+                  <span className="mr-2">💬</span> Talk Track
+                </h4>
+                <p className="text-green-700 text-sm leading-relaxed">
+                  {metric.talkTrack}
+                </p>
+              </div>
+            )}
+
+            {/* Footer */}
+            <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+              <span className="text-sm text-gray-500 truncate">
+                {metric.source}
+              </span>
+
+              {metric.sourceUrl && (
+                <a
+                  href={metric.sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 font-medium hover:underline relative z-10 cursor-pointer"
+                  style={{ pointerEvents: 'all' }}
+                >
+                  View Source
+                  <ExternalLink className="h-4 w-4 ml-1" />
+                </a>
+              )}
+            </div>
           </div>
-        )}
-
-        {/* Talk Track */}
-        {metric.talkTrack && (
-          <div className="bg-green-50 border-l-4 border-green-400 p-3 mb-4 rounded-r">
-            <h4 className="font-semibold text-green-800 mb-1 text-sm flex items-center">
-              <span className="mr-1">💬</span> Talk Track
-            </h4>
-            <p className="text-green-700 text-xs leading-relaxed">
-              {metric.talkTrack}
-            </p>
-          </div>
-        )}
-
-        {/* Footer */}
-        <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-          <span className="text-xs text-gray-500 truncate">
-            {metric.source}
-          </span>
-
-          {metric.sourceUrl && (
-            <a
-              href={metric.sourceUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center text-xs text-blue-600 hover:text-blue-800 font-medium hover:underline relative z-10 cursor-pointer"
-              style={{ pointerEvents: 'all' }}
-            >
-              View Source
-              <ExternalLink className="h-3 w-3 ml-1" />
-            </a>
-          )}
         </div>
       </div>
     </div>
