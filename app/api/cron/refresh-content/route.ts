@@ -254,7 +254,9 @@ async function refreshDailyMetrics() {
       hasViewTrackingColumn = false
     }
 
-    // First, archive metrics that have been viewed (move to archive like content does)
+    // TEMPORARILY DISABLED: First, archive metrics that have been viewed (move to archive like content does)
+    // TODO: Re-enable once cron authentication is fixed
+    /*
     const archiveData: any = { status: 'ARCHIVED' }
     
     let archiveQuery = supabase
@@ -284,6 +286,7 @@ async function refreshDailyMetrics() {
       console.error('Error archiving current metrics:', archiveError)
       await alertService.alertDatabaseError(archiveError)
     }
+    */
 
     // Get metrics from the last 90 days that haven't been recently viewed
     const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
