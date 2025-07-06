@@ -38,6 +38,10 @@ interface Metric {
   whyItMatters: string
   talkTrack: string
   status: string
+  howToUse?: string
+  description?: string
+  sourceUrl?: string
+  priority?: string
 }
 
 interface PaginationData {
@@ -63,7 +67,7 @@ export default function ArchiveContent() {
   })
   const [metricsPagination, setMetricsPagination] = useState<PaginationData>({
     page: 1,
-    limit: 9,
+    limit: 2, // Reduced to 2 to force pagination with 4 total metrics
     total: 0,
     totalPages: 0
   })
@@ -157,10 +161,12 @@ export default function ArchiveContent() {
         return
       }
 
-      // Convert publishedAt strings to Date objects
+      // Convert publishedAt strings to Date objects and map API fields to match MetricCard interface
       const metricsWithDates = data.metrics.map((metric: any) => ({
         ...metric,
-        publishedAt: metric.publishedAt ? new Date(metric.publishedAt) : null
+        publishedAt: metric.publishedAt ? new Date(metric.publishedAt) : null,
+        howToUse: metric.whyItMatters, // Map whyItMatters to howToUse for middle column
+        description: metric.whyItMatters // Also keep as description for left column
       }))
 
       if (replace) {

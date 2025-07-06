@@ -65,6 +65,15 @@ export default function ArticleCard({ article }: ArticleCardProps) {
       case 'Consumer & Retail': return 'bg-purple-100 text-purple-800'
       case 'Financial Services': return 'bg-green-100 text-green-800'
       case 'Healthcare': return 'bg-pink-100 text-pink-800'
+      case 'Healthcare & Life Sciences': return 'bg-pink-100 text-pink-800'
+      case 'Energy & Utilities': return 'bg-yellow-100 text-yellow-800'
+      case 'Insurance': return 'bg-blue-100 text-blue-800'
+      case 'Telecom': return 'bg-purple-100 text-purple-800'
+      case 'Political Candidate & Advocacy': return 'bg-red-100 text-red-800'
+      case 'Services': return 'bg-indigo-100 text-indigo-800'
+      case 'Education': return 'bg-yellow-100 text-yellow-800'
+      case 'Travel & Hospitality': return 'bg-orange-100 text-orange-800'
+      case 'Automotive': return 'bg-slate-100 text-slate-800'
       default: return 'bg-gray-100 text-gray-800'
     }
   }
