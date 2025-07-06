@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/db'
 import { z } from 'zod'
+import { addContactToBrevo, sendWelcomeEmail } from '@/lib/brevo-service'
 
 const subscribeSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -52,6 +53,15 @@ export async function POST(request: NextRequest) {
             { status: 500 }
           )
         }
+
+        // Add to Brevo and send welcome email
+        try {
+          await addContactToBrevo(email, name || existingSubscriber.name)
+          await sendWelcomeEmail(email, name || existingSubscriber.name)
+        } catch (brevoError) {
+          console.error('Brevo integration error (reactivation):', brevoError)
+          // Don't fail the subscription if email fails
+        }
         
         return NextResponse.json(
           { message: 'Welcome back! Your subscription has been reactivated.' },
@@ -78,8 +88,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // TODO: Send welcome email
-    // await sendWelcomeEmail(email)
+    // Add to Brevo and send welcome email
+    try {
+      await addContactToBrevo(email, name)
+      await sendWelcomeEmail(email, name)
+    } catch (brevoError) {
+      console.error('Brevo integration error (new subscription):', brevoError)
+      // Don't fail the subscription if email fails
+    }
 
     return NextResponse.json(
       { message: 'Successfully subscribed to Topline!' },
