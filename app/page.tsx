@@ -26,8 +26,8 @@ export default function HomePage() {
               <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
                 Stay ahead with
                 <br />
-                <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                  daily sales intelligence
+                <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent whitespace-nowrap">
+                  sales intelligence
                 </span>
               </h1>
               <p className="text-xl text-gray-600 mb-8">
