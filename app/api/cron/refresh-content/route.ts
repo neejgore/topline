@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { CONTENT_SOURCES, RELEVANT_KEYWORDS, EXCLUDE_KEYWORDS } from '../../../../lib/content-sources'
+import { CONTENT_SOURCES, RELEVANT_KEYWORDS, EXCLUDE_KEYWORDS, VERTICALS } from '../../../../lib/content-sources'
 import { generateAIContent, generateMetricsAIContent } from '../../../../lib/ai-content-generator'
 import Parser from 'rss-parser'
 
@@ -151,6 +151,7 @@ async function refreshDailyMetrics(supabase: any) {
       .select('*')
       .gte('publishedAt', ninetyDaysAgo.toISOString())
       .eq('status', 'ARCHIVED')
+      .in('vertical', VERTICALS)
       .or(`lastViewedAt.is.null,lastViewedAt.lt.${threeDaysAgo.toISOString()}`)
       .order('publishedAt', { ascending: false })
 
