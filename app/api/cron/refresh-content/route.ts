@@ -35,15 +35,15 @@ export async function GET(request: Request) {
     let totalArticles = 0
     let skippedArticles = 0
 
-    // Process RSS feeds with AI content generation
-    for (const source of CONTENT_SOURCES.slice(0, 8)) {
+    // Process all 18 RSS feeds with AI content generation
+    for (const source of CONTENT_SOURCES) {
       try {
         console.log(`📡 Fetching from ${source.name}...`)
         
         const feed = await parser.parseURL(source.rssUrl)
         
         if (feed.items) {
-          for (const item of feed.items.slice(0, 5)) {
+          for (const item of feed.items.slice(0, 3)) {
             try {
               if (!item.title || !item.link) continue
 
