@@ -88,7 +88,7 @@ export default async function NewsletterPreview() {
           <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 sm:p-8">
             <div className="max-w-2xl mx-auto text-center">
               <h1 className="text-3xl sm:text-4xl font-bold mb-2">Topline</h1>
-              <p className="text-blue-100 text-lg">Your daily sales intelligence briefing</p>
+              <p className="text-blue-100 text-lg">Daily sales intelligence</p>
               <p className="text-blue-200 text-sm mt-2">{date}</p>
             </div>
           </div>
