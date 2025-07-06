@@ -30,7 +30,7 @@ export default function HomePage() {
                 </span>
               </h1>
               <p className="text-xl text-gray-600 mb-8">
-                Curated daily insights, metrics, and industry developments to power your sales conversations
+                Key insights, metrics, and industry developments to power your sales conversations
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="bg-blue-50 rounded-lg p-4 text-center">
