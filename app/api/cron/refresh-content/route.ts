@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { CONTENT_SOURCES, RELEVANT_KEYWORDS, EXCLUDE_KEYWORDS } from '../../../../lib/content-sources'
-import { generateAIContent } from '../../../../lib/ai-content-generator'
+import { generateAIContent, generateMetricsAIContent } from '../../../../lib/ai-content-generator'
 import Parser from 'rss-parser'
 
 const parser = new Parser()
@@ -158,16 +158,29 @@ async function refreshDailyMetrics(supabase: any) {
       // Select 1 metric (newest available)
       const selectedMetric = availableMetrics[0]
 
-      // Publish it
+      console.log(`🤖 Generating AI content for metric: ${selectedMetric.title}`)
+
+      // Generate AI-powered content for the metric
+      const aiContent = await generateMetricsAIContent(
+        selectedMetric.title,
+        selectedMetric.value,
+        selectedMetric.source,
+        selectedMetric.whyItMatters || '',
+        selectedMetric.vertical
+      )
+
+      // Publish it with enhanced AI content
       await supabase
         .from('metrics')
         .update({ 
           status: 'PUBLISHED',
-          lastViewedAt: new Date().toISOString()
+          lastViewedAt: new Date().toISOString(),
+          whyItMatters: aiContent.whyItMatters,
+          talkTrack: aiContent.talkTrack
         })
         .eq('id', selectedMetric.id)
 
-      console.log(`✅ Selected metric: ${selectedMetric.title}`)
+      console.log(`✅ Selected metric with AI content: ${selectedMetric.title}`)
       return { success: true, metricsSelected: 1 }
     } else {
       console.log('No available metrics to select')
