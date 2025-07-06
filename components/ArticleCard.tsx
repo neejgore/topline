@@ -75,7 +75,7 @@ export default function ArticleCard({ article }: ArticleCardProps) {
           <div className="flex items-center gap-2">
             {article.priority && getPriorityStars(article.priority)}
             {article.vertical && (
-              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getVerticalColor(article.vertical)}`}>
+              <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${getVerticalColor(article.vertical)}`}>
                 {article.vertical}
               </span>
             )}
