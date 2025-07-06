@@ -70,8 +70,8 @@ export async function GET(request: NextRequest) {
     // Content should stay visible all day until daily refresh rotates it
     // The cron job handles content rotation, not view tracking
 
-    // Add vertical filter if specified
-    if (vertical !== 'ALL') {
+    // Add vertical filter if specified (handle both 'All' and 'ALL' as the same)
+    if (vertical !== 'ALL' && vertical !== 'All') {
       query = query.eq('vertical', vertical)
     }
 
@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
     // REMOVED: Duplicate prevention based on lastViewedAt for count query
     // Content should stay visible all day until daily refresh rotates it
 
-    if (vertical !== 'ALL') {
+    if (vertical !== 'ALL' && vertical !== 'All') {
       countQuery = countQuery.eq('vertical', vertical)
     }
 
