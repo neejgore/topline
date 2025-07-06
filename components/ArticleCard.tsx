@@ -26,12 +26,18 @@ export default function ArticleCard({ article }: ArticleCardProps) {
 
   const formatDate = (date: Date | null) => {
     if (!date) return 'Recently'
-    return new Date(date).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    const d = new Date(date)
+    
+    // Format: "Jul 5, 03:58 PM"
+    const month = d.toLocaleDateString('en-US', { month: 'short' })
+    const day = d.getDate()
+    const time = d.toLocaleTimeString('en-US', { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      hour12: true 
     })
+    
+    return `${month} ${day}, ${time}`
   }
 
   const getPriorityStars = (priority?: string) => {

@@ -62,7 +62,13 @@ export default function DailyContent() {
         throw new Error(data.error || 'Failed to fetch content')
       }
 
-      setArticles(data.content || [])
+      // Convert publishedAt strings to Date objects for consistent formatting
+      const articlesWithDates = (data.content || []).map((article: any) => ({
+        ...article,
+        publishedAt: article.publishedAt ? new Date(article.publishedAt) : null
+      }))
+      
+      setArticles(articlesWithDates)
       setError('')
     } catch (err) {
       setError('Failed to load content. Please try again later.')
