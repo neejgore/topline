@@ -1,5 +1,5 @@
 const { createClient } = require('@supabase/supabase-js')
-const { CONTENT_SOURCES } = require('../lib/content-sources.js')
+const { CONTENT_SOURCES } = require('../lib/content-sources.ts')
 const { generateAIContent } = require('../lib/ai-content-generator.js')
 const { randomUUID } = require('crypto')
 const Parser = require('rss-parser')
