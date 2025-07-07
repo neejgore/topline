@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    console.log('🔥 Starting automated newsletter campaign...')
+    console.log('🔔 Starting automated newsletter campaign...')
     
     // Get the base URL for API calls
     const baseUrl = process.env.VERCEL_URL 
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    console.log('🔥 Manual newsletter test...')
+    console.log('🔔 Manual newsletter test...')
     
     // Get the base URL for API calls
     const baseUrl = process.env.VERCEL_URL 

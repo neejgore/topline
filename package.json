@@ -53,5 +53,8 @@
     "healthcare marketing",
     "financial services"
   ],
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "sharp": "^0.34.2"
+  }
 }

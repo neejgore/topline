@@ -8,6 +8,13 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata = {
   title: 'BellDesk AI - Sales Intelligence Platform',
   description: 'Stay ahead with AI-powered sales intelligence and industry insights',
+  icons: {
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', sizes: '32x32' }
+    ],
+    apple: '/apple-touch-icon.png',
+  }
 }
 
 export default function RootLayout({

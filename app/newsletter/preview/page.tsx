@@ -115,7 +115,7 @@ export default function NewsletterPreview() {
           {/* Newsletter Header */}
           <div className="bg-gradient-to-r from-slate-900 via-blue-800 to-blue-600 text-white p-6 sm:p-8">
             <div className="max-w-2xl mx-auto text-center">
-              <div className="text-2xl mb-2">🔥</div>
+              <div className="text-2xl mb-2">🔔</div>
               <h1 className="text-3xl sm:text-4xl font-bold mb-2">The Beacon</h1>
               <p className="text-blue-100 text-lg">AI-Powered Sales Intelligence</p>
               <p className="text-blue-200 text-sm mt-2">{date}</p>

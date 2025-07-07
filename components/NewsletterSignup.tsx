@@ -53,7 +53,7 @@ export default function NewsletterSignup() {
   return (
     <div className="card max-w-md mx-auto">
       <div className="text-center mb-6">
-        <div className="text-3xl mb-2">🔥</div>
+                      <div className="text-3xl mb-2">🔔</div>
         <h3 className="text-lg font-semibold text-gray-900 mb-2">Get The Beacon</h3>
         <p className="text-gray-600">
           Monday-Friday at 7am EST - AI-powered sales intelligence delivered to your inbox.
