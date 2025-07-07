@@ -1,5 +1,5 @@
 const { createClient } = require('@supabase/supabase-js')
-const { CONTENT_SOURCES, RELEVANT_KEYWORDS, EXCLUDE_KEYWORDS, VERTICALS } = require('../lib/content-sources')
+const { CONTENT_SOURCES, RELEVANT_KEYWORDS, EXCLUDE_KEYWORDS, VERTICALS } = require('../lib/content-sources.ts')
 const { generateAIContent, generateMetricsAIContent } = require('../lib/ai-content-generator')
 const Parser = require('rss-parser')
 
@@ -17,23 +17,45 @@ async function manualRefresh() {
   console.log('=' .repeat(50))
 
   try {
-    // STEP 1: Archive old content (older than 24 hours)
+    // STEP 1: Archive old content (older than 24 hours OR if we're refreshing on a new day)
     console.log('\n🗄️  Step 1: Archiving content older than 24 hours...')
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
     
-    const { error: archiveArticlesError } = await supabase
+    // Get current published articles to check their age
+    const { data: publishedArticles } = await supabase
       .from('articles')
-      .update({ 
-        status: 'ARCHIVED',
-        lastViewedAt: new Date().toISOString() 
-      })
+      .select('id, publishedAt, createdAt')
       .eq('status', 'PUBLISHED')
-      .lt('publishedAt', twentyFourHoursAgo.toISOString())
-
-    if (archiveArticlesError) {
-      console.error('Error archiving old articles:', archiveArticlesError)
+    
+    console.log(`📊 Found ${publishedArticles?.length || 0} published articles`)
+    
+    // Archive articles that are old OR were created more than 24 hours ago
+    const articlesToArchive = publishedArticles?.filter(article => {
+      const publishedDate = new Date(article.publishedAt)
+      const createdDate = new Date(article.createdAt)
+      const isOldByPublished = publishedDate < twentyFourHoursAgo
+      const isOldByCreated = createdDate < twentyFourHoursAgo
+      return isOldByPublished || isOldByCreated
+    }) || []
+    
+    console.log(`📦 Archiving ${articlesToArchive.length} old articles`)
+    
+    if (articlesToArchive.length > 0) {
+      const { error: archiveArticlesError } = await supabase
+        .from('articles')
+        .update({ 
+          status: 'ARCHIVED',
+          lastViewedAt: new Date().toISOString() 
+        })
+        .in('id', articlesToArchive.map(a => a.id))
+      
+      if (archiveArticlesError) {
+        console.error('Error archiving old articles:', archiveArticlesError)
+      } else {
+        console.log('✅ Old articles archived')
+      }
     } else {
-      console.log('✅ Old articles archived')
+      console.log('✅ No old articles to archive')
     }
 
     // STEP 2: Process articles with 24-hour lookback
@@ -204,7 +226,7 @@ async function refreshDailyMetrics() {
       .gte('createdAt', ninetyDaysAgo.toISOString())
       .eq('status', 'ARCHIVED')
       .in('vertical', VERTICALS)
-      .is('lastViewedAt', null)
+      .or('lastViewedAt.is.null,lastViewedAt.lt.' + new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()) // Allow reuse after 7 days
       .order('createdAt', { ascending: false })
 
     console.log(`📊 Found ${availableMetrics?.length || 0} unused metrics in 90-day window`)
