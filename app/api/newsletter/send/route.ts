@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
 // Import the newsletter service
@@ -10,81 +10,83 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const cronSecret = searchParams.get('secret')
-    
-    // Verify cron secret for security
-    if (cronSecret !== process.env.CRON_SECRET) {
+    // Security check - only allow cron jobs
+    const authHeader = request.headers.get('authorization')
+    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    console.log('Starting newsletter send process...')
+    console.log('🔥 Starting automated newsletter campaign...')
     
     // Get the base URL for API calls
     const baseUrl = process.env.VERCEL_URL 
       ? `https://${process.env.VERCEL_URL}` 
       : 'https://topline-tlwi.vercel.app'
     
-    // Generate and send newsletter
+    // Send the newsletter campaign
     const result = await generateAndSendNewsletter(supabase, baseUrl)
     
-    console.log('Newsletter send result:', result)
-    
     if (result.success) {
-      return NextResponse.json({
+      console.log('✅ Newsletter campaign sent successfully!')
+      return NextResponse.json({ 
+        success: true, 
         message: result.message,
-        count: result.count,
-        timestamp: new Date().toISOString()
+        count: result.count
       })
     } else {
-      return NextResponse.json({
-        error: result.error,
-        timestamp: new Date().toISOString()
+      console.error('❌ Newsletter campaign failed:', result.error)
+      return NextResponse.json({ 
+        error: result.error 
       }, { status: 500 })
     }
-    
+
   } catch (error) {
-    console.error('Newsletter send error:', error)
-    return NextResponse.json({
-      error: 'Internal server error',
-      details: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString()
+    console.error('❌ Newsletter send error:', error)
+    return NextResponse.json({ 
+      error: 'Failed to send newsletter campaign' 
     }, { status: 500 })
   }
 }
 
-// Allow GET requests for manual testing
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url)
-  const testMode = searchParams.get('test')
-  
-  if (testMode === 'true') {
-    try {
-      // Get the base URL for API calls
-      const baseUrl = process.env.VERCEL_URL 
-        ? `https://${process.env.VERCEL_URL}` 
-        : 'https://topline-tlwi.vercel.app'
-      
-      const { getNewsletterContent } = require('../../../../lib/newsletter-service')
-      const content = await getNewsletterContent(baseUrl)
-      
-      return NextResponse.json({
-        message: 'Newsletter content preview',
-        content: content,
-        timestamp: new Date().toISOString()
+// For manual testing
+export async function GET(request: NextRequest) {
+  try {
+    // Security check - only allow cron jobs
+    const authHeader = request.headers.get('authorization')
+    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    console.log('🔥 Manual newsletter test...')
+    
+    // Get the base URL for API calls
+    const baseUrl = process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}` 
+      : 'https://topline-tlwi.vercel.app'
+    
+    // Send the newsletter campaign
+    const result = await generateAndSendNewsletter(supabase, baseUrl)
+    
+    if (result.success) {
+      console.log('✅ Newsletter test sent successfully!')
+      return NextResponse.json({ 
+        success: true, 
+        message: result.message,
+        count: result.count
       })
-    } catch (error) {
-      return NextResponse.json({
-        error: 'Failed to get newsletter content',
-        details: error instanceof Error ? error.message : 'Unknown error'
+    } else {
+      console.error('❌ Newsletter test failed:', result.error)
+      return NextResponse.json({ 
+        error: result.error 
       }, { status: 500 })
     }
+
+  } catch (error) {
+    console.error('❌ Newsletter test error:', error)
+    return NextResponse.json({ 
+      error: 'Failed to send newsletter test' 
+    }, { status: 500 })
   }
-  
-  return NextResponse.json({
-    message: 'Newsletter send endpoint',
-    usage: 'POST with ?secret=CRON_SECRET to send newsletter, GET with ?test=true to preview content'
-  })
 } 
