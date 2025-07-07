@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Mail, CheckCircle } from 'lucide-react'
+import { CheckCircle } from 'lucide-react'
 
 export default function NewsletterSignup() {
   const [email, setEmail] = useState('')
@@ -31,10 +31,8 @@ export default function NewsletterSignup() {
         setError(data.message || 'Failed to subscribe. Please try again.')
       }
     } catch (error) {
-      // For development: still show success even if API fails
-      console.log('Newsletter signup (development mode):', email)
-      setIsSubscribed(true)
-      setEmail('')
+      console.error('Newsletter subscription error:', error)
+      setError('Network error. Please check your connection and try again.')
     } finally {
       setIsSubmitting(false)
     }
@@ -46,7 +44,7 @@ export default function NewsletterSignup() {
         <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
         <h3 className="text-lg font-semibold text-gray-900 mb-2">You're all set!</h3>
         <p className="text-gray-600">
-          You'll receive BellDesk AI every Monday at 7am. Check your inbox for a confirmation email.
+          You'll receive The Beacon Monday-Friday at 7am EST. Check your inbox for a confirmation email.
         </p>
       </div>
     )
@@ -55,10 +53,10 @@ export default function NewsletterSignup() {
   return (
     <div className="card max-w-md mx-auto">
       <div className="text-center mb-6">
-        <Mail className="h-12 w-12 text-primary-600 mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Get BellDesk AI Daily</h3>
+        <div className="text-3xl mb-2">🔥</div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">Get The Beacon</h3>
         <p className="text-gray-600">
-          Every Monday at 7am - delivered to your inbox for scan-then-click convenience.
+          Monday-Friday at 7am EST - AI-powered sales intelligence delivered to your inbox.
         </p>
       </div>
 
@@ -90,7 +88,7 @@ export default function NewsletterSignup() {
           disabled={isSubmitting}
           className="btn btn-primary w-full"
         >
-          {isSubmitting ? 'Subscribing...' : 'Subscribe to BellDesk AI'}
+          {isSubmitting ? 'Subscribing...' : 'Subscribe to The Beacon'}
         </button>
       </form>
 
