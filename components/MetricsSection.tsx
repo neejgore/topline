@@ -95,7 +95,8 @@ export default function MetricsSection({ selectedVertical, selectedRelevance }: 
       weekday: 'long', 
       year: 'numeric', 
       month: 'long', 
-      day: 'numeric' 
+      day: 'numeric',
+      timeZone: 'America/New_York'
     }
     return today.toLocaleDateString('en-US', options)
   }

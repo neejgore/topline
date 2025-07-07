@@ -6,8 +6,8 @@ import Footer from '@/components/Footer'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
-  title: 'Topline - Sales Intelligence Platform',
-  description: 'Stay ahead with curated sales intelligence and industry insights',
+  title: 'BellDesk AI - Sales Intelligence Platform',
+  description: 'Stay ahead with AI-powered sales intelligence and industry insights',
 }
 
 export default function RootLayout({

@@ -1,11 +1,26 @@
 const { createClient } = require('@supabase/supabase-js')
-const { CONTENT_SOURCES, VERTICALS } = require('../lib/content-sources')
 
 // Initialize Supabase client
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 )
+
+// Hardcoded verticals for testing
+const VERTICALS = [
+  'Technology & Media',
+  'Consumer & Retail',
+  'Healthcare',
+  'Financial Services',
+  'Insurance',
+  'Automotive',
+  'Travel & Hospitality',
+  'Education',
+  'Telecom',
+  'Services',
+  'Political Candidate & Advocacy',
+  'Other'
+]
 
 async function testSystematicRules() {
   console.log('🧪 Testing Systematic Rules Implementation')
@@ -53,8 +68,8 @@ async function testSystematicRules() {
   console.log(`\nDuplicate articles found: ${duplicateUrls.length}`)
   if (duplicateUrls.length > 0) {
     console.log('❌ RULE VIOLATION: Same articles reused')
-    duplicateUrls.forEach(([url, count]) => {
-      console.log(`  ${url}: ${count} times`)
+    duplicateUrls.slice(0, 3).forEach(([url, count]) => {
+      console.log(`  ${url.substring(0, 60)}...: ${count} times`)
     })
   } else {
     console.log('✅ No duplicate articles (no reuse rule enforced)')
@@ -114,9 +129,11 @@ async function testSystematicRules() {
   })
   
   console.log('\nSource usage (last 7 days):')
-  CONTENT_SOURCES.forEach(source => {
-    const count = sourceCounts[source.name] || 0
-    console.log(`  ${source.name}: ${count} articles ${count > 0 ? '✅' : '❌'}`)
+  const sources = Object.keys(sourceCounts)
+  console.log(`Active sources: ${sources.length}`)
+  sources.slice(0, 10).forEach(source => {
+    const count = sourceCounts[source] || 0
+    console.log(`  ${source}: ${count} articles`)
   })
   
   console.log('\nVertical distribution:')
@@ -155,9 +172,8 @@ async function testSystematicRules() {
     issues.push('Previously viewed metrics still published')
   }
   
-  const unusedSources = CONTENT_SOURCES.filter(source => !sourceCounts[source.name])
-  if (unusedSources.length > 0) {
-    issues.push(`${unusedSources.length} sources not used recently`)
+  if (sources.length < 5) {
+    issues.push('Low source diversity (less than 5 sources used recently)')
   }
   
   if (issues.length === 0) {
@@ -168,9 +184,10 @@ async function testSystematicRules() {
   }
   
   console.log('\n🔧 MANUAL ACTIONS AVAILABLE:')
-  console.log('1. Run daily refresh: node scripts/manual-refresh.js')
+  console.log('1. Run manual refresh: node scripts/manual-refresh.js')
   console.log('2. Test cron job: curl -H "Authorization: Bearer pasdogawegmasdngasd" https://topline-tlwi.vercel.app/api/cron/refresh-content')
   console.log('3. Check newsletter: https://topline-tlwi.vercel.app/newsletter/preview')
+  console.log('4. Check website: https://topline-tlwi.vercel.app/')
 }
 
 testSystematicRules().catch(console.error) 

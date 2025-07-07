@@ -1,8 +1,8 @@
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Newsletter Preview | Topline',
-  description: 'Preview of the daily Topline newsletter',
+  title: 'Newsletter Preview | BellDesk AI',
+  description: 'Preview of the daily BellDesk AI newsletter',
 }
 
 async function getNewsletterContent() {
@@ -30,7 +30,8 @@ async function getNewsletterContent() {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
-        day: 'numeric'
+        day: 'numeric',
+        timeZone: 'America/New_York'
       })
     }
   } catch (error) {
@@ -42,7 +43,8 @@ async function getNewsletterContent() {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
-        day: 'numeric'
+        day: 'numeric',
+        timeZone: 'America/New_York'
       })
     }
   }
@@ -87,7 +89,7 @@ export default async function NewsletterPreview() {
           {/* Newsletter Header */}
           <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 sm:p-8">
             <div className="max-w-2xl mx-auto text-center">
-              <h1 className="text-3xl sm:text-4xl font-bold mb-2">Topline</h1>
+              <h1 className="text-3xl sm:text-4xl font-bold mb-2">BellDesk AI</h1>
               <p className="text-blue-100 text-lg">Daily sales intelligence</p>
               <p className="text-blue-200 text-sm mt-2">{date}</p>
             </div>
@@ -170,21 +172,21 @@ export default async function NewsletterPreview() {
               <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6 text-center">
                 <h3 className="font-semibold text-gray-900 mb-2">Want more insights?</h3>
                 <p className="text-sm text-gray-600 mb-4">
-                  Visit Topline for archived content and additional intelligence
+                  Visit BellDesk AI for archived content and additional intelligence
                 </p>
                 <a 
                   href="https://topline-tlwi.vercel.app" 
                   className="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
                 >
-                  Visit Topline
+                  Visit BellDesk AI
                 </a>
               </div>
 
               {/* Footer */}
               <div className="mt-8 pt-6 border-t border-gray-200 text-center text-xs text-gray-500">
-                <p>© 2024 Topline. All rights reserved.</p>
+                <p>© 2024 BellDesk AI. All rights reserved.</p>
                 <p className="mt-1">
-                  You're receiving this because you subscribed to Topline updates.
+                  You're receiving this because you subscribed to BellDesk AI updates.
                 </p>
               </div>
             </div>

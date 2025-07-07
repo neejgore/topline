@@ -6,7 +6,7 @@ import LoadingSpinner from '@/components/LoadingSpinner'
 import NewsletterSignup from '@/components/NewsletterSignup'
 
 export const metadata: Metadata = {
-  title: "Today's Topline",
+  title: "Today's BellDesk AI",
   description: 'Daily sales intelligence and market insights for enterprise sales professionals',
 }
 
@@ -60,7 +60,7 @@ export default function HomePage() {
       {/* Content Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">Topline for {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</h2>
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">BellDesk AI for {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'America/New_York' })}</h2>
           <p className="text-lg text-gray-600">
             Fresh insights and metrics to fuel your sales conversations
           </p>
@@ -73,7 +73,7 @@ export default function HomePage() {
         {/* Use Cases Section */}
         <section className="mt-8 mb-6">
           <h2 className="text-xl font-bold text-gray-900 mb-4 text-center">
-            How Sales Professionals Use Topline
+            How Sales Professionals Use BellDesk AI
           </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="card">

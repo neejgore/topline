@@ -21,6 +21,23 @@ interface ArticleCardProps {
   article: Article
 }
 
+// Helper function to decode HTML entities
+const decodeHtmlEntities = (text: string): string => {
+  if (typeof document === 'undefined') {
+    // Server-side fallback - simple entity replacements
+    return text
+      .replace(/&#39;/g, "'")
+      .replace(/&quot;/g, '"')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+  }
+  
+  const textArea = document.createElement('textarea')
+  textArea.innerHTML = text
+  return textArea.value
+}
+
 export default function ArticleCard({ article }: ArticleCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
 
@@ -98,12 +115,12 @@ export default function ArticleCard({ article }: ArticleCardProps) {
         </div>
 
         <h3 className="text-lg font-semibold text-gray-900 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors">
-          {article.title}
+          {decodeHtmlEntities(article.title)}
         </h3>
 
         {article.summary && (
           <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-            {article.summary}
+            {decodeHtmlEntities(article.summary)}
           </p>
         )}
 
@@ -151,7 +168,7 @@ export default function ArticleCard({ article }: ArticleCardProps) {
                     <h4 className="font-medium text-gray-900">Why It Matters</h4>
                   </div>
                   <p className="text-sm text-gray-600 pl-6">
-                    {article.whyItMatters}
+                    {decodeHtmlEntities(article.whyItMatters)}
                   </p>
                 </div>
               )}
@@ -163,7 +180,7 @@ export default function ArticleCard({ article }: ArticleCardProps) {
                     <h4 className="font-medium text-gray-900">Talk Track</h4>
                   </div>
                   <p className="text-sm text-gray-600 pl-6">
-                    {article.talkTrack}
+                    {decodeHtmlEntities(article.talkTrack)}
                   </p>
                 </div>
               )}

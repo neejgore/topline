@@ -8,7 +8,7 @@ export default function Footer() {
           {/* Brand Section */}
           <div className="md:col-span-2">
             <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent mb-4">
-              Topline
+              BellDesk AI
             </h3>
             <p className="text-gray-300 mb-4 max-w-md">
               Curated daily sales intelligence for enterprise professionals. 
@@ -36,7 +36,7 @@ export default function Footer() {
             <ul className="space-y-2">
               <li>
                 <a href="/" className="text-gray-300 hover:text-white transition-colors">
-                  Topline for {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                  BellDesk AI for {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'America/New_York' })}
                 </a>
               </li>
               <li>
@@ -62,7 +62,7 @@ export default function Footer() {
         {/* Bottom Section */}
         <div className="border-t border-gray-800 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
           <div className="text-gray-400 text-sm">
-            © 2024 Topline by Zeta Global. All rights reserved.
+            © 2024 BellDesk AI. All rights reserved.
           </div>
           <div className="text-gray-400 text-sm mt-4 md:mt-0">
             Built for enterprise sales professionals

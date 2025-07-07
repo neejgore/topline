@@ -18,6 +18,23 @@ interface MetricCardProps {
   metric: Metric
 }
 
+// Helper function to decode HTML entities
+const decodeHtmlEntities = (text: string): string => {
+  if (typeof document === 'undefined') {
+    // Server-side fallback - simple entity replacements
+    return text
+      .replace(/&#39;/g, "'")
+      .replace(/&quot;/g, '"')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+  }
+  
+  const textArea = document.createElement('textarea')
+  textArea.innerHTML = text
+  return textArea.value
+}
+
 // Function to get vertical tag styling
 const getVerticalStyling = (vertical: string | null | undefined) => {
   if (!vertical) return { bg: 'bg-gray-100', text: 'text-gray-600', dot: 'bg-gray-400' }
@@ -118,14 +135,14 @@ export default function MetricCard({ metric }: MetricCardProps) {
                 {formatValueWithUnit(metric.value, metric.unit)}
               </div>
               <h3 className="text-lg font-semibold text-gray-900 leading-tight">
-                {metric.title}
+                {decodeHtmlEntities(metric.title)}
               </h3>
             </div>
 
             {/* Description */}
             {metric.description && (
               <p className="text-gray-600 text-sm leading-relaxed">
-                {metric.description}
+                {decodeHtmlEntities(metric.description)}
               </p>
             )}
 
@@ -155,7 +172,7 @@ export default function MetricCard({ metric }: MetricCardProps) {
               <div className="bg-blue-50 border-l-4 border-blue-400 p-6 rounded-r h-full">
                 <h4 className="font-semibold text-blue-800 mb-3 text-base">How to Use This:</h4>
                 <p className="text-blue-700 text-sm leading-relaxed">
-                  {metric.howToUse}
+                  {decodeHtmlEntities(metric.howToUse)}
                 </p>
               </div>
             )}
@@ -169,7 +186,7 @@ export default function MetricCard({ metric }: MetricCardProps) {
                   <span className="mr-2">💬</span> Talk Track
                 </h4>
                 <p className="text-green-700 text-sm leading-relaxed">
-                  {metric.talkTrack}
+                  {decodeHtmlEntities(metric.talkTrack)}
                 </p>
               </div>
             )}
