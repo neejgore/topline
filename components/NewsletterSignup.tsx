@@ -15,7 +15,7 @@ export default function NewsletterSignup() {
     setError('')
 
     try {
-      const response = await fetch('/api/newsletter/subscribe', {
+      const response = await fetch('/api/newsletter/subscribe-direct', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
