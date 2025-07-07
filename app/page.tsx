@@ -35,7 +35,7 @@ export default function HomePage() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="bg-blue-50 rounded-lg p-4 text-center">
-                  <div className="text-2xl font-bold text-blue-600">15+</div>
+                  <div className="text-2xl font-bold text-blue-600">20+</div>
                   <div className="text-sm text-gray-600">Premium Sources</div>
                 </div>
                 <div className="bg-indigo-50 rounded-lg p-4 text-center">

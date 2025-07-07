@@ -16,7 +16,7 @@ export default function Footer() {
             </p>
             <div className="flex space-x-4">
               <div className="bg-gray-800 rounded-lg p-3 text-center">
-                <div className="text-lg font-bold text-blue-400">15+</div>
+                <div className="text-lg font-bold text-blue-400">20+</div>
                 <div className="text-xs text-gray-400">Sources</div>
               </div>
               <div className="bg-gray-800 rounded-lg p-3 text-center">
