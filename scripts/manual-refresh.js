@@ -2,6 +2,7 @@ require('dotenv').config()
 const { createClient } = require('@supabase/supabase-js')
 const { CONTENT_SOURCES, RELEVANT_KEYWORDS, EXCLUDE_KEYWORDS, VERTICALS } = require('../lib/content-sources.ts')
 const { generateAIContent, generateMetricsAIContent } = require('../lib/ai-content-generator')
+const { classifyVerticalAutonomous } = require('../lib/content-classifier')
 const Parser = require('rss-parser')
 
 const parser = new Parser()
@@ -114,12 +115,19 @@ async function manualRefresh() {
 
               console.log(`🤖 Generating AI content for: ${item.title.substring(0, 50)}...`)
               
+              // Classify vertical based on content, not source
+              const contentVertical = classifyVerticalAutonomous(
+                item.title,
+                item.contentSnippet || item.content || '',
+                source.name
+              )
+              
               // Generate AI-powered content
               const aiContent = await generateAIContent(
                 item.title,
                 item.contentSnippet || item.content || '',
                 source.name,
-                source.vertical
+                contentVertical
               )
 
               // Create new article with AI content
@@ -132,7 +140,7 @@ async function manualRefresh() {
                   sourceName: source.name,
                   publishedAt: new Date().toISOString(),
                   createdAt: new Date().toISOString(),
-                  vertical: source.vertical,
+                  vertical: contentVertical,
                   status: 'PUBLISHED',
                   priority: source.priority,
                   category: 'NEWS',
