@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     if (existingSubscriber) {
       if (existingSubscriber.isActive) {
         return NextResponse.json(
-          { message: 'You are already subscribed to Topline!' },
+          { message: 'You are already subscribed to The Beacon!' },
           { status: 400 }
         )
       } else {
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { message: 'Successfully subscribed to Topline!' },
+      { message: 'Successfully subscribed to The Beacon!' },
       { status: 201 }
     )
 
