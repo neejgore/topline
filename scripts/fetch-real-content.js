@@ -1,3 +1,4 @@
+require('dotenv').config()
 const { CONTENT_SOURCES } = require('../lib/content-sources.js')
 const { prisma } = require('../lib/db')
 const { generateAIContent } = require('../lib/ai-content-generator.js')

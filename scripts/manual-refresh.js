@@ -1,3 +1,4 @@
+require('dotenv').config()
 const { createClient } = require('@supabase/supabase-js')
 const { CONTENT_SOURCES, RELEVANT_KEYWORDS, EXCLUDE_KEYWORDS, VERTICALS } = require('../lib/content-sources.ts')
 const { generateAIContent, generateMetricsAIContent } = require('../lib/ai-content-generator')

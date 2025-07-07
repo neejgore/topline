@@ -1,72 +1,71 @@
+require('dotenv').config()
 const { createClient } = require('@supabase/supabase-js')
 const { generateAIContent } = require('../lib/ai-content-generator.js')
 
-// Supabase connection
-const supabaseUrl = 'https://yuwuaadbqgywebfsbjcp.supabase.co'
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1d3VhYWRicWd5d2ViZnNiamNwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTIyOTgwMiwiZXhwIjoyMDY2ODA1ODAyfQ.tRlLoaBVZe4hpR1WNpSbyf6AwRr42NTPkFfowhuoY7c'
-const supabase = createClient(supabaseUrl, supabaseKey)
-
-// Generic content patterns to identify articles that need regeneration
-const GENERIC_PATTERNS = [
-  'AI and automation are transforming marketing technology',
-  'Privacy changes are reshaping digital marketing',
-  'The retail and commerce landscape is rapidly evolving',
-  'Data strategy is central to modern marketing',
-  'This industry development signals important changes',
-  'This article provides important industry insights',
-  'Use this information to understand current market trends',
-  'Leverage this Technology & Media development',
-  'Use this Consumer & Retail development',
-  'Reference this growth story',
-  'Use this industry consolidation'
-]
+// Initialize Supabase client
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+)
 
 async function regenerateAIContent() {
-  console.log('🤖 Starting AI content regeneration...')
-  
+  console.log('🔄 Starting AI content regeneration...')
+  console.log('📅 Time:', new Date().toLocaleString())
+  console.log('=' .repeat(50))
+
   try {
-    // Get all articles with generic content
+    // Get all published articles
     const { data: articles, error } = await supabase
       .from('articles')
       .select('*')
       .eq('status', 'PUBLISHED')
-      .order('publishedAt', { ascending: false })
-      .limit(50) // Process most recent 50 articles
-    
+      .order('createdAt', { ascending: false })
+
     if (error) {
-      console.error('Error fetching articles:', error)
-      return
+      throw new Error(`Error fetching articles: ${error.message}`)
     }
-    
-    console.log(`📊 Found ${articles.length} articles to process`)
-    
-    let regenerated = 0
-    let skipped = 0
-    
-    for (const article of articles) {
+
+    console.log(`📰 Found ${articles.length} published articles`)
+
+    // Generic phrases that indicate articles need regeneration
+    const genericPhrases = [
+      'AI adoption in Technology & Media is accelerating rapidly',
+      'early adopters gaining significant competitive advantages',
+      'This development signals where the market is heading',
+      'Reference this AI trend to discuss',
+      'position your solution in the context of this market evolution',
+      'Privacy regulations and data changes are forcing immediate strategic shifts',
+      'Market consolidation and funding activities signal investor confidence',
+      'The retail media and commerce landscape is evolving rapidly',
+      'This [vertical] development represents a significant shift'
+    ]
+
+    // Find articles with generic content
+    const articlesNeedingRegeneration = articles.filter(article => {
+      const content = `${article.whyItMatters || ''} ${article.talkTrack || ''}`.toLowerCase()
+      return genericPhrases.some(phrase => content.includes(phrase.toLowerCase())) ||
+             !article.whyItMatters || !article.talkTrack ||
+             article.whyItMatters.trim() === '' || article.talkTrack.trim() === ''
+    })
+
+    console.log(`🔧 Found ${articlesNeedingRegeneration.length} articles needing AI content regeneration`)
+
+    let successCount = 0
+    let failureCount = 0
+
+    for (const article of articlesNeedingRegeneration) {
       try {
-        // Check if article has generic content
-        const hasGenericContent = GENERIC_PATTERNS.some(pattern => 
-          article.whyItMatters?.includes(pattern) || 
-          article.talkTrack?.includes(pattern)
-        )
-        
-        if (!hasGenericContent) {
-          skipped++
-          continue
-        }
-        
-        console.log(`🔄 Regenerating content for: ${article.title}`)
+        console.log(`\n🤖 Regenerating AI content for: ${article.title.substring(0, 50)}...`)
         
         // Generate new AI content
         const aiContent = await generateAIContent(
           article.title,
           article.summary || '',
-          article.sourceName,
-          article.vertical
+          article.sourceName || 'Unknown',
+          article.vertical || 'Technology & Media'
         )
-        
-        // Update the article with new AI content
+
+        // Update the article
         const { error: updateError } = await supabase
           .from('articles')
           .update({
@@ -75,43 +74,53 @@ async function regenerateAIContent() {
             updatedAt: new Date().toISOString()
           })
           .eq('id', article.id)
-        
+
         if (updateError) {
-          console.error(`❌ Error updating article ${article.id}:`, updateError)
-          continue
+          throw new Error(`Error updating article: ${updateError.message}`)
         }
+
+        console.log(`✅ Successfully regenerated AI content for: ${article.title.substring(0, 50)}...`)
+        successCount++
+
+        // Rate limit to avoid overwhelming the API
+        await new Promise(resolve => setTimeout(resolve, 2000))
+
+      } catch (error) {
+        console.error(`❌ Failed to regenerate AI content for article ${article.id}:`, error.message)
+        failureCount++
         
-        regenerated++
-        console.log(`✅ Updated: ${article.title}`)
-        
-        // Small delay to avoid overwhelming the AI API
-        await new Promise(resolve => setTimeout(resolve, 1500))
-        
-      } catch (articleError) {
-        console.error(`❌ Error processing article ${article.id}:`, articleError)
-        skipped++
+        // Continue with next article instead of stopping
+        continue
       }
     }
-    
-    console.log(`🎉 AI content regeneration complete!`)
-    console.log(`📊 Regenerated: ${regenerated} articles, Skipped: ${skipped} articles`)
-    
+
+    console.log('\n🎉 AI content regeneration complete!')
+    console.log('=' .repeat(50))
+    console.log(`✅ Successfully regenerated: ${successCount} articles`)
+    console.log(`❌ Failed to regenerate: ${failureCount} articles`)
+    console.log(`📊 Total articles processed: ${articlesNeedingRegeneration.length}`)
+
+    if (successCount > 0) {
+      console.log('\n🔗 Check results at:')
+      console.log('- Website: https://topline-tlwi.vercel.app/')
+      console.log('- Newsletter: https://topline-tlwi.vercel.app/newsletter/preview')
+    }
+
   } catch (error) {
-    console.error('❌ Script failed:', error)
+    console.error('❌ Error in AI content regeneration:', error)
+    throw error
   }
 }
 
-// Run the script
-if (require.main === module) {
-  regenerateAIContent()
-    .then(() => {
-      console.log('✅ Script completed successfully')
-      process.exit(0)
-    })
-    .catch(error => {
-      console.error('❌ Script failed:', error)
-      process.exit(1)
-    })
-}
+// Run the regeneration
+regenerateAIContent()
+  .then(() => {
+    console.log('\n✅ AI content regeneration completed successfully')
+    process.exit(0)
+  })
+  .catch(error => {
+    console.error('\n❌ AI content regeneration failed:', error)
+    process.exit(1)
+  })
 
 module.exports = { regenerateAIContent } 
