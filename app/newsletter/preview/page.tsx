@@ -1,53 +1,68 @@
+'use client'
+
+import { useState, useEffect } from 'react'
 import { Metadata } from 'next'
 
-export const metadata: Metadata = {
-  title: 'Newsletter Preview | BellDesk AI',
-  description: 'Preview of the daily BellDesk AI newsletter',
+// Remove server-side metadata since this is now client-side
+// export const metadata: Metadata = {
+//   title: 'Newsletter Preview | BellDesk AI',
+//   description: 'Preview of the daily BellDesk AI newsletter',
+// }
+
+interface NewsletterContent {
+  metric: any | null
+  articles: any[]
+  date: string
 }
 
-async function getNewsletterContent() {
-  const baseUrl = process.env.VERCEL_URL 
-    ? `https://${process.env.VERCEL_URL}` 
-    : 'http://localhost:3000'
-
-  try {
-    // Fetch daily metric
-    const metricsResponse = await fetch(`${baseUrl}/api/metrics?limit=1`, {
-      next: { revalidate: 0 } // Always fetch fresh data
+function useNewsletterContent(): NewsletterContent & { loading: boolean } {
+  const [content, setContent] = useState<NewsletterContent>({
+    metric: null,
+    articles: [],
+    date: new Date().toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      timeZone: 'America/New_York'
     })
-    const metricsData = await metricsResponse.json()
-    
-    // Fetch recent articles
-    const articlesResponse = await fetch(`${baseUrl}/api/content?limit=3`, {
-      next: { revalidate: 0 }
-    })
-    const articlesData = await articlesResponse.json()
+  })
+  const [loading, setLoading] = useState(true)
 
-    return {
-      metric: metricsData.metrics?.[0] || null,
-      articles: articlesData.articles || [],
-      date: new Date().toLocaleDateString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        timeZone: 'America/New_York'
-      })
+  useEffect(() => {
+    async function fetchContent() {
+      try {
+        // Fetch daily metric
+        const metricsResponse = await fetch('/api/metrics?limit=1&status=PUBLISHED')
+        const metricsData = await metricsResponse.json()
+        
+        // Fetch recent articles
+        const articlesResponse = await fetch('/api/content?limit=10&status=PUBLISHED')
+        const articlesData = await articlesResponse.json()
+
+        setContent({
+          metric: metricsData.metrics?.[0] || null,
+          articles: articlesData.content || articlesData.articles || [],
+          date: new Date().toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            timeZone: 'America/New_York'
+          })
+        })
+      } catch (error) {
+        console.error('Error fetching newsletter content:', error)
+        // Keep default content on error
+      } finally {
+        setLoading(false)
+      }
     }
-  } catch (error) {
-    console.error('Error fetching newsletter content:', error)
-    return {
-      metric: null,
-      articles: [],
-      date: new Date().toLocaleDateString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        timeZone: 'America/New_York'
-      })
-    }
-  }
+
+    fetchContent()
+  }, [])
+
+  return { ...content, loading }
 }
 
 function formatValueWithUnit(value: number, unit: string): string {
@@ -63,8 +78,19 @@ function formatValueWithUnit(value: number, unit: string): string {
   return `${value}${unit ? ` ${unit}` : ''}`
 }
 
-export default async function NewsletterPreview() {
-  const { metric, articles, date } = await getNewsletterContent()
+export default function NewsletterPreview() {
+  const { metric, articles, date, loading } = useNewsletterContent()
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading newsletter preview...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -74,23 +100,24 @@ export default async function NewsletterPreview() {
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Newsletter Preview</h1>
           <p className="text-gray-600">This is how your daily newsletter will appear to subscribers</p>
           <div className="mt-4 flex items-center gap-4">
-            <a 
-              href="/newsletter/preview"
+            <button 
+              onClick={() => window.location.reload()}
               className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors inline-block"
             >
               Refresh Preview
-            </a>
-            <span className="text-sm text-gray-500">Auto-refreshes with latest content</span>
+            </button>
+            <span className="text-sm text-gray-500">Shows latest content with {articles.length} articles</span>
           </div>
         </div>
 
         {/* Newsletter Content */}
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           {/* Newsletter Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 sm:p-8">
+          <div className="bg-gradient-to-r from-slate-900 via-blue-800 to-blue-600 text-white p-6 sm:p-8">
             <div className="max-w-2xl mx-auto text-center">
-              <h1 className="text-3xl sm:text-4xl font-bold mb-2">BellDesk AI</h1>
-              <p className="text-blue-100 text-lg">Daily sales intelligence</p>
+              <div className="text-2xl mb-2">🔥</div>
+              <h1 className="text-3xl sm:text-4xl font-bold mb-2">The Beacon</h1>
+              <p className="text-blue-100 text-lg">AI-Powered Sales Intelligence</p>
               <p className="text-blue-200 text-sm mt-2">{date}</p>
             </div>
           </div>
@@ -102,7 +129,7 @@ export default async function NewsletterPreview() {
               {/* Daily Metric Section */}
               {metric ? (
                 <div className="mb-8">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4">📊 Need-to-know Metric</h2>
+                  <h2 className="text-xl font-semibold text-gray-900 mb-4">📊 Today's Key Metric</h2>
                   <div className="bg-gray-50 rounded-lg p-6">
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                       {/* Left Column: Metric and Description */}
@@ -136,7 +163,7 @@ export default async function NewsletterPreview() {
                 </div>
               ) : (
                 <div className="mb-8">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4">📊 Need-to-know Metric</h2>
+                  <h2 className="text-xl font-semibold text-gray-900 mb-4">📊 Today's Key Metric</h2>
                   <div className="bg-gray-50 rounded-lg p-6">
                     <p className="text-gray-500 text-center">No metric available for today</p>
                   </div>

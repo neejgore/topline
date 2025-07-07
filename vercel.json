@@ -7,10 +7,6 @@
     {
       "path": "/api/cron/refresh-content",
       "schedule": "0 10 * * 1-5"
-    },
-    {
-      "path": "/api/newsletter/send?secret=pasdogawegmasdngasd",
-      "schedule": "0 12 * * 1-5"
     }
   ],
   "env": {
