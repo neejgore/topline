@@ -1,12 +1,78 @@
-// Newsletter Service - Handles newsletter generation and sending
+#!/usr/bin/env node
+
+// Load environment variables
+require('dotenv').config({ path: '.env.local' })
+
+// Configuration
+const TEST_EMAIL = 'neej.gore@gmail.com'
+const TEST_NAME = 'Neej'
 const BREVO_API_KEY = process.env.BREVO_API_KEY
 const BREVO_API_URL = 'https://api.brevo.com/v3'
-const { OpenAI } = require('openai')
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
+// Sample content (using real data from APIs)
+const testContent = {
+  metric: {
+    title: "AI Marketing Spend Q3 2024",
+    value: "42.8",
+    unit: "billion USD",
+    description: "The AI Marketing Spend of 42.8 billion USD in Q3 2024 signals a crucial shift in budget allocation for enterprises as they prioritize digital transformation initiatives.",
+    source: "AI Marketing Report Q3 2024",
+    howToUse: "This metric allows decision-makers to benchmark their spending against competitors and identify emerging trends in the technology and media sectors.",
+    talkTrack: "With AI marketing spend reaching 42.8 billion USD, it's clear that businesses are doubling down on digital transformation. This validates the necessity of investing in AI-driven solutions.",
+    vertical: "Technology & Media"
+  },
+  articles: [
+    {
+      title: "In CTV, retail media and emerging channels, third-party data is more important than ever",
+      summary: "Connected TV and retail media are dominating advertiser attention — and their budgets. CTV ad spending is projected to reach $33.35 billion this year, while retail media's 19.7% growth will be more than double the growth in overall digital advertising.",
+      source: "Digiday",
+      vertical: "Technology & Media"
+    },
+    {
+      title: "Hogarth's Glasson On Cannes, How AI Is Transforming Content Production",
+      summary: "Cannes is changing in a good way, says Richard Glasson, CEO of WPP's production operation Hogarth Worldwide. And so is his business, thanks to rapid developments in artificial intelligence.",
+      source: "MediaPost",
+      vertical: "Technology & Media"
+    },
+    {
+      title: "ChatGPT Named This Pickle Campaign -- And It Slaps",
+      summary: "Cleveland Kitchen taps AI and a risque slogan to push its lightly fermented pickles into 15,000 stores -- and disrupt a crowded category.",
+      source: "MediaPost",
+      vertical: "Technology & Media"
+    },
+    {
+      title: "Marketing results don't add. They multiply and synergize",
+      summary: "Traditional metrics can't capture how campaigns interact. Test for multiplicative and synergistic effects and rethink paid media measurement.",
+      source: "MarTech Today",
+      vertical: "Technology & Media"
+    },
+    {
+      title: "5 Amazon Ads features you're not using — but should be",
+      summary: "Missed these Amazon Ads features? Catch up on Attribution, Prime Video and more ways to drive better, data-backed campaigns.",
+      source: "MarTech Today",
+      vertical: "Technology & Media"
+    },
+    {
+      title: "Podcast companies turn to live events to capture growing advertiser spend",
+      summary: "The surge in the number of live podcast events in 2025 reflects a broader shift: advertisers are betting bigger on podcasts — not just as an audio channel but as a full-fledged creator economy play.",
+      source: "Digiday",
+      vertical: "Technology & Media"
+    },
+    {
+      title: "Best Buy, Lowe's chief marketing officers explain why they launched new influencer programs",
+      summary: "CMOs launched these new programs in response to the growing importance of influencers in recommending products.",
+      source: "Digiday",
+      vertical: "Technology & Media"
+    }
+  ],
+  date: new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    timeZone: 'America/New_York'
+  })
+}
 
 /**
  * Format metric value with unit for display
@@ -25,9 +91,9 @@ function formatValueWithUnit(value, unit) {
 }
 
 /**
- * Generate newsletter HTML content
+ * Generate The Beacon HTML newsletter
  */
-function generateNewsletterHTML(data) {
+function generateBeaconHTML(data) {
   const { metric, articles, date } = data
   
   return `
@@ -239,7 +305,7 @@ function generateNewsletterHTML(data) {
                 <div class="metric-columns">
                     <div class="metric-column">
                         <h4>How to Use This</h4>
-                        <p>${metric.howToUse || metric.whyItMatters}</p>
+                        <p>${metric.howToUse}</p>
                     </div>
                     <div class="metric-column">
                         <h4>Talk Track</h4>
@@ -283,153 +349,9 @@ function generateNewsletterHTML(data) {
 }
 
 /**
- * Get newsletter content from APIs
+ * Send test email via Brevo
  */
-async function getNewsletterContent(baseUrl) {
-  try {
-    // Fetch daily metric (published only)
-    const metricsResponse = await fetch(`${baseUrl}/api/metrics?limit=1&status=PUBLISHED`)
-    const metricsData = await metricsResponse.json()
-    
-    // Fetch recent articles (published only)
-    const articlesResponse = await fetch(`${baseUrl}/api/content?limit=10&status=PUBLISHED`)
-    const articlesData = await articlesResponse.json()
-
-    return {
-      metric: metricsData.metrics?.[0] || null,
-      articles: articlesData.content || articlesData.articles || [],
-      date: new Date().toLocaleDateString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        timeZone: 'America/New_York'
-      })
-    }
-  } catch (error) {
-    console.error('Error fetching newsletter content:', error)
-    return {
-      metric: null,
-      articles: [],
-      date: new Date().toLocaleDateString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        timeZone: 'America/New_York'
-      })
-    }
-  }
-}
-
-/**
- * Get all active subscribers
- */
-async function getActiveSubscribers(supabase) {
-  try {
-    const { data: subscribers, error } = await supabase
-      .from('newsletter_subscribers')
-      .select('email, name')
-      .eq('isActive', true)
-
-    if (error) {
-      console.error('Error fetching subscribers:', error)
-      return []
-    }
-
-    return subscribers || []
-  } catch (error) {
-    console.error('Error fetching subscribers:', error)
-    return []
-  }
-}
-
-/**
- * Generate AI-powered subject line based on content
- */
-async function generateSubjectLine(metric, articles) {
-  if (!process.env.OPENAI_API_KEY) {
-    // Fallback to simple subject if no OpenAI key
-    if (metric) {
-      return `🔥 The Beacon: ${metric.title}`
-    }
-    if (articles.length > 0) {
-      return `🔥 The Beacon: ${articles[0].title}`
-    }
-    return `🔥 The Beacon: Daily Sales Intelligence`
-  }
-
-  try {
-    const contentSummary = {
-      metric: metric ? {
-        title: metric.title,
-        value: metric.value,
-        vertical: metric.vertical,
-        priority: metric.priority
-      } : null,
-      articles: articles.slice(0, 3).map(article => ({
-        title: article.title,
-        vertical: article.vertical,
-        priority: article.priority
-      }))
-    }
-
-    const prompt = `
-You are an expert at writing compelling email subject lines for sales intelligence newsletters.
-
-Today's content includes:
-${metric ? `METRIC: ${metric.title} (${metric.value}) - ${metric.vertical} - Priority: ${metric.priority}` : ''}
-${articles.length > 0 ? `ARTICLES: ${articles.map(a => `${a.title} (${a.vertical}, Priority: ${a.priority})`).join(', ')}` : ''}
-
-Write a compelling subject line for "The Beacon" newsletter that:
-1. Starts with "🔥 The Beacon:"
-2. Highlights the most important/relevant content (metric OR top article)
-3. Creates urgency and interest for enterprise sales professionals
-4. Is under 60 characters total
-5. Focuses on the highest priority content
-
-Choose either the metric or the highest priority article as the main focus.
-
-Respond with just the subject line, nothing else.
-`
-
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: "You are an expert email marketer specializing in B2B sales intelligence newsletters. Always respond with just the subject line."
-        },
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
-      temperature: 0.7,
-      max_tokens: 50,
-    })
-
-    const subject = response.choices[0].message.content.trim()
-    return subject
-
-  } catch (error) {
-    console.error('Error generating AI subject line:', error)
-    
-    // Fallback to content-based subject
-    if (metric) {
-      return `🔥 The Beacon: ${metric.title}`
-    }
-    if (articles.length > 0) {
-      return `🔥 The Beacon: ${articles[0].title}`
-    }
-    return `🔥 The Beacon: Daily Sales Intelligence`
-  }
-}
-
-/**
- * Send newsletter via Brevo
- */
-async function sendNewsletterEmail(htmlContent, subject, subscribers) {
+async function sendTestEmail(htmlContent, subject, email, name) {
   if (!BREVO_API_KEY) {
     throw new Error('BREVO_API_KEY is not configured')
   }
@@ -447,10 +369,10 @@ async function sendNewsletterEmail(htmlContent, subject, subscribers) {
           name: 'The Beacon',
           email: 'Beacon@BellDesk.ai'
         },
-        to: subscribers.map(sub => ({
-          email: sub.email,
-          name: sub.name || ''
-        })),
+        to: [{
+          email: email,
+          name: name
+        }],
         subject: subject,
         htmlContent: htmlContent
       })
@@ -464,57 +386,67 @@ async function sendNewsletterEmail(htmlContent, subject, subscribers) {
     const result = await response.json()
     return result
   } catch (error) {
-    console.error('Error sending newsletter:', error)
+    console.error('Error sending test email:', error)
     throw error
   }
 }
 
 /**
- * Generate and send daily newsletter
+ * Main function
  */
-async function generateAndSendNewsletter(supabase, baseUrl) {
+async function sendDirectBeacon() {
   try {
-    // Get newsletter content
-    const content = await getNewsletterContent(baseUrl)
+    console.log('🔥 Generating The Beacon newsletter with 7 articles...')
     
     // Generate HTML
-    const htmlContent = generateNewsletterHTML(content)
+    console.log('🎨 Generating HTML...')
+    const htmlContent = generateBeaconHTML(testContent)
     
-    // Get subscribers
-    const subscribers = await getActiveSubscribers(supabase)
+    // Subject line
+    const subject = `🔥 The Beacon: ${testContent.metric.title} + 7 Key Articles`
     
-    if (subscribers.length === 0) {
-      console.log('No active subscribers found')
-      return { success: true, message: 'No active subscribers', count: 0 }
-    }
-
-    // Generate AI-powered subject line
-    const subject = await generateSubjectLine(content.metric, content.articles)
+    console.log(`📧 Subject: ${subject}`)
+    console.log(`📊 Metric: ${testContent.metric.title}`)
+    console.log(`📰 Articles: ${testContent.articles.length}`)
     
-    // Send newsletter
-    const result = await sendNewsletterEmail(htmlContent, subject, subscribers)
+    // Send test email
+    console.log(`📤 Sending newsletter to ${TEST_EMAIL}...`)
+    const result = await sendTestEmail(htmlContent, subject, TEST_EMAIL, TEST_NAME)
     
-    console.log(`Newsletter sent successfully to ${subscribers.length} subscribers`)
+    console.log('✅ The Beacon newsletter sent successfully!')
+    console.log(`📧 Email sent to: ${TEST_EMAIL}`)
+    console.log(`📋 Subject: ${subject}`)
+    console.log(`🆔 Brevo Message ID: ${result.messageId}`)
     
     return {
       success: true,
-      message: `Newsletter sent to ${subscribers.length} subscribers`,
-      count: subscribers.length,
-      brevoResult: result
+      recipient: TEST_EMAIL,
+      subject: subject,
+      messageId: result.messageId,
+      articleCount: testContent.articles.length
     }
+    
   } catch (error) {
-    console.error('Error generating and sending newsletter:', error)
+    console.error('❌ Error sending The Beacon:', error)
     return {
       success: false,
-      error: error.message,
-      count: 0
+      error: error.message
     }
   }
 }
 
-module.exports = {
-  generateNewsletterHTML,
-  getNewsletterContent,
-  generateAndSendNewsletter,
-  generateSubjectLine
-} 
+// Run the script
+sendDirectBeacon()
+  .then(result => {
+    if (result.success) {
+      console.log('\n🎉 The Beacon sent successfully!')
+      console.log(`📊 Full newsletter with ${result.articleCount} articles delivered!`)
+    } else {
+      console.log('\n💥 Failed to send The Beacon:', result.error)
+      process.exit(1)
+    }
+  })
+  .catch(error => {
+    console.error('\n💥 Script error:', error)
+    process.exit(1)
+  }) 
