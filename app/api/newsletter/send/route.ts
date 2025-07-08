@@ -12,10 +12,21 @@ const supabase = createClient(
 
 export async function POST(request: NextRequest) {
   try {
-    // Security check - only allow cron jobs
+    // Check if this is a Vercel cron job (internal call) or manual call
     const authHeader = request.headers.get('authorization')
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const userAgent = request.headers.get('user-agent')
+    const isVercelCron = userAgent?.includes('vercel-cron') || 
+                        request.headers.get('x-vercel-cron') === '1' ||
+                        request.headers.get('x-vercel-deployment-url')
+    
+    // For manual calls, require CRON_SECRET
+    if (!isVercelCron) {
+      if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
+      console.log('🔔 Manual newsletter send triggered...')
+    } else {
+      console.log('🔔 Vercel cron newsletter send triggered...')
     }
 
     console.log('🔔 Starting automated newsletter campaign...')
@@ -53,10 +64,21 @@ export async function POST(request: NextRequest) {
 // For manual testing
 export async function GET(request: NextRequest) {
   try {
-    // Security check - only allow cron jobs
+    // Check if this is a Vercel cron job (internal call) or manual call
     const authHeader = request.headers.get('authorization')
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const userAgent = request.headers.get('user-agent')
+    const isVercelCron = userAgent?.includes('vercel-cron') || 
+                        request.headers.get('x-vercel-cron') === '1' ||
+                        request.headers.get('x-vercel-deployment-url')
+    
+    // For manual calls, require CRON_SECRET
+    if (!isVercelCron) {
+      if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
+      console.log('🔔 Manual newsletter test triggered...')
+    } else {
+      console.log('🔔 Vercel cron newsletter test triggered...')
     }
 
     console.log('🔔 Manual newsletter test...')

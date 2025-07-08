@@ -13,6 +13,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { email, name } = subscribeSchema.parse(body)
 
+    console.log(`📧 New subscription attempt: ${email} (${name || 'no name'})`)
+
     // Check if subscriber already exists
     const { data: existingSubscriber, error: findError } = await supabase
       .from('newsletter_subscribers')
@@ -31,11 +33,13 @@ export async function POST(request: NextRequest) {
 
     if (existingSubscriber) {
       if (existingSubscriber.isActive) {
+        console.log(`📧 ${email} already subscribed and active`)
         return NextResponse.json(
           { message: 'You are already subscribed to The Beacon!' },
           { status: 400 }
         )
       } else {
+        console.log(`📧 Reactivating subscription for ${email}`)
         // Reactivate existing subscriber
         const { error: updateError } = await supabase
           .from('newsletter_subscribers')
@@ -54,14 +58,36 @@ export async function POST(request: NextRequest) {
           )
         }
 
-        // Add to Brevo and send welcome email
+        // Add to Brevo and send welcome email with detailed logging
+        let brevoSuccess = false
+        let emailSuccess = false
+        
         try {
+          console.log(`📧 Adding ${email} to Brevo...`)
           await addContactToBrevo(email, name || existingSubscriber.name)
-          await sendWelcomeEmail(email, name || existingSubscriber.name)
+          brevoSuccess = true
+          console.log(`✅ Successfully added ${email} to Brevo`)
         } catch (brevoError) {
-          console.error('Brevo integration error (reactivation):', brevoError)
-          // Don't fail the subscription if email fails
+          console.error('❌ Brevo contact add error (reactivation):', brevoError)
         }
+
+        try {
+          console.log(`📧 Sending welcome email to ${email}...`)
+          const result = await sendWelcomeEmail(email, name || existingSubscriber.name)
+          emailSuccess = true
+          console.log(`✅ Welcome email sent successfully to ${email}:`, result.messageId)
+        } catch (emailError) {
+          console.error('❌ Welcome email error (reactivation):', emailError)
+          // Log the specific error details
+          console.error('❌ Welcome email error details:', {
+            email,
+            name: name || existingSubscriber.name,
+            error: emailError instanceof Error ? emailError.message : String(emailError),
+            stack: emailError instanceof Error ? emailError.stack : undefined
+          })
+        }
+
+        console.log(`📧 Reactivation complete for ${email}: Brevo=${brevoSuccess}, Email=${emailSuccess}`)
         
         return NextResponse.json(
           { message: 'Welcome back! Your subscription has been reactivated.' },
@@ -70,6 +96,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    console.log(`📧 Creating new subscription for ${email}`)
     // Create new subscriber
     const { error: insertError } = await supabase
       .from('newsletter_subscribers')
@@ -88,14 +115,38 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Add to Brevo and send welcome email
+    console.log(`✅ Database subscription created for ${email}`)
+
+    // Add to Brevo and send welcome email with detailed logging
+    let brevoSuccess = false
+    let emailSuccess = false
+    
     try {
+      console.log(`📧 Adding ${email} to Brevo...`)
       await addContactToBrevo(email, name)
-      await sendWelcomeEmail(email, name)
+      brevoSuccess = true
+      console.log(`✅ Successfully added ${email} to Brevo`)
     } catch (brevoError) {
-      console.error('Brevo integration error (new subscription):', brevoError)
-      // Don't fail the subscription if email fails
+      console.error('❌ Brevo contact add error (new subscription):', brevoError)
     }
+
+    try {
+      console.log(`📧 Sending welcome email to ${email}...`)
+      const result = await sendWelcomeEmail(email, name)
+      emailSuccess = true
+      console.log(`✅ Welcome email sent successfully to ${email}:`, result.messageId)
+    } catch (emailError) {
+      console.error('❌ Welcome email error (new subscription):', emailError)
+      // Log the specific error details
+      console.error('❌ Welcome email error details:', {
+        email,
+        name,
+        error: emailError instanceof Error ? emailError.message : String(emailError),
+        stack: emailError instanceof Error ? emailError.stack : undefined
+      })
+    }
+
+    console.log(`📧 New subscription complete for ${email}: Brevo=${brevoSuccess}, Email=${emailSuccess}`)
 
     return NextResponse.json(
       { message: 'Successfully subscribed to The Beacon!' },
@@ -104,13 +155,14 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     if (error instanceof z.ZodError) {
+      console.error('❌ Validation error:', error.errors)
       return NextResponse.json(
         { message: 'Invalid email address' },
         { status: 400 }
       )
     }
 
-    console.error('Newsletter subscription error:', error)
+    console.error('❌ Newsletter subscription error:', error)
     return NextResponse.json(
       { message: 'Failed to subscribe. Please try again.' },
       { status: 500 }

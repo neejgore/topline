@@ -8,10 +8,21 @@ const parser = new Parser()
 
 export async function GET(request: Request) {
   try {
-    // Verify cron secret
+    // Check if this is a Vercel cron job (internal call) or manual call
     const authHeader = request.headers.get('authorization')
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const userAgent = request.headers.get('user-agent')
+    const isVercelCron = userAgent?.includes('vercel-cron') || 
+                        request.headers.get('x-vercel-cron') === '1' ||
+                        request.headers.get('x-vercel-deployment-url')
+    
+    // For manual calls, require CRON_SECRET
+    if (!isVercelCron) {
+      if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
+      console.log('🔄 Manual cron job triggered...')
+    } else {
+      console.log('🔄 Vercel cron job triggered...')
     }
 
     const supabase = createClient(
