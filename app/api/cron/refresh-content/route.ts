@@ -28,22 +28,27 @@ async function assessSalesRelevanceWithAI(title: string, content: string, vertic
 
   try {
     const prompt = `
-You are an expert at identifying content relevant to enterprise sales professionals, particularly those selling marketing technology, advertising technology, and related services.
+You are an expert at identifying content relevant to enterprise sales professionals and business intelligence.
 
 Analyze this article:
 Title: ${title}
 Content: ${content}
 Vertical: ${vertical}
 
-Is this article relevant to sales intelligence for enterprise sales professionals? Consider:
-- Marketing technology trends
-- Advertising industry developments
-- Business/revenue impacts
-- Technology adoption
-- Industry regulations affecting martech/adtech
-- Company acquisitions, funding, leadership changes
-- Budget/spending trends
-- Platform updates that affect sales strategies
+Is this article relevant to sales intelligence for enterprise sales professionals? Consider any content about:
+- Business trends, market conditions, industry changes
+- Technology adoption, platform updates, software developments
+- Company news (acquisitions, funding, leadership changes, hiring)
+- Revenue, budget, and spending trends
+- Marketing, advertising, and sales technology
+- Industry regulations affecting business
+- Economic indicators affecting business
+- Consumer behavior and market demand
+- Digital transformation and business strategy
+- Any business intelligence that helps sales professionals understand market conditions
+
+Be INCLUSIVE - if it has business value for sales professionals, answer YES.
+Only reject if it's clearly not business-related (sports, entertainment, personal health, etc.).
 
 Respond with ONLY "YES" or "NO" - nothing else.
 `
@@ -53,7 +58,7 @@ Respond with ONLY "YES" or "NO" - nothing else.
       messages: [
         {
           role: "system",
-          content: "You are an expert at identifying sales intelligence content. Respond only with YES or NO."
+          content: "You are an expert at identifying sales intelligence content. Be INCLUSIVE - if it has business value for sales professionals, answer YES. Respond only with YES or NO."
         },
         {
           role: "user",
