@@ -31,9 +31,11 @@ export async function GET(request: NextRequest) {
         status,
         views,
         clicks,
-        shares
+        shares,
+        importanceScore
       `)
       .eq('status', status)
+      .order('importanceScore', { ascending: false })
       .order('publishedAt', { ascending: false })
       .range(skip, skip + limit - 1)
 

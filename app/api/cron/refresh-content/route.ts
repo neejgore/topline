@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { CONTENT_SOURCES, EXCLUDE_KEYWORDS } from '../../../../lib/content-sources'
 import { generateAIContent } from '../../../../lib/ai-content-generator'
 import { classifyContentVertical } from '../../../../lib/content-classifier'
+import { calculateRelevanceScore } from '../../../../lib/relevance-scorer'
 import { OpenAI } from 'openai'
 
 const Parser = require('rss-parser')
@@ -248,6 +249,17 @@ export async function GET(request: Request) {
                 source.vertical
               )
               
+              // AI-powered relevance scoring for intelligent prioritization
+              console.log(`🔢 Calculating relevance score...`)
+              const relevanceScore = await calculateRelevanceScore(
+                item.title,
+                item.contentSnippet || item.content || '',
+                aiContent.whyItMatters,
+                aiContent.talkTrack,
+                correctVertical,
+                source.name
+              )
+              
               console.log(`💾 INSERTING into database...`)
 
               // Create article with full AI intelligence
@@ -266,7 +278,7 @@ export async function GET(request: Request) {
                 category: 'NEWS',
                 whyItMatters: aiContent.whyItMatters,
                 talkTrack: aiContent.talkTrack,
-                importanceScore: 0,
+                importanceScore: relevanceScore, // AI-calculated relevance score
                 views: 0,
                 clicks: 0,
                 shares: 0
