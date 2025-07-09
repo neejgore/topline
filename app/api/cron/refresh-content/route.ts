@@ -49,9 +49,11 @@ Is this article relevant to sales intelligence for enterprise sales professional
 - Digital transformation and business strategy
 - Competition and market positioning intelligence
 
-CRITICAL: Only approve articles that provide actionable business intelligence for sales professionals in target verticals: Technology & Media, Consumer & Retail, Healthcare, Financial Services, Insurance, Automotive, Travel & Hospitality, Education, Telecom, Services, Political Candidate & Advocacy.
+APPROVAL CRITERIA: Accept articles that provide business intelligence for sales professionals in target verticals: Technology & Media, Consumer & Retail, Healthcare, Financial Services, Insurance, Automotive, Travel & Hospitality, Education, Telecom, Services, Political Candidate & Advocacy.
 
-Reject if: sports, entertainment, personal health, celebrity news, or irrelevant verticals.
+REJECTION CRITERIA: Reject only if clearly irrelevant (sports, entertainment, personal health, celebrity news, or clearly non-business content).
+
+Be moderately inclusive - when in doubt, approve business-related content.
 
 Respond with ONLY "YES" or "NO" - nothing else.
 `
@@ -61,14 +63,14 @@ Respond with ONLY "YES" or "NO" - nothing else.
       messages: [
         {
           role: "system",
-          content: "You are an expert at identifying sales intelligence content for target business verticals. Be selective - only approve content with clear business value for sales professionals. Respond only with YES or NO."
+          content: "You are an expert at identifying sales intelligence content for target business verticals. Be moderately inclusive - approve business-related content unless clearly irrelevant. Respond only with YES or NO."
         },
         {
           role: "user",
           content: prompt
         }
       ],
-      temperature: 0.1,
+      temperature: 0.3, // Increased from 0.1 for more balanced responses
       max_tokens: 5,
     })
 
@@ -211,14 +213,11 @@ export async function GET(request: Request) {
 
               // OpenAI-powered relevance assessment for target verticals
               console.log(`🤖 AI assessing relevance...`)
-              const isRelevant = true // Temporarily disable AI check
-              /*
               const isRelevant = await assessSalesRelevanceWithAI(
                 item.title,
                 item.contentSnippet || item.content || '',
                 source.vertical
               )
-              */
 
               console.log(`🤖 AI relevance result: ${isRelevant ? 'APPROVED' : 'REJECTED'}`)
 
