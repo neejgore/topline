@@ -193,13 +193,10 @@ export async function GET(request: Request) {
                 continue
               }
 
-              // Use OpenAI to determine relevance to sales intelligence
-              const isRelevant = await assessSalesRelevanceWithAI(
-                item.title,
-                item.contentSnippet || item.content || '',
-                source.vertical
-              )
-
+              // TEMPORARY: Skip AI assessment for debugging - accept all articles
+              console.log(`🔍 Processing article: ${item.title}`)
+              const isRelevant = true // Temporarily accept all articles
+              
               if (!isRelevant) {
                 skippedArticles++
                 continue
