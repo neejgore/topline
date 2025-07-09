@@ -190,28 +190,29 @@ export async function GET(request: Request) {
               //   continue
               // }
 
-              // Check if article already exists (STRICT NO REUSE POLICY)
-              console.log(`🔍 Checking for existing article with URL: ${item.link}`)
+              // TEMPORARY: Skip duplicate check for debugging
+              console.log(`🔍 Skipping duplicate check for debugging - URL: ${item.link}`)
               
-              const { data: existingArticle, error: checkError } = await supabase
-                .from('articles')
-                .select('id')
-                .eq('sourceUrl', item.link)
-                .single()
+              // Skip duplicate check for now
+              // const { data: existingArticle, error: checkError } = await supabase
+              //   .from('articles')
+              //   .select('id')
+              //   .eq('sourceUrl', item.link)
+              //   .single()
 
-              if (checkError && checkError.code !== 'PGRST116') {
-                console.error('❌ Error checking for existing article:', checkError)
-                skippedArticles++
-                continue
-              }
+              // if (checkError && checkError.code !== 'PGRST116') {
+              //   console.error('❌ Error checking for existing article:', checkError)
+              //   skippedArticles++
+              //   continue
+              // }
 
-              if (existingArticle) {
-                console.log(`❌ Skipping - article already exists (id: ${existingArticle.id})`)
-                skippedArticles++
-                continue
-              }
+              // if (existingArticle) {
+              //   console.log(`❌ Skipping - article already exists (id: ${existingArticle.id})`)
+              //   skippedArticles++
+              //   continue
+              // }
               
-              console.log(`✅ Article does not exist, proceeding...`)
+              console.log(`✅ Article does not exist (duplicate check skipped), proceeding...`)
               
               console.log(`✅ Article passed all checks, processing...`)
 
