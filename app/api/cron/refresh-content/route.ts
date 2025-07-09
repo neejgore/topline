@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { CONTENT_SOURCES, EXCLUDE_KEYWORDS } from '../../../../lib/content-sources'
 import { generateAIContent } from '../../../../lib/ai-content-generator'
+import { classifyContentVertical } from '../../../../lib/content-classifier'
 import { OpenAI } from 'openai'
 
 const Parser = require('rss-parser')
@@ -238,6 +239,15 @@ export async function GET(request: Request) {
               )
 
               console.log(`✅ AI content generated successfully`)
+              
+              // AI-based content classification to ensure accurate vertical assignment
+              console.log(`🔍 Classifying content vertical...`)
+              const correctVertical = await classifyContentVertical(
+                item.title,
+                item.contentSnippet || item.content || '',
+                source.vertical
+              )
+              
               console.log(`💾 INSERTING into database...`)
 
               // Create article with full AI intelligence
@@ -250,7 +260,7 @@ export async function GET(request: Request) {
                 publishedAt: itemDate.toISOString(),
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(), // Add required updatedAt field
-                vertical: source.vertical,
+                vertical: correctVertical, // Use AI-classified vertical instead of source vertical
                 status: 'PUBLISHED',
                 priority: source.priority,
                 category: 'NEWS',
