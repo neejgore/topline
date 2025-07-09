@@ -19,6 +19,7 @@ export async function GET() {
       sourceName: 'Test Source',
       publishedAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
       vertical: 'Technology & Media',
       status: 'PUBLISHED',
       priority: 'MEDIUM',
