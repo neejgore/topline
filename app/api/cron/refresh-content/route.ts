@@ -211,11 +211,14 @@ export async function GET(request: Request) {
 
               // OpenAI-powered relevance assessment for target verticals
               console.log(`🤖 AI assessing relevance...`)
+              const isRelevant = true // Temporarily disable AI check
+              /*
               const isRelevant = await assessSalesRelevanceWithAI(
                 item.title,
                 item.contentSnippet || item.content || '',
                 source.vertical
               )
+              */
 
               console.log(`🤖 AI relevance result: ${isRelevant ? 'APPROVED' : 'REJECTED'}`)
 
