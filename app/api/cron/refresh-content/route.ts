@@ -125,9 +125,9 @@ export async function GET(request: Request) {
       })
     }
 
-    // STEP 1: Archive old content (older than 48 hours)
-    console.log('🗄️  Step 1: Archiving content older than 48 hours...')
-    const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000)
+    // STEP 1: Archive old content (older than 24 hours)
+    console.log('🗄️  Step 1: Archiving content older than 24 hours...')
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
     
     const { data: publishedArticles } = await supabase
       .from('articles')
@@ -139,7 +139,7 @@ export async function GET(request: Request) {
     const articlesToArchive = publishedArticles?.filter(article => {
       const publishedDate = new Date(article.publishedAt)
       const createdDate = new Date(article.createdAt)
-      return publishedDate < fortyEightHoursAgo || createdDate < fortyEightHoursAgo
+      return publishedDate < twentyFourHoursAgo || createdDate < twentyFourHoursAgo
     }) || []
     
     console.log(`📦 Archiving ${articlesToArchive.length} old articles`)
@@ -170,42 +170,62 @@ export async function GET(request: Request) {
           
           for (const item of feed.items.slice(0, 3)) { // Process up to 3 items per source
             try {
-              if (!item.title || !item.link) continue
+              console.log(`\n🔍 DEBUGGING ITEM: ${item.title}`)
+              console.log(`📅 Item date: ${item.pubDate}`)
+              console.log(`🔗 Item URL: ${item.link}`)
+              
+              if (!item.title || !item.link) {
+                console.log(`❌ SKIP: Missing title or link`)
+                continue
+              }
 
-              // Check if article is from the last 48 hours
+              // Check if article is from the last 24 hours
               const itemDate = item.pubDate ? new Date(item.pubDate) : new Date()
-              if (itemDate < fortyEightHoursAgo) {
+              console.log(`⏰ Item date parsed: ${itemDate.toISOString()}`)
+              console.log(`⏰ 24h cutoff: ${twentyFourHoursAgo.toISOString()}`)
+              console.log(`⏰ Is recent? ${itemDate >= twentyFourHoursAgo}`)
+              
+              if (itemDate < twentyFourHoursAgo) {
+                console.log(`❌ SKIP: Article too old`)
                 continue
               }
 
               // Strict no-reuse policy: Check if article already exists
-              const { data: existingArticle } = await supabase
+              console.log(`🔍 Checking for duplicates...`)
+              const { data: existingArticle, error: checkError } = await supabase
                 .from('articles')
                 .select('id')
                 .eq('sourceUrl', item.link)
                 .single()
 
+              console.log(`📊 Duplicate check result: ${existingArticle ? 'FOUND' : 'NOT FOUND'}`)
+              if (checkError) {
+                console.log(`🔍 Duplicate check error: ${checkError.message}`)
+              }
+
               if (existingArticle) {
+                console.log(`❌ SKIP: Article already exists (id: ${existingArticle.id})`)
                 skippedArticles++
                 continue
               }
 
               // OpenAI-powered relevance assessment for target verticals
-              console.log(`🤖 AI assessing relevance: ${item.title.substring(0, 50)}...`)
+              console.log(`🤖 AI assessing relevance...`)
               const isRelevant = await assessSalesRelevanceWithAI(
                 item.title,
                 item.contentSnippet || item.content || '',
                 source.vertical
               )
 
+              console.log(`🤖 AI relevance result: ${isRelevant ? 'APPROVED' : 'REJECTED'}`)
+
               if (!isRelevant) {
-                console.log(`❌ AI rejected: ${item.title.substring(0, 50)}...`)
+                console.log(`❌ SKIP: AI rejected relevance`)
                 skippedArticles++
                 continue
               }
 
-              console.log(`✅ AI approved: ${item.title.substring(0, 50)}...`)
-              console.log(`🤖 Generating AI content...`)
+              console.log(`✅ PROCESSING: All checks passed, generating AI content...`)
               
               // Generate AI-powered content with enhanced intelligence
               const aiContent = await generateAIContent(
@@ -215,42 +235,55 @@ export async function GET(request: Request) {
                 source.vertical
               )
 
+              console.log(`✅ AI content generated successfully`)
+              console.log(`💾 INSERTING into database...`)
+
               // Create article with full AI intelligence
-              const { error: insertError } = await supabase
+              const articleData = {
+                title: item.title,
+                summary: item.contentSnippet || item.content || null,
+                sourceUrl: item.link,
+                sourceName: source.name,
+                publishedAt: itemDate.toISOString(),
+                createdAt: new Date().toISOString(),
+                vertical: source.vertical,
+                status: 'PUBLISHED',
+                priority: source.priority,
+                category: 'NEWS',
+                whyItMatters: aiContent.whyItMatters,
+                talkTrack: aiContent.talkTrack,
+                importanceScore: 0,
+                views: 0,
+                clicks: 0,
+                shares: 0
+              }
+
+              console.log(`📝 Article data: ${JSON.stringify({
+                title: articleData.title,
+                sourceUrl: articleData.sourceUrl,
+                vertical: articleData.vertical,
+                status: articleData.status
+              })}`)
+
+              const { data: insertResult, error: insertError } = await supabase
                 .from('articles')
-                .insert({
-                  title: item.title,
-                  summary: item.contentSnippet || item.content || null,
-                  sourceUrl: item.link,
-                  sourceName: source.name,
-                  publishedAt: itemDate.toISOString(),
-                  createdAt: new Date().toISOString(),
-                  vertical: source.vertical,
-                  status: 'PUBLISHED',
-                  priority: source.priority,
-                  category: 'NEWS',
-                  whyItMatters: aiContent.whyItMatters,
-                  talkTrack: aiContent.talkTrack,
-                  importanceScore: 0,
-                  views: 0,
-                  clicks: 0,
-                  shares: 0
-                })
+                .insert(articleData)
+                .select()
 
               if (insertError) {
-                console.error('❌ Database insertion error:', insertError)
+                console.error('❌ DATABASE ERROR:', JSON.stringify(insertError, null, 2))
                 skippedArticles++
                 continue
               }
 
+              console.log(`✅ SUCCESS: Article inserted with ID: ${insertResult?.[0]?.id}`)
               totalArticles++
-              console.log(`✅ Successfully published with AI content: ${item.title.substring(0, 50)}...`)
 
               // Rate limit to avoid overwhelming OpenAI
               await new Promise(resolve => setTimeout(resolve, 2000))
 
             } catch (itemError) {
-              console.error('❌ Error processing article:', itemError)
+              console.error('❌ ITEM ERROR:', itemError)
               skippedArticles++
             }
           }
