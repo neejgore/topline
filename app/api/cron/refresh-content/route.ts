@@ -215,13 +215,11 @@ export async function GET(request: Request) {
 
               console.log(`🤖 Generating AI content for: ${item.title}`)
               
-              // Generate AI-powered content
-              const aiContent = await generateAIContent(
-                item.title,
-                item.contentSnippet || item.content || '',
-                source.name,
-                source.vertical
-              )
+              // TEMPORARY: Skip AI content generation for debugging
+              const aiContent = {
+                whyItMatters: "This development represents a significant shift in the market landscape.",
+                talkTrack: "I saw this news and thought of our conversation about market trends."
+              }
 
               // Create new article with AI content
               const { error: insertError } = await supabase
