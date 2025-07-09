@@ -173,12 +173,20 @@ export async function GET(request: Request) {
         if (feed.items) {
           for (const item of feed.items.slice(0, 5)) { // Increased to 5 items per source
             try {
-              if (!item.title || !item.link) continue
+              console.log(`🔍 Checking article: ${item.title}`)
+              
+              if (!item.title || !item.link) {
+                console.log(`❌ Skipping - missing title or link`)
+                continue
+              }
 
               // Check if article is from the last 48 hours (expanded lookback)
               const itemDate = item.pubDate ? new Date(item.pubDate) : new Date()
+              console.log(`📅 Article date: ${itemDate.toISOString()}, 48h ago: ${fortyEightHoursAgo.toISOString()}`)
+              
               if (itemDate < fortyEightHoursAgo) {
-                continue // Skip articles older than 48 hours
+                console.log(`❌ Skipping - article too old`)
+                continue
               }
 
               // Check if article already exists (STRICT NO REUSE POLICY)
@@ -189,9 +197,12 @@ export async function GET(request: Request) {
                 .single()
 
               if (existingArticle) {
+                console.log(`❌ Skipping - article already exists (id: ${existingArticle.id})`)
                 skippedArticles++
                 continue
               }
+              
+              console.log(`✅ Article passed all checks, processing...`)
 
               // TEMPORARY: Skip AI assessment for debugging - accept all articles
               console.log(`🔍 Processing article: ${item.title}`)
