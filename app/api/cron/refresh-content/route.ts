@@ -240,12 +240,14 @@ export async function GET(request: Request) {
 
               // Create article with full AI intelligence
               const articleData = {
+                id: Math.floor(Math.random() * 1000000000), // Generate unique ID
                 title: item.title,
                 summary: item.contentSnippet || item.content || null,
                 sourceUrl: item.link,
                 sourceName: source.name,
                 publishedAt: itemDate.toISOString(),
                 createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(), // Add required updatedAt field
                 vertical: source.vertical,
                 status: 'PUBLISHED',
                 priority: source.priority,
