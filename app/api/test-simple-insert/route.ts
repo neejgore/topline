@@ -10,8 +10,9 @@ export async function GET() {
 
     console.log('🧪 Testing simple article insertion...')
 
-    // Simple test article
+    // Simple test article with manual ID
     const testArticle = {
+      id: Math.floor(Math.random() * 1000000), // Manual ID for testing
       title: `Test Article ${Date.now()}`,
       summary: 'This is a test article to check database functionality',
       sourceUrl: `https://example.com/test-${Date.now()}`,
