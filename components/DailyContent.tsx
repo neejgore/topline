@@ -26,6 +26,7 @@ interface Article {
   views?: number
   clicks?: number
   shares?: number
+  importanceScore?: number
 }
 
 export default function DailyContent() {

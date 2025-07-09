@@ -15,6 +15,7 @@ interface Article {
   vertical?: string | null
   priority?: string
   category?: string
+  importanceScore?: number
 }
 
 interface ArticleCardProps {
@@ -57,9 +58,23 @@ export default function ArticleCard({ article }: ArticleCardProps) {
     return `${month} ${day}, ${time}`
   }
 
-  const getPriorityStars = (priority?: string) => {
-    const starCount = priority === 'HIGH' ? 3 : priority === 'MEDIUM' ? 2 : priority === 'LOW' ? 1 : 0;
-    const starColor = priority === 'HIGH' ? 'text-red-500' : priority === 'MEDIUM' ? 'text-orange-500' : 'text-gray-400';
+  const getRelevanceStars = (importanceScore?: number) => {
+    if (!importanceScore) return null;
+    
+    // Convert 0-100 AI relevance score to 1-3 star rating
+    let starCount = 0;
+    let starColor = 'text-gray-400';
+    
+    if (importanceScore >= 85) {
+      starCount = 3;
+      starColor = 'text-red-500'; // High relevance
+    } else if (importanceScore >= 70) {
+      starCount = 2;
+      starColor = 'text-orange-500'; // Medium relevance
+    } else if (importanceScore >= 50) {
+      starCount = 1;
+      starColor = 'text-gray-400'; // Low relevance
+    }
     
     if (starCount === 0) return null;
     
@@ -105,7 +120,7 @@ export default function ArticleCard({ article }: ArticleCardProps) {
             <span>{formatDate(article.publishedAt || null)}</span>
           </div>
           <div className="flex items-center gap-2">
-            {article.priority && getPriorityStars(article.priority)}
+            {article.importanceScore && getRelevanceStars(article.importanceScore)}
             {article.vertical && (
               <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${getVerticalColor(article.vertical)}`}>
                 {article.vertical}
