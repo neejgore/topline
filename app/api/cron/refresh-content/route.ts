@@ -122,9 +122,9 @@ export async function GET(request: Request) {
       })
     }
 
-    // STEP 1: Archive old content (older than 48 hours OR if we're refreshing on a new day)
-    console.log('🗄️  Step 1: Archiving content older than 48 hours...')
-    const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000)
+    // STEP 1: Archive old content (older than 7 days for testing)
+    console.log('🗄️  Step 1: Archiving content older than 7 days...')
+    const fortyEightHoursAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
     
     // Get current published articles to check their age
     const { data: publishedArticles } = await supabase
@@ -180,9 +180,9 @@ export async function GET(request: Request) {
                 continue
               }
 
-              // Check if article is from the last 48 hours (expanded lookback)
+              // Check if article is from the last 7 days (expanded for testing)
               const itemDate = item.pubDate ? new Date(item.pubDate) : new Date()
-              console.log(`📅 Article date: ${itemDate.toISOString()}, 48h ago: ${fortyEightHoursAgo.toISOString()}`)
+              console.log(`📅 Article date: ${itemDate.toISOString()}, 7 days ago: ${fortyEightHoursAgo.toISOString()}`)
               
               if (itemDate < fortyEightHoursAgo) {
                 console.log(`❌ Skipping - article too old`)
