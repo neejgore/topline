@@ -110,4 +110,25 @@ export async function GET(request: Request) {
         }
 
       } catch (sourceError) {
-        console.error(`
+        console.error(`❌ Error fetching from ${source.name}:`, sourceError)
+        skippedArticles++
+      }
+    }
+
+    console.log(`🎉 Content refresh completed: ${totalArticles} articles inserted, ${skippedArticles} skipped`)
+
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Content refresh completed',
+      totalArticles: totalArticles,
+      skippedArticles: skippedArticles
+    })
+
+  } catch (error) {
+    console.error('❌ Content refresh failed:', error)
+    return NextResponse.json({ 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
+  }
+}
