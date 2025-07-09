@@ -180,14 +180,15 @@ export async function GET(request: Request) {
                 continue
               }
 
-              // Check if article is from the last 7 days (expanded for testing)
+              // TEMPORARY: Skip date check completely for debugging
               const itemDate = item.pubDate ? new Date(item.pubDate) : new Date()
-              console.log(`📅 Article date: ${itemDate.toISOString()}, 7 days ago: ${fortyEightHoursAgo.toISOString()}`)
+              console.log(`📅 Article date: ${itemDate.toISOString()}, skipping date check for debugging`)
               
-              if (itemDate < fortyEightHoursAgo) {
-                console.log(`❌ Skipping - article too old`)
-                continue
-              }
+              // Skip date filtering for now
+              // if (itemDate < fortyEightHoursAgo) {
+              //   console.log(`❌ Skipping - article too old`)
+              //   continue
+              // }
 
               // Check if article already exists (STRICT NO REUSE POLICY)
               console.log(`🔍 Checking for existing article with URL: ${item.link}`)
