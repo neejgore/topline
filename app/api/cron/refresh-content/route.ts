@@ -3,8 +3,80 @@ import { createClient } from '@supabase/supabase-js'
 import { CONTENT_SOURCES, RELEVANT_KEYWORDS, EXCLUDE_KEYWORDS, VERTICALS } from '../../../../lib/content-sources'
 import { generateAIContent, generateMetricsAIContent } from '../../../../lib/ai-content-generator'
 import Parser from 'rss-parser'
+import { OpenAI } from 'openai'
 
 const parser = new Parser()
+
+// Initialize OpenAI client
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+})
+
+/**
+ * Use OpenAI to assess if an article is relevant to sales intelligence
+ */
+async function assessSalesRelevanceWithAI(title: string, content: string, vertical: string): Promise<boolean> {
+  if (!process.env.OPENAI_API_KEY) {
+    console.log('⚠️ No OpenAI key - falling back to basic relevance check')
+    // Fallback to simple exclusion check
+    const combinedText = (title + ' ' + content).toLowerCase()
+    const hasExcludedContent = EXCLUDE_KEYWORDS.some(keyword => 
+      combinedText.includes(keyword)
+    )
+    return !hasExcludedContent
+  }
+
+  try {
+    const prompt = `
+You are an expert at identifying content relevant to enterprise sales professionals, particularly those selling marketing technology, advertising technology, and related services.
+
+Analyze this article:
+Title: ${title}
+Content: ${content}
+Vertical: ${vertical}
+
+Is this article relevant to sales intelligence for enterprise sales professionals? Consider:
+- Marketing technology trends
+- Advertising industry developments
+- Business/revenue impacts
+- Technology adoption
+- Industry regulations affecting martech/adtech
+- Company acquisitions, funding, leadership changes
+- Budget/spending trends
+- Platform updates that affect sales strategies
+
+Respond with ONLY "YES" or "NO" - nothing else.
+`
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: "You are an expert at identifying sales intelligence content. Respond only with YES or NO."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      temperature: 0.1,
+      max_tokens: 5,
+    })
+
+    const result = response.choices[0].message.content?.trim().toUpperCase()
+    return result === 'YES'
+
+  } catch (error) {
+    console.error('Error assessing article relevance with AI:', error)
+    // Fallback to simple exclusion check if AI fails
+    const combinedText = (title + ' ' + content).toLowerCase()
+    const hasExcludedContent = EXCLUDE_KEYWORDS.some(keyword => 
+      combinedText.includes(keyword)
+    )
+    return !hasExcludedContent
+  }
+}
 
 export async function GET(request: Request) {
   try {
@@ -45,9 +117,9 @@ export async function GET(request: Request) {
       })
     }
 
-    // STEP 1: Archive old content (older than 24 hours OR if we're refreshing on a new day)
-    console.log('🗄️  Step 1: Archiving content older than 24 hours...')
-    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
+    // STEP 1: Archive old content (older than 48 hours OR if we're refreshing on a new day)
+    console.log('🗄️  Step 1: Archiving content older than 48 hours...')
+    const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000)
     
     // Get current published articles to check their age
     const { data: publishedArticles } = await supabase
@@ -57,12 +129,12 @@ export async function GET(request: Request) {
     
     console.log(`📊 Found ${publishedArticles?.length || 0} published articles`)
     
-    // Archive articles that are old OR were created more than 24 hours ago
+    // Archive articles that are old OR were created more than 48 hours ago
     const articlesToArchive = publishedArticles?.filter(article => {
       const publishedDate = new Date(article.publishedAt)
       const createdDate = new Date(article.createdAt)
-      const isOldByPublished = publishedDate < twentyFourHoursAgo
-      const isOldByCreated = createdDate < twentyFourHoursAgo
+      const isOldByPublished = publishedDate < fortyEightHoursAgo
+      const isOldByCreated = createdDate < fortyEightHoursAgo
       return isOldByPublished || isOldByCreated
     }) || []
     
@@ -82,8 +154,8 @@ export async function GET(request: Request) {
       }
     }
 
-    // STEP 2: Process articles with 24-hour lookback
-    console.log('📰 Step 2: Processing articles with 24-hour lookback...')
+    // STEP 2: Process articles with 48-hour lookback using AI relevance assessment (NO REUSE)
+    console.log('📰 Step 2: Processing articles with 48-hour lookback using AI relevance assessment...')
     let totalArticles = 0
     let skippedArticles = 0
 
@@ -98,13 +170,13 @@ export async function GET(request: Request) {
             try {
               if (!item.title || !item.link) continue
 
-              // Check if article is from the last 24 hours
+              // Check if article is from the last 48 hours (expanded lookback)
               const itemDate = item.pubDate ? new Date(item.pubDate) : new Date()
-              if (itemDate < twentyFourHoursAgo) {
-                continue // Skip articles older than 24 hours
+              if (itemDate < fortyEightHoursAgo) {
+                continue // Skip articles older than 48 hours
               }
 
-              // Check if article already exists (no reuse rule)
+              // Check if article already exists (STRICT NO REUSE POLICY)
               const { data: existingArticle } = await supabase
                 .from('articles')
                 .select('id')
@@ -116,19 +188,14 @@ export async function GET(request: Request) {
                 continue
               }
 
-              // Check relevance to sales/marketing/tech professionals
-              const title = item.title.toLowerCase()
-              const content = (item.contentSnippet || item.content || '').toLowerCase()
-              
-              const isRelevant = RELEVANT_KEYWORDS.some(keyword => 
-                title.includes(keyword) || content.includes(keyword)
-              )
-              
-              const hasExcludedContent = EXCLUDE_KEYWORDS.some(keyword => 
-                title.includes(keyword) || content.includes(keyword)
+              // Use OpenAI to determine relevance to sales intelligence
+              const isRelevant = await assessSalesRelevanceWithAI(
+                item.title,
+                item.contentSnippet || item.content || '',
+                source.vertical
               )
 
-              if (!isRelevant || hasExcludedContent) {
+              if (!isRelevant) {
                 skippedArticles++
                 continue
               }
@@ -186,121 +253,21 @@ export async function GET(request: Request) {
 
       } catch (sourceError) {
         console.error(`Error fetching from ${source.name}:`, sourceError)
+        skippedArticles++
       }
     }
 
-    // STEP 3: Refresh daily metrics with 90-day lookback
-    console.log('📊 Step 3: Refreshing daily metrics with 90-day lookback...')
-    const metricsResult = await refreshDailyMetrics(supabase)
+    console.log(`📊 Processed ${totalArticles} articles, skipped ${skippedArticles} articles`)
 
-    console.log(`🎉 Systematic daily refresh complete!`)
-    console.log(`📰 Articles: ${totalArticles} added, ${skippedArticles} skipped`)
-    console.log(`📊 Metrics: ${metricsResult.metricsSelected} selected`)
-
-    return NextResponse.json({
-      success: true,
-      totalArticles,
-      skippedArticles,
-      metricsResult,
-      timestamp: new Date().toISOString()
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Content refresh completed',
+      totalArticles: totalArticles,
+      skippedArticles: skippedArticles
     })
 
   } catch (error) {
-    console.error('Error in systematic content refresh:', error)
-    return NextResponse.json({ 
-      error: 'Internal server error', 
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 })
+    console.error('Error refreshing content:', error)
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }
-
-// Systematic metrics refresh with 90-day lookback and no reuse
-async function refreshDailyMetrics(supabase: any) {
-  try {
-    console.log('🔄 Starting systematic metrics refresh...')
-    
-    // Archive current published metrics
-    await supabase
-      .from('metrics')
-      .update({ 
-        status: 'ARCHIVED',
-        lastViewedAt: new Date().toISOString()
-      })
-      .eq('status', 'PUBLISHED')
-
-    // Get available metrics from the last 90 days that haven't been used
-    const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
-    
-    console.log(`📊 Looking for metrics from ${ninetyDaysAgo.toISOString()} to now...`)
-
-    const { data: availableMetrics } = await supabase
-      .from('metrics')
-      .select('*')
-      .gte('createdAt', ninetyDaysAgo.toISOString())
-      .eq('status', 'ARCHIVED')
-      .in('vertical', VERTICALS)
-      .or('lastViewedAt.is.null,lastViewedAt.lt.' + new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()) // Allow reuse after 7 days
-      .order('createdAt', { ascending: false })
-
-    console.log(`📊 Found ${availableMetrics?.length || 0} unused metrics in 90-day window`)
-
-    if (availableMetrics && availableMetrics.length > 0) {
-      // Select 1 metric (newest available that hasn't been used)
-      const selectedMetric = availableMetrics[0]
-
-      console.log(`🤖 Generating AI content for metric: ${selectedMetric.title}`)
-
-      // Generate AI-powered content for the metric
-      const aiContent = await generateMetricsAIContent(
-        selectedMetric.title,
-        selectedMetric.value,
-        selectedMetric.source,
-        selectedMetric.whyItMatters || '',
-        selectedMetric.vertical
-      )
-
-      // Publish it with enhanced AI content
-      await supabase
-        .from('metrics')
-        .update({ 
-          status: 'PUBLISHED',
-          publishedAt: new Date().toISOString(),
-          lastViewedAt: new Date().toISOString(),
-          whyItMatters: aiContent.whyItMatters,
-          talkTrack: aiContent.talkTrack
-        })
-        .eq('id', selectedMetric.id)
-
-      console.log(`✅ Selected metric with AI content: ${selectedMetric.title}`)
-      return { success: true, metricsSelected: 1, selectedMetric: selectedMetric.title }
-    } else {
-      console.log('⚠️  No available unused metrics found in 90-day window')
-      
-      // If no unused metrics, try to discover new ones
-      const discoveryResult = await discoverNewMetrics(supabase)
-      return { success: discoveryResult.success, metricsSelected: discoveryResult.metricsSelected }
-    }
-
-  } catch (error) {
-    console.error('Error refreshing metrics:', error)
-    return { success: false, metricsSelected: 0, error: error instanceof Error ? error.message : 'Unknown error' }
-  }
-}
-
-// Discover new metrics when none are available
-async function discoverNewMetrics(supabase: any) {
-  try {
-    console.log('🔍 Discovering new metrics...')
-    
-    // This would be where you could add logic to generate new metrics
-    // For now, return that no new metrics were found
-    return { success: false, metricsSelected: 0, message: 'No new metrics discovered' }
-  } catch (error) {
-    console.error('Error discovering new metrics:', error)
-    return { success: false, metricsSelected: 0, error: error instanceof Error ? error.message : 'Unknown error' }
-  }
-}
-
-export async function POST(request: Request) {
-  return GET(request)
-} 

@@ -12,7 +12,7 @@ async function regenerateAIContent() {
   console.log('🔄 Starting AI content regeneration...')
   console.log('📅 Time:', new Date().toLocaleString())
   console.log('=' .repeat(50))
-
+  
   try {
     // Get all published articles
     const { data: articles, error } = await supabase
@@ -20,11 +20,11 @@ async function regenerateAIContent() {
       .select('*')
       .eq('status', 'PUBLISHED')
       .order('createdAt', { ascending: false })
-
+    
     if (error) {
       throw new Error(`Error fetching articles: ${error.message}`)
     }
-
+    
     console.log(`📰 Found ${articles.length} published articles`)
 
     // Generic phrases that indicate articles need regeneration
@@ -64,7 +64,7 @@ async function regenerateAIContent() {
           article.sourceName || 'Unknown',
           article.vertical || 'Technology & Media'
         )
-
+        
         // Update the article
         const { error: updateError } = await supabase
           .from('articles')
@@ -74,17 +74,17 @@ async function regenerateAIContent() {
             updatedAt: new Date().toISOString()
           })
           .eq('id', article.id)
-
+        
         if (updateError) {
           throw new Error(`Error updating article: ${updateError.message}`)
         }
-
+        
         console.log(`✅ Successfully regenerated AI content for: ${article.title.substring(0, 50)}...`)
         successCount++
-
+        
         // Rate limit to avoid overwhelming the API
         await new Promise(resolve => setTimeout(resolve, 2000))
-
+        
       } catch (error) {
         console.error(`❌ Failed to regenerate AI content for article ${article.id}:`, error.message)
         failureCount++
@@ -93,7 +93,7 @@ async function regenerateAIContent() {
         continue
       }
     }
-
+    
     console.log('\n🎉 AI content regeneration complete!')
     console.log('=' .repeat(50))
     console.log(`✅ Successfully regenerated: ${successCount} articles`)
@@ -105,7 +105,7 @@ async function regenerateAIContent() {
       console.log('- Website: https://topline-tlwi.vercel.app/')
       console.log('- Newsletter: https://topline-tlwi.vercel.app/newsletter/preview')
     }
-
+    
   } catch (error) {
     console.error('❌ Error in AI content regeneration:', error)
     throw error
@@ -113,14 +113,14 @@ async function regenerateAIContent() {
 }
 
 // Run the regeneration
-regenerateAIContent()
-  .then(() => {
+  regenerateAIContent()
+    .then(() => {
     console.log('\n✅ AI content regeneration completed successfully')
-    process.exit(0)
-  })
-  .catch(error => {
+      process.exit(0)
+    })
+    .catch(error => {
     console.error('\n❌ AI content regeneration failed:', error)
-    process.exit(1)
-  })
+      process.exit(1)
+    })
 
 module.exports = { regenerateAIContent } 
