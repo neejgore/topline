@@ -190,17 +190,27 @@ export async function GET(request: Request) {
               }
 
               // Check if article already exists (STRICT NO REUSE POLICY)
-              const { data: existingArticle } = await supabase
+              console.log(`🔍 Checking for existing article with URL: ${item.link}`)
+              
+              const { data: existingArticle, error: checkError } = await supabase
                 .from('articles')
                 .select('id')
                 .eq('sourceUrl', item.link)
                 .single()
+
+              if (checkError && checkError.code !== 'PGRST116') {
+                console.error('❌ Error checking for existing article:', checkError)
+                skippedArticles++
+                continue
+              }
 
               if (existingArticle) {
                 console.log(`❌ Skipping - article already exists (id: ${existingArticle.id})`)
                 skippedArticles++
                 continue
               }
+              
+              console.log(`✅ Article does not exist, proceeding...`)
               
               console.log(`✅ Article passed all checks, processing...`)
 
@@ -222,35 +232,41 @@ export async function GET(request: Request) {
               }
 
               // Create new article with AI content
+              console.log(`💾 Attempting to insert article: ${item.title}`)
+              
+              const articleData = {
+                title: item.title,
+                summary: item.contentSnippet || item.content || null,
+                sourceUrl: item.link,
+                sourceName: source.name,
+                publishedAt: item.pubDate ? new Date(item.pubDate).toISOString() : new Date().toISOString(), // Use actual RSS date
+                createdAt: new Date().toISOString(),
+                vertical: source.vertical,
+                status: 'PUBLISHED',
+                priority: source.priority,
+                category: 'NEWS',
+                whyItMatters: aiContent.whyItMatters,
+                talkTrack: aiContent.talkTrack,
+                importanceScore: 0,
+                views: 0,
+                clicks: 0,
+                shares: 0
+              }
+              
+              console.log(`📝 Article data:`, JSON.stringify(articleData, null, 2))
+              
               const { error: insertError } = await supabase
                 .from('articles')
-                .insert({
-                  title: item.title,
-                  summary: item.contentSnippet || item.content || null,
-                  sourceUrl: item.link,
-                  sourceName: source.name,
-                  publishedAt: item.pubDate ? new Date(item.pubDate).toISOString() : new Date().toISOString(), // Use actual RSS date
-                  createdAt: new Date().toISOString(),
-                  vertical: source.vertical,
-                  status: 'PUBLISHED',
-                  priority: source.priority,
-                  category: 'NEWS',
-                  whyItMatters: aiContent.whyItMatters,
-                  talkTrack: aiContent.talkTrack,
-                  importanceScore: 0,
-                  views: 0,
-                  clicks: 0,
-                  shares: 0
-                })
+                .insert(articleData)
 
               if (insertError) {
-                console.error('Error inserting article:', insertError)
+                console.error('❌ Error inserting article:', insertError)
                 skippedArticles++
                 continue
               }
 
               totalArticles++
-              console.log(`✅ Added with AI content: ${item.title}`)
+              console.log(`✅ Successfully inserted article: ${item.title}`)
 
               // Rate limit to avoid overwhelming AI API
               await new Promise(resolve => setTimeout(resolve, 1000))
