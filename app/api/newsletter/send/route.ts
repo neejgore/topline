@@ -29,6 +29,27 @@ export async function POST(request: NextRequest) {
       console.log('🔔 Vercel cron newsletter send triggered...')
     }
 
+    // DUPLICATE SEND PROTECTION - Check if newsletter already sent today
+    const today = new Date().toISOString().split('T')[0] // YYYY-MM-DD format
+    const { data: recentSends, error: checkError } = await supabase
+      .from('newsletter_sends')
+      .select('*')
+      .gte('sent_at', `${today}T00:00:00.000Z`)
+      .lt('sent_at', `${today}T23:59:59.999Z`)
+      .limit(1)
+
+    if (checkError) {
+      console.log('⚠️ Could not check for duplicate sends (table may not exist):', checkError.message)
+    } else if (recentSends && recentSends.length > 0) {
+      console.log('⏸️ Newsletter already sent today, skipping duplicate send')
+      return NextResponse.json({ 
+        success: true, 
+        message: 'Newsletter already sent today - duplicate send prevented',
+        count: 0,
+        alreadySent: true
+      })
+    }
+
     console.log('🔔 Starting automated newsletter campaign...')
     
     // Get the base URL for API calls
@@ -41,6 +62,21 @@ export async function POST(request: NextRequest) {
     
     if (result.success) {
       console.log('✅ Newsletter campaign sent successfully!')
+      
+      // Track successful send to prevent duplicates
+      try {
+        await supabase
+          .from('newsletter_sends')
+          .insert({
+            sent_at: new Date().toISOString(),
+            subscriber_count: result.count,
+            campaign_id: result.brevoResult?.campaignId || null
+          })
+        console.log('📝 Send tracked for duplicate prevention')
+      } catch (trackError) {
+        console.log('⚠️ Could not track send (table may not exist):', trackError)
+      }
+      
       return NextResponse.json({ 
         success: true, 
         message: result.message,
@@ -81,6 +117,27 @@ export async function GET(request: NextRequest) {
       console.log('🔔 Vercel cron newsletter test triggered...')
     }
 
+    // DUPLICATE SEND PROTECTION - Check if newsletter already sent today
+    const today = new Date().toISOString().split('T')[0] // YYYY-MM-DD format
+    const { data: recentSends, error: checkError } = await supabase
+      .from('newsletter_sends')
+      .select('*')
+      .gte('sent_at', `${today}T00:00:00.000Z`)
+      .lt('sent_at', `${today}T23:59:59.999Z`)
+      .limit(1)
+
+    if (checkError) {
+      console.log('⚠️ Could not check for duplicate sends (table may not exist):', checkError.message)
+    } else if (recentSends && recentSends.length > 0) {
+      console.log('⏸️ Newsletter already sent today, skipping duplicate send')
+      return NextResponse.json({ 
+        success: true, 
+        message: 'Newsletter already sent today - duplicate send prevented',
+        count: 0,
+        alreadySent: true
+      })
+    }
+
     console.log('🔔 Manual newsletter test...')
     
     // Get the base URL for API calls
@@ -93,6 +150,21 @@ export async function GET(request: NextRequest) {
     
     if (result.success) {
       console.log('✅ Newsletter test sent successfully!')
+      
+      // Track successful send to prevent duplicates
+      try {
+        await supabase
+          .from('newsletter_sends')
+          .insert({
+            sent_at: new Date().toISOString(),
+            subscriber_count: result.count,
+            campaign_id: result.brevoResult?.campaignId || null
+          })
+        console.log('📝 Send tracked for duplicate prevention')
+      } catch (trackError) {
+        console.log('⚠️ Could not track send (table may not exist):', trackError)
+      }
+      
       return NextResponse.json({ 
         success: true, 
         message: result.message,
