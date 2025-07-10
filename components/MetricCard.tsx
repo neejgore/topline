@@ -35,6 +35,12 @@ const decodeHtmlEntities = (text: string): string => {
   return textArea.value
 }
 
+// Helper function to clean metric title for display
+const cleanMetricTitle = (title: string): string => {
+  // Remove date suffixes like "(2025-06-17)" or "(2025-06-17)" from title
+  return title.replace(/\s*\([0-9]{4}-[0-9]{2}-[0-9]{2}\)\s*$/, '').trim()
+}
+
 // Function to get vertical tag styling
 const getVerticalStyling = (vertical: string | null | undefined) => {
   if (!vertical) return { bg: 'bg-gray-100', text: 'text-gray-600', dot: 'bg-gray-400' }
@@ -135,7 +141,7 @@ export default function MetricCard({ metric }: MetricCardProps) {
                 {formatValueWithUnit(metric.value, metric.unit)}
               </div>
               <h3 className="text-lg font-semibold text-gray-900 leading-tight">
-                {decodeHtmlEntities(metric.title)}
+                {decodeHtmlEntities(cleanMetricTitle(metric.title))}
               </h3>
             </div>
 
