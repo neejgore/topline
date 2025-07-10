@@ -2,7 +2,7 @@
 
 require('dotenv').config({ path: '.env.local' })
 const { generateNewsletterHTML, getNewsletterContent, generateSubjectLine } = require('../lib/newsletter-service')
-const { sendEmailWithBrevo } = require('../lib/brevo-service')
+const { sendCampaignToList } = require('../lib/brevo-service')
 
 // Node.js v22 has native fetch support
 
@@ -29,24 +29,20 @@ async function sendTestNewsletter() {
     const subject = await generateSubjectLine(content.metric, content.articles)
     
     console.log(`📧 Sending test newsletter with subject: "${subject}"`)
-    // Send to just the test email
-    const result = await sendEmailWithBrevo(
-      'beacon@belldesk.ai',
-      'The Beacon',
-      [testEmail],
-      subject,
-      htmlContent
-    )
+    console.log(`📧 NOTE: This will send to all subscribers in List ID 3 (not just test email)`)
+    
+    // Send to List ID 3 using Campaign API (keeps emails private)
+    const result = await sendCampaignToList(subject, htmlContent, 3)
     
     if (result.success) {
-      console.log('✅ Test newsletter sent successfully!')
-      console.log(`📬 Message ID: ${result.messageId}`)
-      console.log(`📧 Check ${testEmail} for the newsletter`)
+      console.log('✅ Test newsletter campaign created successfully!')
+      console.log(`📬 Campaign ID: ${result.campaignId}`)
       console.log(`📊 Content included:`)
       console.log(`   Metric: ${content.metric ? content.metric.title : 'None'}`)
       console.log(`   Articles: ${content.articles.length}`)
+      console.log(`📧 Campaign will send to all subscribers in List ID 3`)
     } else {
-      console.log('❌ Failed to send test newsletter')
+      console.log('❌ Failed to create test newsletter campaign')
       console.log('Result:', result)
     }
     
