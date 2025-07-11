@@ -8,24 +8,70 @@ export async function POST(request: NextRequest) {
   try {
     console.log('🔄 Starting metrics AI content regeneration...')
     
-    // Get all published metrics
+    // Get all metrics (both published and archived) from target verticals
+    const TARGET_VERTICALS = [
+      'Technology & Media',
+      'Consumer & Retail', 
+      'Healthcare',
+      'Financial Services',
+      'Insurance',
+      'Automotive',
+      'Travel & Hospitality',
+      'Education',
+      'Telecom',
+      'Services',
+      'Political Candidate & Advocacy',
+      'Other'
+    ]
+    
     const { data: metrics, error } = await supabase
       .from('metrics')
       .select('*')
-      .eq('status', 'PUBLISHED')
+      .in('status', ['PUBLISHED', 'ARCHIVED'])
+      .in('vertical', TARGET_VERTICALS)
       .order('publishedAt', { ascending: false })
 
     if (error) {
       throw new Error(`Error fetching metrics: ${error.message}`)
     }
 
-    console.log(`📊 Found ${metrics.length} published metrics`)
+    console.log(`📊 Found ${metrics.length} metrics (published and archived)`)
+
+    // Generic phrases that indicate metrics need regeneration
+    const genericPhrases = [
+      'AI and automation are transforming industry operations',
+      'Digital transformation is accelerating across industries',
+      'Retail and consumer behavior is shifting dramatically',
+      'This metric shows how brands are adapting their customer engagement',
+      'Understanding these metrics helps position solutions in the context',
+      'This metric reveals how technology adoption is reshaping business operations',
+      'The media and technology landscape is rapidly evolving',
+      'Energy and utilities are transitioning to sustainable models',
+      'Financial services are undergoing digital transformation',
+      'Healthcare is embracing digital innovation',
+      'This metric indicates how the sector is adapting',
+      'This development signals where the market is heading',
+      'How is your organization planning to capitalize on this growth trend',
+      'What opportunities do you see in this expanding market',
+      'How are these technology trends impacting your digital strategy',
+      'Where is your organization in terms of adoption of these technologies'
+    ]
+
+    // Filter metrics that need regeneration
+    const metricsNeedingRegeneration = metrics.filter(metric => {
+      const content = `${metric.whyItMatters || ''} ${metric.talkTrack || ''}`.toLowerCase()
+      return genericPhrases.some(phrase => content.includes(phrase.toLowerCase())) ||
+             !metric.whyItMatters || !metric.talkTrack ||
+             metric.whyItMatters.trim() === '' || metric.talkTrack.trim() === ''
+    })
+
+    console.log(`🔧 Found ${metricsNeedingRegeneration.length} metrics needing AI content regeneration`)
 
     let regeneratedCount = 0
     let failedCount = 0
     const results = []
 
-    for (const metric of metrics) {
+    for (const metric of metricsNeedingRegeneration) {
       try {
         console.log(`🤖 Regenerating AI content for: ${metric.title}`)
         
@@ -89,6 +135,7 @@ export async function POST(request: NextRequest) {
       message: 'Metrics AI content regeneration completed',
       stats: {
         totalMetrics: metrics.length,
+        metricsNeedingRegeneration: metricsNeedingRegeneration.length,
         regeneratedCount,
         failedCount
       },
@@ -106,25 +153,64 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    // Get preview of current metrics
+    // Get preview of current metrics from target verticals
+    const TARGET_VERTICALS = [
+      'Technology & Media',
+      'Consumer & Retail', 
+      'Healthcare',
+      'Financial Services',
+      'Insurance',
+      'Automotive',
+      'Travel & Hospitality',
+      'Education',
+      'Telecom',
+      'Services',
+      'Political Candidate & Advocacy',
+      'Other'
+    ]
+    
     const { data: metrics, error } = await supabase
       .from('metrics')
-      .select('id, title, value, vertical, whyItMatters, talkTrack, source')
-      .eq('status', 'PUBLISHED')
-      .limit(5)
+      .select('id, title, value, vertical, whyItMatters, talkTrack, source, status')
+      .in('status', ['PUBLISHED', 'ARCHIVED'])
+      .in('vertical', TARGET_VERTICALS)
+      .limit(10)
 
     if (error) {
       throw new Error(`Error fetching metrics: ${error.message}`)
     }
+
+    // Check for generic content
+    const genericPhrases = [
+      'AI and automation are transforming industry operations',
+      'Digital transformation is accelerating across industries',
+      'Retail and consumer behavior is shifting dramatically',
+      'This metric shows how brands are adapting their customer engagement',
+      'Understanding these metrics helps position solutions in the context',
+      'This metric reveals how technology adoption is reshaping business operations',
+      'The media and technology landscape is rapidly evolving',
+      'Energy and utilities are transitioning to sustainable models',
+      'Financial services are undergoing digital transformation',
+      'Healthcare is embracing digital innovation'
+    ]
+
+    const metricsWithGenericContent = metrics.filter(metric => {
+      const content = `${metric.whyItMatters || ''} ${metric.talkTrack || ''}`.toLowerCase()
+      return genericPhrases.some(phrase => content.includes(phrase.toLowerCase())) ||
+             !metric.whyItMatters || !metric.talkTrack ||
+             metric.whyItMatters.trim() === '' || metric.talkTrack.trim() === ''
+    })
 
     const preview = metrics.map(metric => ({
       id: metric.id,
       title: metric.title,
       value: metric.value,
       vertical: metric.vertical,
+      status: metric.status,
       currentWhyItMatters: metric.whyItMatters?.substring(0, 200) + '...',
       currentTalkTrack: metric.talkTrack?.substring(0, 150) + '...',
-      source: metric.source
+      source: metric.source,
+      hasGenericContent: metricsWithGenericContent.some(m => m.id === metric.id)
     }))
 
     return NextResponse.json({
@@ -132,7 +218,9 @@ export async function GET(request: NextRequest) {
       message: 'Current metrics preview',
       metrics: preview,
       stats: {
-        totalPublishedMetrics: metrics.length
+        totalMetrics: metrics.length,
+        metricsWithGenericContent: metricsWithGenericContent.length,
+        metricsWithSpecificContent: metrics.length - metricsWithGenericContent.length
       }
     })
 
