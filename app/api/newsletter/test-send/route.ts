@@ -72,10 +72,8 @@ export async function POST(request: NextRequest) {
     // Skip authorization for testing
     console.log(`🔔 Sending test newsletter to ${email}...`)
     
-    // Get the base URL for API calls
-    const baseUrl = process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}` 
-      : 'https://topline-tlwi.vercel.app'
+    // Get the base URL for API calls - always use canonical URL
+    const baseUrl = 'https://topline-tlwi.vercel.app'
     
     // Get newsletter content
     const content = await getNewsletterContent(baseUrl)

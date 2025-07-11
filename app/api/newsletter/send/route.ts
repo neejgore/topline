@@ -52,10 +52,8 @@ export async function POST(request: NextRequest) {
 
     console.log('🔔 Starting automated newsletter campaign...')
     
-    // Get the base URL for API calls
-    const baseUrl = process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}` 
-      : 'https://topline-tlwi.vercel.app'
+    // Get the base URL for API calls - always use canonical URL
+    const baseUrl = 'https://topline-tlwi.vercel.app'
     
     // Send the newsletter campaign
     const result = await generateAndSendNewsletter(supabase, baseUrl)
@@ -140,10 +138,8 @@ export async function GET(request: NextRequest) {
 
     console.log('🔔 Manual newsletter test...')
     
-    // Get the base URL for API calls
-    const baseUrl = process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}` 
-      : 'https://topline-tlwi.vercel.app'
+    // Get the base URL for API calls - always use canonical URL
+    const baseUrl = 'https://topline-tlwi.vercel.app'
     
     // Send the newsletter campaign
     const result = await generateAndSendNewsletter(supabase, baseUrl)

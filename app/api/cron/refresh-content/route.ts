@@ -321,6 +321,86 @@ export async function GET(request: Request) {
       }
     }
 
+    // STEP 3: Publish fresh metric daily
+    console.log('📊 Step 3: Publishing fresh daily metric...')
+    
+    // Target verticals (from memory requirement)
+    const VERTICALS = [
+      'Technology & Media',
+      'Consumer & Retail', 
+      'Healthcare',
+      'Financial Services',
+      'Insurance',
+      'Automotive',
+      'Travel & Hospitality',
+      'Education',
+      'Telecom',
+      'Services',
+      'Political Candidate & Advocacy',
+      'Other'
+    ]
+    
+    try {
+      // Archive current published metrics
+      const { data: currentMetrics } = await supabase
+        .from('metrics')
+        .select('id, title')
+        .eq('status', 'PUBLISHED')
+      
+      if (currentMetrics && currentMetrics.length > 0) {
+        console.log(`📦 Archiving ${currentMetrics.length} current metrics...`)
+        await supabase
+          .from('metrics')
+          .update({ 
+            status: 'ARCHIVED',
+            lastViewedAt: new Date().toISOString()
+          })
+          .eq('status', 'PUBLISHED')
+      }
+      
+      // Get available metrics (allow reuse after 7 days, only from target verticals)
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+      const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
+      
+      const { data: availableMetrics } = await supabase
+        .from('metrics')
+        .select('*')
+        .gte('createdAt', ninetyDaysAgo.toISOString())
+        .eq('status', 'ARCHIVED')
+        .in('vertical', VERTICALS)
+        .or(`lastViewedAt.is.null,lastViewedAt.lt.${sevenDaysAgo.toISOString()}`)
+        .order('createdAt', { ascending: false })
+      
+      console.log(`📊 Found ${availableMetrics?.length || 0} available metrics`)
+      
+      if (availableMetrics && availableMetrics.length > 0) {
+        // Select 1 metric (the newest available from target verticals)
+        const selectedMetric = availableMetrics[0]
+        
+        // Publish the selected metric with updated publishedAt date
+        const { error: publishError } = await supabase
+          .from('metrics')
+          .update({ 
+            status: 'PUBLISHED',
+            publishedAt: new Date().toISOString(),
+            lastViewedAt: new Date().toISOString()
+          })
+          .eq('id', selectedMetric.id)
+        
+        if (publishError) {
+          console.error('❌ Error publishing metric:', publishError)
+        } else {
+          console.log(`✅ Published metric: ${selectedMetric.title} (${selectedMetric.value} ${selectedMetric.unit})`)
+          console.log(`📊 Vertical: ${selectedMetric.vertical}`)
+        }
+      } else {
+        console.log('⚠️  No available metrics to publish')
+      }
+      
+    } catch (metricError) {
+      console.error('❌ Error in metric publishing:', metricError)
+    }
+
     console.log(`🎉 Intelligent content refresh completed: ${totalArticles} articles published, ${skippedArticles} skipped`)
 
     return NextResponse.json({ 
