@@ -88,6 +88,13 @@ export async function GET(request: NextRequest) {
       query = query.eq('priority', priority.toUpperCase())
     }
 
+    // For archive requests, only show metrics that were actually shown to users
+    if (beforeDate && hasViewTrackingColumn) {
+      query = query.not('lastViewedAt', 'is', null)
+      // Order by lastViewedAt for archive to show most recently viewed first
+      query = query.order('lastViewedAt', { ascending: false })
+    }
+
     // Get metrics and count with appropriate date filter
     let countQuery = supabase
       .from('metrics')
@@ -105,6 +112,11 @@ export async function GET(request: NextRequest) {
 
     if (priority !== 'ALL') {
       countQuery = countQuery.eq('priority', priority.toUpperCase())
+    }
+
+    // For archive requests, only count metrics that were actually shown to users
+    if (beforeDate && hasViewTrackingColumn) {
+      countQuery = countQuery.not('lastViewedAt', 'is', null)
     }
 
     const [metricsResult, countResult] = await Promise.all([
