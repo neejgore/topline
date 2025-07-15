@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
     const vertical = searchParams.get('vertical') || 'ALL'
     const priority = searchParams.get('priority') || 'ALL'
     const status = searchParams.get('status') || 'PUBLISHED'
+    const beforeDate = searchParams.get('beforeDate') // For archive filtering
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '20')
     const skip = (page - 1) * limit
@@ -39,6 +40,11 @@ export async function GET(request: NextRequest) {
       .order('publishedAt', { ascending: false })
       .range(skip, skip + limit - 1)
 
+    // Add date filtering for archive (before specified date)
+    if (beforeDate) {
+      query = query.lte('publishedAt', beforeDate)
+    }
+
     // Add vertical filter if specified
     if (vertical !== 'ALL' && vertical !== 'All') {
       query = query.eq('vertical', vertical)
@@ -54,6 +60,11 @@ export async function GET(request: NextRequest) {
       .from('articles')
       .select('*', { count: 'exact', head: true })
       .eq('status', status)
+
+    // Add date filtering for archive (before specified date)
+    if (beforeDate) {
+      countQuery = countQuery.lte('publishedAt', beforeDate)
+    }
 
     if (vertical !== 'ALL' && vertical !== 'All') {
       countQuery = countQuery.eq('vertical', vertical)

@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
     const vertical = searchParams.get('vertical') || 'ALL'
     const priority = searchParams.get('priority') || 'ALL'
     const status = searchParams.get('status') || 'PUBLISHED'
+    const beforeDate = searchParams.get('beforeDate') // For archive filtering
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '1') // Default to 1 metric
     const skip = (page - 1) * limit
@@ -19,8 +20,15 @@ export async function GET(request: NextRequest) {
 
     // For archived metrics, extend the date range to include future dates
     // This handles test data that might have incorrect dates
-    const dateRangeStart = status === 'ARCHIVED' ? new Date('2020-01-01') : ninetyDaysAgo
-    const dateRangeEnd = status === 'ARCHIVED' ? new Date('2030-12-31') : new Date()
+    // If beforeDate is provided (for archive page), use it as the end date
+    let dateRangeStart = status === 'ARCHIVED' ? new Date('2020-01-01') : ninetyDaysAgo
+    let dateRangeEnd = status === 'ARCHIVED' ? new Date('2030-12-31') : new Date()
+    
+    // For archive filtering, override the date range
+    if (beforeDate) {
+      dateRangeEnd = new Date(beforeDate)
+      dateRangeStart = new Date('2020-01-01') // Allow all historical data
+    }
 
     // Get today's date for daily limit tracking
     const today = new Date().toISOString().split('T')[0]
