@@ -104,9 +104,9 @@ export default function ArchiveContent() {
     try {
       setArticlesLoading(true)
       
-      // Calculate start of today to exclude all of today's content
+      // Calculate start of today to exclude all of today's content (UTC)
       const startOfToday = new Date()
-      startOfToday.setHours(0, 0, 0, 0) // Start of today
+      startOfToday.setUTCHours(0, 0, 0, 0) // Start of today in UTC
       
       const params = new URLSearchParams({
         vertical: selectedVertical,
@@ -147,13 +147,13 @@ export default function ArchiveContent() {
     try {
       setMetricsLoading(true)
       
-      // Calculate start of today to exclude all of today's content
+      // Calculate start of today to exclude all of today's content (UTC)
       const startOfToday = new Date()
-      startOfToday.setHours(0, 0, 0, 0) // Start of today
+      startOfToday.setUTCHours(0, 0, 0, 0) // Start of today in UTC
       
       const params = new URLSearchParams({
         vertical: selectedVertical,
-        status: 'PUBLISHED', // Look for published metrics from past days
+        status: 'ARCHIVED', // Look for archived metrics from past days
         page: page.toString(),
         limit: metricsPagination.limit.toString(),
         beforeDate: startOfToday.toISOString() // Only content from before today
