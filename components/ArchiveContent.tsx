@@ -175,8 +175,8 @@ export default function ArchiveContent() {
       const metricsWithDates = data.metrics.map((metric: any) => ({
         ...metric,
         publishedAt: metric.publishedAt ? new Date(metric.publishedAt) : null,
-        howToUse: metric.whyItMatters, // Map whyItMatters to howToUse for middle column
-        description: metric.whyItMatters // Also keep as description for left column
+        description: metric.context || metric.whyItMatters, // Use context for description, fallback to whyItMatters
+        howToUse: metric.whyItMatters // Map whyItMatters to howToUse for middle column
       }))
 
       if (replace) {

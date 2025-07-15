@@ -52,6 +52,7 @@ export async function GET(request: NextRequest) {
       title,
       value,
       unit,
+      context,
       source,
       sourceUrl,
       whyItMatters,

@@ -68,10 +68,10 @@ export default function MetricsSection({ selectedVertical, selectedRelevance }: 
         title: metric.title,
         value: metric.value,
         unit: metric.unit,
-        description: metric.whyItMatters,
+        description: metric.context || metric.whyItMatters, // Use context for description, fallback to whyItMatters
         source: metric.source || 'Unknown',
         sourceUrl: metric.sourceUrl,
-        howToUse: metric.whyItMatters,
+        howToUse: metric.whyItMatters, // Use whyItMatters for howToUse
         talkTrack: metric.talkTrack,
         vertical: metric.vertical,
         priority: metric.priority
