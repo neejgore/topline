@@ -67,11 +67,17 @@ export async function POST(request: NextRequest) {
 
     console.log(`🔧 Found ${metricsNeedingRegeneration.length} metrics needing AI content regeneration`)
 
+    // Process only 5 metrics per API call to avoid timeout
+    const maxMetricsPerCall = 5
+    const metricsToProcess = metricsNeedingRegeneration.slice(0, maxMetricsPerCall)
+    
+    console.log(`📊 Processing ${metricsToProcess.length} metrics in this batch (${metricsNeedingRegeneration.length - metricsToProcess.length} remaining)`)
+
     let regeneratedCount = 0
     let failedCount = 0
     const results = []
 
-    for (const metric of metricsNeedingRegeneration) {
+    for (const metric of metricsToProcess) {
       try {
         console.log(`🤖 Regenerating AI content for: ${metric.title}`)
         
