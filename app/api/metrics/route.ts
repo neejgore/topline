@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
       .select(selectColumns)
       .eq('status', status)
       .gte('publishedAt', dateRangeStart.toISOString())
-      .lte('publishedAt', dateRangeEnd.toISOString())
+      .lt('publishedAt', dateRangeEnd.toISOString())
       .order('publishedAt', { ascending: false })
       .range(skip, skip + limit - 1)
 
@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
       .select('*', { count: 'exact', head: true })
       .eq('status', status)
       .gte('publishedAt', dateRangeStart.toISOString())
-      .lte('publishedAt', dateRangeEnd.toISOString())
+      .lt('publishedAt', dateRangeEnd.toISOString())
 
     // REMOVED: Duplicate prevention based on lastViewedAt for count query
     // Content should stay visible all day until daily refresh rotates it

@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
 
     // Add date filtering for archive (before specified date)
     if (beforeDate) {
-      query = query.lte('publishedAt', beforeDate)
+      query = query.lt('publishedAt', beforeDate)
     }
 
     // Add vertical filter if specified
@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
 
     // Add date filtering for archive (before specified date)
     if (beforeDate) {
-      countQuery = countQuery.lte('publishedAt', beforeDate)
+      countQuery = countQuery.lt('publishedAt', beforeDate)
     }
 
     if (vertical !== 'ALL' && vertical !== 'All') {

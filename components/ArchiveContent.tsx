@@ -104,17 +104,16 @@ export default function ArchiveContent() {
     try {
       setArticlesLoading(true)
       
-      // Calculate yesterday's date (previous day)
-      const yesterday = new Date()
-      yesterday.setDate(yesterday.getDate() - 1)
-      yesterday.setHours(23, 59, 59, 999) // End of yesterday
+      // Calculate start of today to exclude all of today's content
+      const startOfToday = new Date()
+      startOfToday.setHours(0, 0, 0, 0) // Start of today
       
       const params = new URLSearchParams({
         vertical: selectedVertical,
         status: 'PUBLISHED', // Look for published articles from past days
         page: page.toString(),
         limit: articlesPagination.limit.toString(),
-        beforeDate: yesterday.toISOString() // Only content from yesterday and before
+        beforeDate: startOfToday.toISOString() // Only content from before today
       })
 
       const response = await fetch(`/api/content?${params}`)
@@ -148,17 +147,16 @@ export default function ArchiveContent() {
     try {
       setMetricsLoading(true)
       
-      // Calculate yesterday's date (previous day)
-      const yesterday = new Date()
-      yesterday.setDate(yesterday.getDate() - 1)
-      yesterday.setHours(23, 59, 59, 999) // End of yesterday
+      // Calculate start of today to exclude all of today's content
+      const startOfToday = new Date()
+      startOfToday.setHours(0, 0, 0, 0) // Start of today
       
       const params = new URLSearchParams({
         vertical: selectedVertical,
         status: 'PUBLISHED', // Look for published metrics from past days
         page: page.toString(),
         limit: metricsPagination.limit.toString(),
-        beforeDate: yesterday.toISOString() // Only content from yesterday and before
+        beforeDate: startOfToday.toISOString() // Only content from before today
       })
 
       const response = await fetch(`/api/metrics?${params}`)
