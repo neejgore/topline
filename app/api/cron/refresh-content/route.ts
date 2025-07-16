@@ -358,11 +358,22 @@ export async function GET(request: Request) {
           .eq('status', 'PUBLISHED')
       }
       
-      // Get available metrics (allow reuse after 7 days, only from target verticals)
+      // Get available metrics (NO REUSE - must be different titles, only from target verticals)
       const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
       const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
       
-      const { data: availableMetrics } = await supabase
+      // Get metrics that were published/viewed in the last 30 days to exclude them
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+      const { data: recentMetrics } = await supabase
+        .from('metrics')
+        .select('title')
+        .gte('lastViewedAt', thirtyDaysAgo.toISOString())
+        .not('lastViewedAt', 'is', null)
+      
+      const recentTitles = recentMetrics?.map(m => m.title) || []
+      console.log(`🚫 Excluding ${recentTitles.length} recently used metric titles:`, recentTitles)
+      
+      let availableMetricsQuery = supabase
         .from('metrics')
         .select('*')
         .gte('createdAt', ninetyDaysAgo.toISOString())
@@ -370,6 +381,13 @@ export async function GET(request: Request) {
         .in('vertical', VERTICALS)
         .or(`lastViewedAt.is.null,lastViewedAt.lt.${sevenDaysAgo.toISOString()}`)
         .order('createdAt', { ascending: false })
+      
+      // Only exclude recent titles if there are any
+      if (recentTitles.length > 0) {
+        availableMetricsQuery = availableMetricsQuery.not('title', 'in', `(${recentTitles.map(t => `"${t}"`).join(',')})`)
+      }
+      
+      const { data: availableMetrics } = await availableMetricsQuery
       
       console.log(`📊 Found ${availableMetrics?.length || 0} available metrics`)
       
