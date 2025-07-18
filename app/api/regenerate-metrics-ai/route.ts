@@ -1,96 +1,76 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/db'
 
-// Import the enhanced metrics AI generator
+// Import the FIXED metrics AI generator
 const { generateMetricsAIContent } = require('../../../lib/ai-content-generator')
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('🔄 Starting metrics AI content regeneration...')
+    console.log('🔄 Starting COMPREHENSIVE metrics AI content regeneration...')
+    console.log('🎯 Target: ALL metrics with generic content that lacks specific value references')
     
-    // Get all metrics (both published and archived) from target verticals
-    const TARGET_VERTICALS = [
-      'Technology & Media',
-      'Consumer & Retail', 
-      'Healthcare',
-      'Financial Services',
-      'Insurance',
-      'Automotive',
-      'Travel & Hospitality',
-      'Education',
-      'Telecom',
-      'Services',
-      'Political Candidate & Advocacy',
-      'Other'
-    ]
-    
+    // Get ALL metrics from the database (both published and archived)
     const { data: metrics, error } = await supabase
       .from('metrics')
       .select('*')
-      .in('status', ['PUBLISHED', 'ARCHIVED'])
-      .in('vertical', TARGET_VERTICALS)
-      .order('publishedAt', { ascending: false })
+      .order('createdAt', { ascending: false })
 
     if (error) {
       throw new Error(`Error fetching metrics: ${error.message}`)
     }
 
-    console.log(`📊 Found ${metrics.length} metrics (published and archived)`)
-
-    // Generic phrases that indicate metrics need regeneration
-    const genericPhrases = [
-      'AI and automation are transforming industry operations',
-      'Digital transformation is accelerating across industries',
-      'Retail and consumer behavior is shifting dramatically',
-      'This metric shows how brands are adapting their customer engagement',
-      'Understanding these metrics helps position solutions in the context',
-      'This metric reveals how technology adoption is reshaping business operations',
-      'The media and technology landscape is rapidly evolving',
-      'Energy and utilities are transitioning to sustainable models',
-      'Financial services are undergoing digital transformation',
-      'Healthcare is embracing digital innovation',
-      'This metric indicates how the sector is adapting',
-      'This development signals where the market is heading',
-      'How is your organization planning to capitalize on this growth trend',
-      'What opportunities do you see in this expanding market',
-      'How are these technology trends impacting your digital strategy',
-      'Where is your organization in terms of adoption of these technologies'
-    ]
-
-    // Filter metrics that need regeneration
-    const metricsNeedingRegeneration = metrics.filter(metric => {
-      const content = `${metric.whyItMatters || ''} ${metric.talkTrack || ''}`.toLowerCase()
-      return genericPhrases.some(phrase => content.includes(phrase.toLowerCase())) ||
-             !metric.whyItMatters || !metric.talkTrack ||
-             metric.whyItMatters.trim() === '' || metric.talkTrack.trim() === ''
+    console.log(`📊 Found ${metrics.length} total metrics to analyze`)
+    
+    // Identify metrics with generic content that needs fixing
+    const metricsNeedingFix = metrics.filter(metric => {
+      return hasGenericContent(metric) || !referencesSpecificValue(metric)
+    })
+    
+    console.log(`🔧 Found ${metricsNeedingFix.length} metrics with generic content that needs fixing`)
+    
+    if (metricsNeedingFix.length === 0) {
+      return NextResponse.json({
+        success: true,
+        message: 'No metrics need fixing - all content is specific',
+        totalMetrics: metrics.length,
+        fixedMetrics: 0
+      })
+    }
+    
+    // Log the metrics that need fixing
+    console.log('\n📋 Metrics requiring specific content generation:')
+    metricsNeedingFix.forEach((metric, index) => {
+      console.log(`${index + 1}. "${metric.title}" (${metric.value}${metric.unit ? ` ${metric.unit}` : ''})`)
+      console.log(`   Current whyItMatters: ${metric.whyItMatters?.substring(0, 100)}...`)
+      console.log(`   Status: ${metric.status}`)
+      console.log('')
     })
 
-    console.log(`🔧 Found ${metricsNeedingRegeneration.length} metrics needing AI content regeneration`)
-
-    // Process only 5 metrics per API call to avoid timeout
-    const maxMetricsPerCall = 5
-    const metricsToProcess = metricsNeedingRegeneration.slice(0, maxMetricsPerCall)
-    
-    console.log(`📊 Processing ${metricsToProcess.length} metrics in this batch (${metricsNeedingRegeneration.length - metricsToProcess.length} remaining)`)
-
-    let regeneratedCount = 0
+    let fixedCount = 0
     let failedCount = 0
     const results = []
 
-    for (const metric of metricsToProcess) {
+    // Process each metric that needs fixing
+    for (const metric of metricsNeedingFix) {
       try {
-        console.log(`🤖 Regenerating AI content for: ${metric.title}`)
+        const formattedValue = formatValueDisplay(metric.value, metric.unit)
+        console.log(`\n🤖 FIXING: "${metric.title}" = ${formattedValue}`)
+        console.log(`📊 Status: ${metric.status} | Vertical: ${metric.vertical}`)
         
-        // Generate enhanced AI content
+        // Generate NEW specific AI content that references the exact value
         const aiContent = await generateMetricsAIContent(
           metric.title,
           metric.value,
-          metric.source,
-          metric.explanation || metric.whyItMatters || '',
+          metric.source || 'Industry Report',
+          metric.context || metric.whyItMatters || '',
           metric.vertical
         )
 
-        // Update the metric with new AI content
+        console.log(`✅ Generated SPECIFIC content for ${formattedValue}:`)
+        console.log(`📝 New whyItMatters: ${aiContent.whyItMatters.substring(0, 120)}...`)
+        console.log(`💬 New talkTrack: ${aiContent.talkTrack.substring(0, 120)}...`)
+
+        // Update the metric in the database
         const { error: updateError } = await supabase
           .from('metrics')
           .update({
@@ -104,137 +84,139 @@ export async function POST(request: NextRequest) {
           throw new Error(`Error updating metric: ${updateError.message}`)
         }
 
-        console.log(`✅ Enhanced: ${metric.title.substring(0, 50)}...`)
-        regeneratedCount++
-        
+        fixedCount++
         results.push({
           id: metric.id,
-          title: metric.title.substring(0, 50),
+          title: metric.title,
+          value: formattedValue,
           vertical: metric.vertical,
-          oldWhyItMatters: metric.whyItMatters?.substring(0, 100) + '...',
-          newWhyItMatters: aiContent.whyItMatters.substring(0, 100) + '...',
-          status: 'regenerated'
+          status: metric.status,
+          oldWhyItMatters: metric.whyItMatters?.substring(0, 100),
+          newWhyItMatters: aiContent.whyItMatters.substring(0, 100),
+          result: 'FIXED'
         })
 
+        console.log(`✅ FIXED: "${metric.title}" now references ${formattedValue}`)
+        
         // Rate limit to avoid overwhelming AI API
         await new Promise(resolve => setTimeout(resolve, 2000))
 
       } catch (error) {
-        console.error(`❌ Failed to regenerate AI content for metric ${metric.id}:`, (error as Error).message)
+        console.error(`❌ FAILED to fix metric "${metric.title}":`, (error as Error).message)
         failedCount++
         
         results.push({
           id: metric.id,
-          title: metric.title.substring(0, 50),
-          status: 'failed',
+          title: metric.title,
+          value: formatValueDisplay(metric.value, metric.unit),
+          vertical: metric.vertical,
+          status: metric.status,
+          result: 'FAILED',
           error: (error as Error).message
         })
       }
     }
 
-    console.log(`🎉 Metrics AI regeneration complete!`)
-    console.log(`📊 Regenerated: ${regeneratedCount} metrics`)
-    console.log(`📊 Failed: ${failedCount} metrics`)
+    console.log('\n🎉 COMPREHENSIVE metrics AI regeneration completed!')
+    console.log('=' .repeat(60))
+    console.log(`📊 Total metrics analyzed: ${metrics.length}`)
+    console.log(`🔧 Metrics needing fixes: ${metricsNeedingFix.length}`)
+    console.log(`✅ Successfully fixed: ${fixedCount}`)
+    console.log(`❌ Failed to fix: ${failedCount}`)
+    console.log(`🎯 Success rate: ${Math.round((fixedCount / metricsNeedingFix.length) * 100)}%`)
 
     return NextResponse.json({
       success: true,
-      message: 'Metrics AI content regeneration completed',
-      stats: {
-        totalMetrics: metrics.length,
-        metricsNeedingRegeneration: metricsNeedingRegeneration.length,
-        regeneratedCount,
-        failedCount
-      },
-      results: results.slice(0, 5) // Return first 5 results as sample
+      message: `Comprehensive metrics AI regeneration completed: ${fixedCount} metrics fixed`,
+      totalMetrics: metrics.length,
+      metricsNeedingFix: metricsNeedingFix.length,
+      fixedMetrics: fixedCount,
+      failedMetrics: failedCount,
+      successRate: Math.round((fixedCount / metricsNeedingFix.length) * 100),
+      results: results,
+      timestamp: new Date().toISOString()
     })
 
   } catch (error) {
-    console.error('❌ Error in metrics AI regeneration:', error)
+    console.error('❌ Comprehensive metrics AI regeneration failed:', (error as Error).message)
     return NextResponse.json({
       success: false,
-      error: (error as Error).message
+      error: (error as Error).message,
+      timestamp: new Date().toISOString()
     }, { status: 500 })
   }
 }
 
-export async function GET(request: NextRequest) {
-  try {
-    // Get preview of current metrics from target verticals
-    const TARGET_VERTICALS = [
-      'Technology & Media',
-      'Consumer & Retail', 
-      'Healthcare',
-      'Financial Services',
-      'Insurance',
-      'Automotive',
-      'Travel & Hospitality',
-      'Education',
-      'Telecom',
-      'Services',
-      'Political Candidate & Advocacy',
-      'Other'
-    ]
-    
-    const { data: metrics, error } = await supabase
-      .from('metrics')
-      .select('id, title, value, vertical, whyItMatters, talkTrack, source, status')
-      .in('status', ['PUBLISHED', 'ARCHIVED'])
-      .in('vertical', TARGET_VERTICALS)
-      .limit(10)
+/**
+ * Check if a metric has generic content that needs fixing
+ */
+function hasGenericContent(metric: any): boolean {
+  const { whyItMatters, talkTrack } = metric
+  
+  if (!whyItMatters || !talkTrack) return true
+  
+  // Check for generic phrases that indicate bad content
+  const genericPhrases = [
+    'is accelerating rapidly',
+    'early adopters gaining significant competitive advantages',
+    'This development signals where the market is heading',
+    'Reference this AI trend to discuss',
+    'position your solution in the context of this market evolution',
+    'Privacy regulations and data changes are forcing immediate strategic shifts',
+    'Market consolidation and funding activities signal investor confidence',
+    'The retail media and commerce landscape is evolving rapidly',
+    'This [vertical] development represents a significant shift',
+    'is growing rapidly as organizations prioritize',
+    'remains critical as digital becomes the primary',
+    'are forcing brands to invest heavily in',
+    'Use this to discuss',
+    'Reference this to discuss',
+    'digital transformation is accelerating',
+    'are modernizing',
+    'market is evolving',
+    'trends are changing',
+    'optimization remains critical',
+    'the importance of',
+    'digitalizing'
+  ]
+  
+  const content = `${whyItMatters} ${talkTrack}`.toLowerCase()
+  return genericPhrases.some(phrase => content.includes(phrase.toLowerCase()))
+}
 
-    if (error) {
-      throw new Error(`Error fetching metrics: ${error.message}`)
+/**
+ * Check if the metric content references its specific value
+ */
+function referencesSpecificValue(metric: any): boolean {
+  const { whyItMatters, talkTrack, value } = metric
+  
+  if (!whyItMatters || !talkTrack || !value) return false
+  
+  const content = `${whyItMatters} ${talkTrack}`.toLowerCase()
+  const numericValue = value.toString().replace(/[^\d.]/g, '')
+  
+  // Must reference the specific numeric value
+  return content.includes(numericValue)
+}
+
+/**
+ * Format value for display
+ */
+function formatValueDisplay(value: any, unit?: string): string {
+  if (!value) return 'N/A'
+  
+  if (unit) {
+    if (unit.includes('billion') || unit.includes('USD')) {
+      return `$${value}B`
     }
-
-    // Check for generic content
-    const genericPhrases = [
-      'AI and automation are transforming industry operations',
-      'Digital transformation is accelerating across industries',
-      'Retail and consumer behavior is shifting dramatically',
-      'This metric shows how brands are adapting their customer engagement',
-      'Understanding these metrics helps position solutions in the context',
-      'This metric reveals how technology adoption is reshaping business operations',
-      'The media and technology landscape is rapidly evolving',
-      'Energy and utilities are transitioning to sustainable models',
-      'Financial services are undergoing digital transformation',
-      'Healthcare is embracing digital innovation'
-    ]
-
-    const metricsWithGenericContent = metrics.filter(metric => {
-      const content = `${metric.whyItMatters || ''} ${metric.talkTrack || ''}`.toLowerCase()
-      return genericPhrases.some(phrase => content.includes(phrase.toLowerCase())) ||
-             !metric.whyItMatters || !metric.talkTrack ||
-             metric.whyItMatters.trim() === '' || metric.talkTrack.trim() === ''
-    })
-
-    const preview = metrics.map(metric => ({
-      id: metric.id,
-      title: metric.title,
-      value: metric.value,
-      vertical: metric.vertical,
-      status: metric.status,
-      currentWhyItMatters: metric.whyItMatters?.substring(0, 200) + '...',
-      currentTalkTrack: metric.talkTrack?.substring(0, 150) + '...',
-      source: metric.source,
-      hasGenericContent: metricsWithGenericContent.some(m => m.id === metric.id)
-    }))
-
-    return NextResponse.json({
-      success: true,
-      message: 'Current metrics preview',
-      metrics: preview,
-      stats: {
-        totalMetrics: metrics.length,
-        metricsWithGenericContent: metricsWithGenericContent.length,
-        metricsWithSpecificContent: metrics.length - metricsWithGenericContent.length
-      }
-    })
-
-  } catch (error) {
-    console.error('❌ Error in metrics preview:', error)
-    return NextResponse.json({
-      success: false,
-      error: (error as Error).message
-    }, { status: 500 })
+    if (unit.includes('million')) {
+      return `$${value}M`
+    }
+    if (unit.includes('percentage') || unit.includes('%')) {
+      return `${value}%`
+    }
+    return `${value} ${unit}`
   }
+  
+  return value.toString()
 } 

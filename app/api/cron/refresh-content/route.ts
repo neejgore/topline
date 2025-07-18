@@ -395,21 +395,67 @@ export async function GET(request: Request) {
         // Select 1 metric (the newest available from target verticals)
         const selectedMetric = availableMetrics[0]
         
-        // Publish the selected metric with updated publishedAt date
-        const { error: publishError } = await supabase
-          .from('metrics')
-          .update({ 
-            status: 'PUBLISHED',
-            publishedAt: new Date().toISOString(),
-            lastViewedAt: new Date().toISOString()
-          })
-          .eq('id', selectedMetric.id)
+        console.log(`🤖 Regenerating AI content for metric: ${selectedMetric.title} (${selectedMetric.value} ${selectedMetric.unit})`)
         
-        if (publishError) {
-          console.error('❌ Error publishing metric:', publishError)
-        } else {
-          console.log(`✅ Published metric: ${selectedMetric.title} (${selectedMetric.value} ${selectedMetric.unit})`)
-          console.log(`📊 Vertical: ${selectedMetric.vertical}`)
+        // CRITICAL: Generate fresh AI content that references the specific metric value
+        const { generateMetricsAIContent } = require('../../../../lib/ai-content-generator')
+        
+        try {
+          const aiContent = await generateMetricsAIContent(
+            selectedMetric.title,
+            selectedMetric.value,
+            selectedMetric.source || 'Industry Report',
+            selectedMetric.context || selectedMetric.whyItMatters || '',
+            selectedMetric.vertical
+          )
+          
+          // CRITICAL VALIDATION: Ensure the AI content references the specific metric value
+          const numericValue = selectedMetric.value.toString().replace(/[^\d.]/g, '')
+          const fullContent = `${aiContent.whyItMatters} ${aiContent.talkTrack}`.toLowerCase()
+          const referencesValue = fullContent.includes(numericValue)
+          
+          if (!referencesValue) {
+            throw new Error(`AI content does not reference the specific value ${selectedMetric.value}`)
+          }
+          
+          console.log(`✅ Generated SPECIFIC AI content for ${selectedMetric.value}${selectedMetric.unit}`)
+          console.log(`📝 New whyItMatters: ${aiContent.whyItMatters.substring(0, 100)}...`)
+          console.log(`✅ VALIDATION PASSED: Content references ${selectedMetric.value} specifically`)
+          
+          // Publish the selected metric with updated publishedAt date AND fresh AI content
+          const { error: publishError } = await supabase
+            .from('metrics')
+            .update({ 
+              status: 'PUBLISHED',
+              publishedAt: new Date().toISOString(),
+              lastViewedAt: new Date().toISOString(),
+              whyItMatters: aiContent.whyItMatters,
+              talkTrack: aiContent.talkTrack,
+              updatedAt: new Date().toISOString()
+            })
+            .eq('id', selectedMetric.id)
+          
+          if (publishError) {
+            console.error('❌ Error publishing metric:', publishError)
+          } else {
+            console.log(`✅ Published metric with SPECIFIC content: ${selectedMetric.title} (${selectedMetric.value} ${selectedMetric.unit})`)
+            console.log(`📊 Vertical: ${selectedMetric.vertical}`)
+          }
+        } catch (aiError) {
+          console.error('❌ Error generating AI content for metric:', aiError)
+          // Fallback: publish without AI content regeneration
+          const { error: publishError } = await supabase
+            .from('metrics')
+            .update({ 
+              status: 'PUBLISHED',
+              publishedAt: new Date().toISOString(),
+              lastViewedAt: new Date().toISOString()
+            })
+            .eq('id', selectedMetric.id)
+          
+          if (!publishError) {
+            console.log(`⚠️  Published metric without AI regeneration: ${selectedMetric.title}`)
+          }
         }
       } else {
         console.log('⚠️  No available metrics to publish')
