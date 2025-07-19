@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { ExternalLink, Calendar, Building2, TrendingUp, MessageCircle, Star } from 'lucide-react'
 import ProspectingEmailModal from './ProspectingEmailModal'
 
@@ -41,8 +42,24 @@ const decodeHtmlEntities = (text: string): string => {
 }
 
 export default function ArticleCard({ article }: ArticleCardProps) {
+  const searchParams = useSearchParams()
   const [isExpanded, setIsExpanded] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
+
+  // Auto-expand Sales Intelligence section if URL parameter is present
+  useEffect(() => {
+    const shouldExpand = searchParams.get('expand') === 'sales-intelligence'
+    if (shouldExpand) {
+      setIsExpanded(true)
+      // Small delay to allow expansion animation, then scroll into view
+      setTimeout(() => {
+        const element = document.querySelector('[data-sales-intelligence]')
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+      }, 300)
+    }
+  }, [searchParams])
 
   const formatDate = (date: Date | null) => {
     if (!date) return 'Recently'
@@ -163,7 +180,7 @@ export default function ArticleCard({ article }: ArticleCardProps) {
 
       {/* Expandable Content */}
       {(article.whyItMatters || article.talkTrack) && (
-        <div className="border-t border-gray-100">
+        <div className="border-t border-gray-100" data-sales-intelligence>
           <button
             onClick={() => setIsExpanded(!isExpanded)}
             className="w-full px-6 py-3 text-left text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-between"
