@@ -48,18 +48,46 @@ export default function ArticleCard({ article }: ArticleCardProps) {
 
   // Auto-expand Sales Intelligence section if URL parameter matches this article
   useEffect(() => {
-    const shouldExpand = searchParams.get('expand') === 'sales-intelligence'
-    const targetArticleId = searchParams.get('article')
-    
-    if (shouldExpand && targetArticleId && targetArticleId === article.id) {
-      setIsExpanded(true)
-      // Small delay to allow expansion animation, then scroll into view
-      setTimeout(() => {
-        const element = document.querySelector(`[data-article-id="${article.id}"]`)
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    try {
+      const shouldExpand = searchParams.get('expand') === 'sales-intelligence'
+      const targetArticleId = searchParams.get('article')
+      
+      console.log('ArticleCard URL debug:', {
+        articleId: article.id,
+        shouldExpand,
+        targetArticleId,
+        matches: targetArticleId === article.id
+      })
+      
+      if (shouldExpand && targetArticleId && targetArticleId === article.id) {
+        console.log(`Expanding article ${article.id}`)
+        setIsExpanded(true)
+        // Small delay to allow expansion animation, then scroll into view
+        setTimeout(() => {
+          const element = document.querySelector(`[data-article-id="${article.id}"]`)
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          }
+        }, 300)
+      }
+    } catch (error) {
+      console.error('Error reading search params:', error)
+      // Fallback to window.location if searchParams fails
+      if (typeof window !== 'undefined') {
+        const url = new URL(window.location.href)
+        const shouldExpand = url.searchParams.get('expand') === 'sales-intelligence'
+        const targetArticleId = url.searchParams.get('article')
+        
+        if (shouldExpand && targetArticleId && targetArticleId === article.id) {
+          setIsExpanded(true)
+          setTimeout(() => {
+            const element = document.querySelector(`[data-article-id="${article.id}"]`)
+            if (element) {
+              element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            }
+          }, 300)
         }
-      }, 300)
+      }
     }
   }, [searchParams, article.id])
 

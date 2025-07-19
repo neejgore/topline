@@ -119,17 +119,44 @@ export default function MetricCard({ metric }: MetricCardProps) {
 
   // Handle metric-specific URL parameters from newsletter
   useEffect(() => {
-    const shouldFocus = searchParams.get('expand') === 'sales-intelligence'
-    const targetMetricId = searchParams.get('metric')
-    
-    if (shouldFocus && targetMetricId && targetMetricId === metric.id) {
-      // Small delay to allow component rendering, then scroll into view
-      setTimeout(() => {
-        const element = document.querySelector(`[data-metric-id="${metric.id}"]`)
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    try {
+      const shouldFocus = searchParams.get('expand') === 'sales-intelligence'
+      const targetMetricId = searchParams.get('metric')
+      
+      console.log('MetricCard URL debug:', {
+        metricId: metric.id,
+        shouldFocus,
+        targetMetricId,
+        matches: targetMetricId === metric.id
+      })
+      
+      if (shouldFocus && targetMetricId && targetMetricId === metric.id) {
+        console.log(`Scrolling to metric ${metric.id}`)
+        // Small delay to allow component rendering, then scroll into view
+        setTimeout(() => {
+          const element = document.querySelector(`[data-metric-id="${metric.id}"]`)
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          }
+        }, 300)
+      }
+    } catch (error) {
+      console.error('Error reading search params in MetricCard:', error)
+      // Fallback to window.location if searchParams fails
+      if (typeof window !== 'undefined') {
+        const url = new URL(window.location.href)
+        const shouldFocus = url.searchParams.get('expand') === 'sales-intelligence'
+        const targetMetricId = url.searchParams.get('metric')
+        
+        if (shouldFocus && targetMetricId && targetMetricId === metric.id) {
+          setTimeout(() => {
+            const element = document.querySelector(`[data-metric-id="${metric.id}"]`)
+            if (element) {
+              element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            }
+          }, 300)
         }
-      }, 300)
+      }
     }
   }, [searchParams, metric.id])
   const verticalStyle = getVerticalStyling(metric.vertical)
