@@ -46,20 +46,22 @@ export default function ArticleCard({ article }: ArticleCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
-  // Auto-expand Sales Intelligence section if URL parameter is present
+  // Auto-expand Sales Intelligence section if URL parameter matches this article
   useEffect(() => {
     const shouldExpand = searchParams.get('expand') === 'sales-intelligence'
-    if (shouldExpand) {
+    const targetArticleId = searchParams.get('article')
+    
+    if (shouldExpand && targetArticleId && targetArticleId === article.id) {
       setIsExpanded(true)
       // Small delay to allow expansion animation, then scroll into view
       setTimeout(() => {
-        const element = document.querySelector('[data-sales-intelligence]')
+        const element = document.querySelector(`[data-article-id="${article.id}"]`)
         if (element) {
           element.scrollIntoView({ behavior: 'smooth', block: 'center' })
         }
       }, 300)
     }
-  }, [searchParams])
+  }, [searchParams, article.id])
 
   const formatDate = (date: Date | null) => {
     if (!date) return 'Recently'
@@ -180,7 +182,7 @@ export default function ArticleCard({ article }: ArticleCardProps) {
 
       {/* Expandable Content */}
       {(article.whyItMatters || article.talkTrack) && (
-        <div className="border-t border-gray-100" data-sales-intelligence>
+        <div className="border-t border-gray-100" data-article-id={article.id}>
           <button
             onClick={() => setIsExpanded(!isExpanded)}
             className="w-full px-6 py-3 text-left text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-between"

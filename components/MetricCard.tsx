@@ -1,5 +1,6 @@
 import { ExternalLink, TrendingUp, Star } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import ProspectingEmailModal from './ProspectingEmailModal'
 
 type Metric = {
@@ -113,11 +114,28 @@ const formatValueWithUnit = (value: string, unit?: string | null) => {
 }
 
 export default function MetricCard({ metric }: MetricCardProps) {
+  const searchParams = useSearchParams()
   const [isModalOpen, setIsModalOpen] = useState(false)
+
+  // Handle metric-specific URL parameters from newsletter
+  useEffect(() => {
+    const shouldFocus = searchParams.get('expand') === 'sales-intelligence'
+    const targetMetricId = searchParams.get('metric')
+    
+    if (shouldFocus && targetMetricId && targetMetricId === metric.id) {
+      // Small delay to allow component rendering, then scroll into view
+      setTimeout(() => {
+        const element = document.querySelector(`[data-metric-id="${metric.id}"]`)
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+      }, 300)
+    }
+  }, [searchParams, metric.id])
   const verticalStyle = getVerticalStyling(metric.vertical)
   
   return (
-    <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 border border-gray-100 overflow-hidden w-full">
+    <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 border border-gray-100 overflow-hidden w-full" data-metric-id={metric.id}>
       {/* Vertical Tag Header */}
       <div className={`${verticalStyle.bg} px-6 py-3 flex items-center justify-between`}>
         <div className="flex items-center space-x-3">
