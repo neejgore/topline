@@ -56,12 +56,14 @@ async function generateProspectingEmail(
     ? `Key Metric: ${content.title} - ${content.value}${content.unit || ''}
        Why It Matters: ${content.whyItMatters || ''}
        Sales Starter: ${content.talkTrack || ''}
-       Source: ${content.source || ''}`
+       Source: ${content.source || ''}
+       Source URL: ${content.sourceUrl || ''}`
     : `Article: ${content.title}
        Summary: ${content.summary || ''}
        Why It Matters: ${content.whyItMatters || ''}
        Sales Starter: ${content.talkTrack || ''}
-       Source: ${content.source || ''}`
+       Source: ${content.source || ''}
+       Source URL: ${content.sourceUrl || ''}`
 
   const prompt = `
 You are an expert B2B sales professional specializing in creating compelling prospecting emails for enterprise software and technology sales.
@@ -72,24 +74,26 @@ ${contextInfo}
 
 EMAIL REQUIREMENTS:
  1. RESEARCH ${targetBrand} and reference specific context about their business, recent news, challenges, or initiatives  
- 2. Use the provided ${type} data as a conversation starter and value proposition
- 3. Keep it VERY SHORT (50-75 words MAX) - outbound emails must be scannable
- 4. Professional but conversational tone
- 5. Single, clear call to action
- 6. Make it feel personalized and researched, not templated
+ 2. Reference SPECIFIC insights, data points, or quotes from the provided ${type} content
+ 3. ALWAYS include the source link for credibility and further reading
+ 4. Keep it VERY SHORT (75-100 words MAX) - outbound emails must be scannable
+ 5. Professional but conversational tone
+ 6. Single, clear call to action
  7. Mobile-friendly with short paragraphs
 
  EMAIL STRUCTURE:
  - Subject line (6-8 words max)
  - Brief opening with ${targetBrand} context (1 sentence)
- - Quick connection to the industry intelligence (1 sentence)
+ - Specific insight/data point from the ${type} with source link (1-2 sentences)
  - Simple call to action (1 sentence)
  - Professional signature placeholder
 
  FOCUS ON:
  - BREVITY - every word must add value
+ - SPECIFIC data/insights from the source material (not generic observations)
  - How this ${type === 'metric' ? 'market data' : 'industry development'} impacts ${targetBrand} specifically
- - Creating curiosity with minimal text
+ - Including the source URL for credibility and further reading
+ - Creating curiosity with concrete value
  - One clear, easy call to action
  - Making it scannable in 10 seconds or less
 
@@ -101,7 +105,7 @@ Generate the complete email now:
     messages: [
       {
         role: "system",
-        content: `You are an expert B2B sales professional who creates highly effective short prospecting emails. You follow modern outbound best practices: keep emails under 75 words, use short paragraphs, create curiosity quickly, and include one clear CTA. Your emails get opened, read, and replied to because they're brief, personalized, and valuable. Every word counts.`
+        content: `You are an expert B2B sales professional who creates highly effective short prospecting emails. You follow modern outbound best practices: keep emails under 100 words, include specific insights and source links, create curiosity with concrete value, and include one clear CTA. Your emails get opened, read, and replied to because they're brief, personalized, substantive, and credible. Always reference specific data points or insights from the source material.`
       },
       {
         role: "user",
@@ -109,7 +113,7 @@ Generate the complete email now:
       }
     ],
     temperature: 0.7,
-    max_tokens: 400,
+    max_tokens: 500,
   })
 
   const email = response.choices[0].message.content?.trim() || ''
