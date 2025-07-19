@@ -73,29 +73,31 @@ Generate a personalized prospecting email to ${targetBrand} using the following 
 ${contextInfo}
 
 EMAIL REQUIREMENTS:
- 1. RESEARCH ${targetBrand} and reference specific context about their business, recent news, challenges, or initiatives  
- 2. Reference SPECIFIC insights, data points, or quotes from the provided ${type} content
- 3. ALWAYS include the source link for credibility and further reading
- 4. Keep it VERY SHORT (75-100 words MAX) - outbound emails must be scannable
- 5. Professional but conversational tone
- 6. Single, clear call to action
- 7. Mobile-friendly with short paragraphs
+ 1. NEVER make up personal details, names, or specific strategies about individuals
+ 2. Focus ONLY on publicly verifiable company information (industry, recent news, business model)
+ 3. Lead with the SPECIFIC data/insight from the source material, not personal assumptions
+ 4. ALWAYS include the source link for credibility 
+ 5. Provide substantial value (120-180 words) while remaining scannable with short paragraphs
+ 6. Professional but conversational tone
+ 7. Single, clear call to action
 
  EMAIL STRUCTURE:
- - Subject line (6-8 words max)
- - Brief opening with ${targetBrand} context (1 sentence)
- - Specific insight/data point from the ${type} with source link (1-2 sentences)
- - Simple call to action (1 sentence)
+ - Subject line (6-8 words max)  
+ - Lead with the specific data/insight and source link (2-3 sentences)
+ - Deeper analysis of what this means for ${targetBrand}'s industry/market (2-3 sentences)
+ - Specific implications or opportunities this creates (1-2 sentences)
+ - Call to action offering to share more insights (1 sentence)
  - Professional signature placeholder
 
  FOCUS ON:
- - BREVITY - every word must add value
- - SPECIFIC data/insights from the source material (not generic observations)
- - How this ${type === 'metric' ? 'market data' : 'industry development'} impacts ${targetBrand} specifically
+ - DEMONSTRATING INDUSTRY EXPERTISE through specific data and analysis
+ - SPECIFIC data/insights from the source material with deeper interpretation
+ - SUBSTANTIAL VALUE that shows you understand the market dynamics
+ - How this ${type === 'metric' ? 'market data' : 'industry development'} creates specific opportunities or challenges
  - Including the source URL for credibility and further reading
- - Creating curiosity with concrete value
- - One clear, easy call to action
- - Making it scannable in 10 seconds or less
+ - THOUGHT LEADERSHIP positioning through insightful analysis
+ - One clear call to action offering additional expertise
+ - Scannable format with short paragraphs despite more content
 
 Generate the complete email now:
 `
@@ -105,7 +107,7 @@ Generate the complete email now:
     messages: [
       {
         role: "system",
-        content: `You are an expert B2B sales professional who creates highly effective short prospecting emails. You follow modern outbound best practices: keep emails under 100 words, include specific insights and source links, create curiosity with concrete value, and include one clear CTA. Your emails get opened, read, and replied to because they're brief, personalized, substantive, and credible. Always reference specific data points or insights from the source material.`
+        content: `You are an expert B2B sales professional who creates highly effective prospecting emails that demonstrate industry expertise. Your emails provide substantial value through deep market insights, specific data analysis, and thought leadership. They get opened, read, and replied to because they show genuine industry knowledge and provide actionable intelligence. You never fabricate personal details but focus on demonstrating expertise through quality analysis of real market data and trends.`
       },
       {
         role: "user",
@@ -113,7 +115,7 @@ Generate the complete email now:
       }
     ],
     temperature: 0.7,
-    max_tokens: 500,
+    max_tokens: 700,
   })
 
   const email = response.choices[0].message.content?.trim() || ''
