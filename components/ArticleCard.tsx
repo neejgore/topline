@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { ExternalLink, Calendar, Building2, TrendingUp, MessageCircle, Star } from 'lucide-react'
+import ProspectingEmailModal from './ProspectingEmailModal'
 
 interface Article {
   id: string
@@ -41,6 +42,7 @@ const decodeHtmlEntities = (text: string): string => {
 
 export default function ArticleCard({ article }: ArticleCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   const formatDate = (date: Date | null) => {
     if (!date) return 'Recently'
@@ -192,17 +194,45 @@ export default function ArticleCard({ article }: ArticleCardProps) {
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <MessageCircle className="h-4 w-4 text-green-600" />
-                    <h4 className="font-medium text-gray-900">Talk Track</h4>
+                    <h4 className="font-medium text-gray-900">Sales Starters</h4>
                   </div>
                   <p className="text-sm text-gray-600 pl-6">
                     {decodeHtmlEntities(article.talkTrack)}
                   </p>
+                  <div className="mt-3 pl-6">
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault()
+                        setIsModalOpen(true)
+                      }}
+                      className="inline-flex items-center px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-md hover:bg-green-700 transition-colors"
+                    >
+                      <svg className="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 7.89a1 1 0 001.42 0L21 7M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                      Create Prospecting Email
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
           )}
         </div>
       )}
+      
+      {/* Prospecting Email Modal */}
+      <ProspectingEmailModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        content={{
+          title: article.title,
+          summary: article.summary || '',
+          whyItMatters: article.whyItMatters || '',
+          talkTrack: article.talkTrack || '',
+          source: article.sourceName || ''
+        }}
+        type="article"
+      />
     </div>
   )
 }

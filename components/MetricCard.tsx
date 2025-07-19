@@ -1,4 +1,6 @@
 import { ExternalLink, TrendingUp, Star } from 'lucide-react'
+import { useState } from 'react'
+import ProspectingEmailModal from './ProspectingEmailModal'
 
 type Metric = {
   id: string
@@ -111,6 +113,7 @@ const formatValueWithUnit = (value: string, unit?: string | null) => {
 }
 
 export default function MetricCard({ metric }: MetricCardProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false)
   const verticalStyle = getVerticalStyling(metric.vertical)
   
   return (
@@ -184,22 +187,51 @@ export default function MetricCard({ metric }: MetricCardProps) {
             )}
           </div>
 
-          {/* Right Column - Talk Track */}
+          {/* Right Column - Sales Starters */}
           <div>
             {metric.talkTrack && (
               <div className="bg-green-50 border-l-4 border-green-400 p-6 rounded-r h-full">
                 <h4 className="font-semibold text-green-800 mb-3 text-base flex items-center">
-                  <span className="mr-2">💬</span> Talk Track
+                  <span className="mr-2">💬</span> Sales Starters
                 </h4>
                 <p className="text-green-700 text-sm leading-relaxed">
                   {decodeHtmlEntities(metric.talkTrack)}
                 </p>
+                <div className="mt-4">
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault()
+                      setIsModalOpen(true)
+                    }}
+                    className="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 7.89a1 1 0 001.42 0L21 7M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    Create Prospecting Email
+                  </button>
+                </div>
               </div>
             )}
           </div>
 
         </div>
       </div>
+      
+      {/* Prospecting Email Modal */}
+      <ProspectingEmailModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        content={{
+          title: metric.title,
+          value: metric.value,
+          unit: metric.unit || '',
+          whyItMatters: metric.howToUse || '',
+          talkTrack: metric.talkTrack || '',
+          source: metric.source
+        }}
+        type="metric"
+      />
     </div>
   )
 }
