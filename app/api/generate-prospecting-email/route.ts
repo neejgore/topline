@@ -71,27 +71,27 @@ Generate a personalized prospecting email to ${targetBrand} using the following 
 ${contextInfo}
 
 EMAIL REQUIREMENTS:
-1. RESEARCH ${targetBrand} and reference specific context about their business, recent news, challenges, or initiatives
-2. Use the provided ${type} data as a conversation starter and value proposition
-3. Create a compelling reason to engage based on industry trends and ${targetBrand}'s likely priorities
-4. Keep it concise (150-200 words max)
-5. Professional but conversational tone
-6. Include a clear, specific call to action
-7. Make it feel personalized and researched, not templated
+ 1. RESEARCH ${targetBrand} and reference specific context about their business, recent news, challenges, or initiatives  
+ 2. Use the provided ${type} data as a conversation starter and value proposition
+ 3. Keep it VERY SHORT (50-75 words MAX) - outbound emails must be scannable
+ 4. Professional but conversational tone
+ 5. Single, clear call to action
+ 6. Make it feel personalized and researched, not templated
+ 7. Mobile-friendly with short paragraphs
 
-EMAIL STRUCTURE:
-- Subject line
-- Opening with specific ${targetBrand} context
-- Connection to the industry intelligence
-- Value proposition relevant to ${targetBrand}
-- Clear call to action
-- Professional signature placeholder
+ EMAIL STRUCTURE:
+ - Subject line (6-8 words max)
+ - Brief opening with ${targetBrand} context (1 sentence)
+ - Quick connection to the industry intelligence (1 sentence)
+ - Simple call to action (1 sentence)
+ - Professional signature placeholder
 
-FOCUS ON:
-- How this ${type === 'metric' ? 'market data' : 'industry development'} impacts ${targetBrand} specifically
-- ${targetBrand}'s likely business priorities and challenges
-- Concrete value you can provide based on this intelligence
-- Creating curiosity and urgency to respond
+ FOCUS ON:
+ - BREVITY - every word must add value
+ - How this ${type === 'metric' ? 'market data' : 'industry development'} impacts ${targetBrand} specifically
+ - Creating curiosity with minimal text
+ - One clear, easy call to action
+ - Making it scannable in 10 seconds or less
 
 Generate the complete email now:
 `
@@ -101,7 +101,7 @@ Generate the complete email now:
     messages: [
       {
         role: "system",
-        content: `You are an expert B2B sales professional who creates highly personalized prospecting emails. You have deep knowledge of enterprise technology companies and their business challenges. Your emails are researched, relevant, and create genuine curiosity. Always reference specific company context and make the industry intelligence directly relevant to their business.`
+        content: `You are an expert B2B sales professional who creates highly effective short prospecting emails. You follow modern outbound best practices: keep emails under 75 words, use short paragraphs, create curiosity quickly, and include one clear CTA. Your emails get opened, read, and replied to because they're brief, personalized, and valuable. Every word counts.`
       },
       {
         role: "user",
@@ -109,7 +109,7 @@ Generate the complete email now:
       }
     ],
     temperature: 0.7,
-    max_tokens: 800,
+    max_tokens: 400,
   })
 
   const email = response.choices[0].message.content?.trim() || ''
