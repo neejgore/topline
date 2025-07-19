@@ -192,14 +192,15 @@ export default function ArticleCard({ article }: ArticleCardProps) {
 
               {article.talkTrack && (
                 <div>
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-2 mb-3">
                     <MessageCircle className="h-4 w-4 text-green-600" />
                     <h4 className="font-medium text-gray-900">Sales Starters</h4>
                   </div>
-                  <p className="text-sm text-gray-600 pl-6">
-                    {decodeHtmlEntities(article.talkTrack)}
-                  </p>
-                  <div className="mt-3 pl-6">
+                  <div className="pl-6">
+                    <h5 className="text-sm font-medium text-green-800 mb-2">Talk Track</h5>
+                    <p className="text-sm text-gray-600 mb-3">
+                      {decodeHtmlEntities(article.talkTrack)}
+                    </p>
                     <button
                       onClick={(e) => {
                         e.preventDefault()
