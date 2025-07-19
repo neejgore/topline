@@ -1,6 +1,5 @@
 import { ExternalLink, TrendingUp, Star } from 'lucide-react'
 import { useState, useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
 import ProspectingEmailModal from './ProspectingEmailModal'
 
 type Metric = {
@@ -114,20 +113,22 @@ const formatValueWithUnit = (value: string, unit?: string | null) => {
 }
 
 export default function MetricCard({ metric }: MetricCardProps) {
-  const searchParams = useSearchParams()
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   // Handle metric-specific URL parameters from newsletter
   useEffect(() => {
-    try {
-      const shouldFocus = searchParams.get('expand') === 'sales-intelligence'
-      const targetMetricId = searchParams.get('metric')
+    // Use window.location directly for better reliability
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href)
+      const shouldFocus = url.searchParams.get('expand') === 'sales-intelligence'
+      const targetMetricId = url.searchParams.get('metric')
       
       console.log('MetricCard URL debug:', {
         metricId: metric.id,
         shouldFocus,
         targetMetricId,
-        matches: targetMetricId === metric.id
+        matches: targetMetricId === metric.id,
+        currentUrl: window.location.href
       })
       
       if (shouldFocus && targetMetricId && targetMetricId === metric.id) {
@@ -136,29 +137,15 @@ export default function MetricCard({ metric }: MetricCardProps) {
         setTimeout(() => {
           const element = document.querySelector(`[data-metric-id="${metric.id}"]`)
           if (element) {
+            console.log('Scrolling to element:', element)
             element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          } else {
+            console.log('Element not found for metric:', metric.id)
           }
         }, 300)
       }
-    } catch (error) {
-      console.error('Error reading search params in MetricCard:', error)
-      // Fallback to window.location if searchParams fails
-      if (typeof window !== 'undefined') {
-        const url = new URL(window.location.href)
-        const shouldFocus = url.searchParams.get('expand') === 'sales-intelligence'
-        const targetMetricId = url.searchParams.get('metric')
-        
-        if (shouldFocus && targetMetricId && targetMetricId === metric.id) {
-          setTimeout(() => {
-            const element = document.querySelector(`[data-metric-id="${metric.id}"]`)
-            if (element) {
-              element.scrollIntoView({ behavior: 'smooth', block: 'center' })
-            }
-          }, 300)
-        }
-      }
     }
-  }, [searchParams, metric.id])
+  }, [metric.id])
   const verticalStyle = getVerticalStyling(metric.vertical)
   
   return (

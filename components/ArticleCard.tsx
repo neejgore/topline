@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
 import { ExternalLink, Calendar, Building2, TrendingUp, MessageCircle, Star } from 'lucide-react'
 import ProspectingEmailModal from './ProspectingEmailModal'
 
@@ -42,21 +41,23 @@ const decodeHtmlEntities = (text: string): string => {
 }
 
 export default function ArticleCard({ article }: ArticleCardProps) {
-  const searchParams = useSearchParams()
   const [isExpanded, setIsExpanded] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   // Auto-expand Sales Intelligence section if URL parameter matches this article
   useEffect(() => {
-    try {
-      const shouldExpand = searchParams.get('expand') === 'sales-intelligence'
-      const targetArticleId = searchParams.get('article')
+    // Use window.location directly for better reliability
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href)
+      const shouldExpand = url.searchParams.get('expand') === 'sales-intelligence'
+      const targetArticleId = url.searchParams.get('article')
       
       console.log('ArticleCard URL debug:', {
         articleId: article.id,
         shouldExpand,
         targetArticleId,
-        matches: targetArticleId === article.id
+        matches: targetArticleId === article.id,
+        currentUrl: window.location.href
       })
       
       if (shouldExpand && targetArticleId && targetArticleId === article.id) {
@@ -66,30 +67,15 @@ export default function ArticleCard({ article }: ArticleCardProps) {
         setTimeout(() => {
           const element = document.querySelector(`[data-article-id="${article.id}"]`)
           if (element) {
+            console.log('Scrolling to element:', element)
             element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          } else {
+            console.log('Element not found for article:', article.id)
           }
         }, 300)
       }
-    } catch (error) {
-      console.error('Error reading search params:', error)
-      // Fallback to window.location if searchParams fails
-      if (typeof window !== 'undefined') {
-        const url = new URL(window.location.href)
-        const shouldExpand = url.searchParams.get('expand') === 'sales-intelligence'
-        const targetArticleId = url.searchParams.get('article')
-        
-        if (shouldExpand && targetArticleId && targetArticleId === article.id) {
-          setIsExpanded(true)
-          setTimeout(() => {
-            const element = document.querySelector(`[data-article-id="${article.id}"]`)
-            if (element) {
-              element.scrollIntoView({ behavior: 'smooth', block: 'center' })
-            }
-          }, 300)
-        }
-      }
     }
-  }, [searchParams, article.id])
+  }, [article.id])
 
   const formatDate = (date: Date | null) => {
     if (!date) return 'Recently'
