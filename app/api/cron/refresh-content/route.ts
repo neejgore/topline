@@ -362,16 +362,17 @@ export async function GET(request: Request) {
       const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
       const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
       
-      // Get metrics that were published/viewed in the last 30 days to exclude them
-      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+      // Get metrics that were published/viewed in the last 7 days to exclude them  
+      // Reduced from 30 to 7 days to ensure metrics can rotate with smaller pool
+      const sevenDaysAgoForExclusion = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
       const { data: recentMetrics } = await supabase
         .from('metrics')
         .select('title')
-        .gte('lastViewedAt', thirtyDaysAgo.toISOString())
+        .gte('lastViewedAt', sevenDaysAgoForExclusion.toISOString())
         .not('lastViewedAt', 'is', null)
       
       const recentTitles = recentMetrics?.map(m => m.title) || []
-      console.log(`🚫 Excluding ${recentTitles.length} recently used metric titles:`, recentTitles)
+      console.log(`🚫 Excluding ${recentTitles.length} metrics used in last 7 days:`, recentTitles)
       
       let availableMetricsQuery = supabase
         .from('metrics')
