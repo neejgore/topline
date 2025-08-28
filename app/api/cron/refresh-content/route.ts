@@ -613,6 +613,15 @@ export async function GET(request: Request) {
       const { data: availableMetrics } = await availableMetricsQuery
       
       console.log(`📊 Found ${availableMetrics?.length || 0} available metrics`)
+
+      // HARD GUARD: If none available, DO NOT REUSE. Exit gracefully.
+      if (!availableMetrics || availableMetrics.length === 0) {
+        console.log('⛔ No never-used metrics available. Skipping metric publish (no reuse).')
+        return NextResponse.json({
+          success: true,
+          message: 'Skipped metric publish: no new metrics available (no reuse policy)'
+        })
+      }
       
       if (availableMetrics && availableMetrics.length > 0) {
         // Select 1 metric (the newest available from target verticals)

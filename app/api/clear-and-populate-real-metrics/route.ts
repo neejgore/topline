@@ -112,26 +112,13 @@ function generateRandomId() {
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('🚀 Starting metrics database reset with REAL metrics...')
-    
-    // First, delete all existing metrics
-    console.log('🧹 Clearing ALL existing metrics...')
-    const { error: deleteError } = await supabase
-      .from('metrics')
-      .delete()
-      .neq('id', 'non-existent-id') // This will delete all records
-    
-    if (deleteError) {
-      console.error('Error deleting existing metrics:', deleteError)
-      return NextResponse.json({
-        success: false,
-        error: `Failed to delete existing metrics: ${deleteError.message}`
-      }, { status: 500 })
-    }
-    
-    console.log('✅ All fake metrics cleared from database')
-    
-    // Now add real metrics
+    console.log('🚀 Starting non-destructive metrics population with REAL metrics...')
+
+    // NON-DESTRUCTIVE: Do NOT delete existing data. Preserve history and reuse prevention.
+    // We will only insert metrics whose titles have never been seen before in the database.
+    console.log('🛡️  Preserving existing metrics and history (no deletion).')
+
+    // Now add real metrics (insert-if-new)
     let addedMetrics = 0
     const results = []
     
@@ -158,6 +145,19 @@ export async function POST(request: NextRequest) {
           updatedAt: new Date().toISOString()
         }
         
+        // Insert only if title never seen before
+        const { data: existing } = await supabase
+          .from('metrics')
+          .select('id')
+          .eq('title', metric.title)
+          .limit(1)
+        
+        if (existing && existing.length > 0) {
+          results.push({ title: metric.title, status: 'skipped-existing' })
+          console.log(`⏭️  Skipped existing metric: ${metric.title}`)
+          continue
+        }
+
         const { error: insertError } = await supabase
           .from('metrics')
           .insert(metricData)
