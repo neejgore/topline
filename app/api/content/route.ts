@@ -36,6 +36,10 @@ export async function GET(request: NextRequest) {
         importanceScore
       `)
       .eq('status', status)
+      // Exclude any test content that may have been inserted
+      .not('sourceName', 'eq', 'Test Source')
+      .not('title', 'ilike', 'Test%Article%')
+      .not('sourceUrl', 'ilike', 'https://example.com/test-%')
       // Prefer freshness first, then relevance
       .order('publishedAt', { ascending: false })
       .order('importanceScore', { ascending: false })
@@ -68,6 +72,9 @@ export async function GET(request: NextRequest) {
       .from('articles')
       .select('*', { count: 'exact', head: true })
       .eq('status', status)
+      .not('sourceName', 'eq', 'Test Source')
+      .not('title', 'ilike', 'Test%Article%')
+      .not('sourceUrl', 'ilike', 'https://example.com/test-%')
 
     // Add date filtering for archive (before specified date)
     if (beforeDate) {
