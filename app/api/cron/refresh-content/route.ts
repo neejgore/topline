@@ -378,8 +378,11 @@ export async function GET(request: Request) {
         .in('id', articlesToArchive.map(a => a.id))
     }
 
-    // STEP 2: Process articles with 48-hour lookback, AI relevance assessment, and strict no-reuse policy
+    // STEP 2: Process articles with configurable lookback (default 48h), AI relevance assessment, and strict no-reuse policy
+    const lookbackHours = parseInt(process.env.ARTICLE_LOOKBACK_HOURS || '48')
+    const lookbackCutoff = new Date(Date.now() - lookbackHours * 60 * 60 * 1000)
     console.log('📰 Step 2: Processing articles with AI intelligence and no-reuse policy...')
+    console.log(`🕒 Article lookback window: ${lookbackHours}h; cutoff=${lookbackCutoff.toISOString()}`)
     let totalArticles = 0
     let skippedArticles = 0
 
@@ -403,13 +406,13 @@ export async function GET(request: Request) {
                 continue
               }
 
-              // Check if article is from the last 24 hours
+              // Check if article is within the lookback window
               const itemDate = item.pubDate ? new Date(item.pubDate) : new Date()
               console.log(`⏰ Item date parsed: ${itemDate.toISOString()}`)
-              console.log(`⏰ 24h cutoff: ${twentyFourHoursAgo.toISOString()}`)
-              console.log(`⏰ Is recent? ${itemDate >= twentyFourHoursAgo}`)
+              console.log(`⏰ Lookback cutoff: ${lookbackCutoff.toISOString()}`)
+              console.log(`⏰ Is recent? ${itemDate >= lookbackCutoff}`)
               
-              if (itemDate < twentyFourHoursAgo) {
+              if (itemDate < lookbackCutoff) {
                 console.log(`❌ SKIP: Article too old`)
                 continue
               }
@@ -541,12 +544,18 @@ export async function GET(request: Request) {
       }
     }
 
-    // STEP 3: Collect new metrics from external sources
-    console.log('🔍 Step 3: Collecting new metrics from external sources...')
-    await collectNewMetrics(supabase)
+    // STEP 3/4: Metrics publication (optional)
+    const METRICS_ENABLED = (process.env.METRICS_ENABLED || 'true').toLowerCase() !== 'false'
+    if (!METRICS_ENABLED) {
+      console.log('⏭️  Metrics disabled via METRICS_ENABLED=false; skipping metric collection and publish')
+    } else {
+      // STEP 3: Collect new metrics from external sources
+      console.log('🔍 Step 3: Collecting new metrics from external sources...')
+      await collectNewMetrics(supabase)
 
-    // STEP 4: Publish fresh metric daily
-    console.log('📊 Step 4: Publishing fresh daily metric...')
+      // STEP 4: Publish fresh metric daily
+      console.log('📊 Step 4: Publishing fresh daily metric...')
+    }
     
     // Target verticals (from memory requirement)
     const VERTICALS = [
@@ -565,6 +574,9 @@ export async function GET(request: Request) {
     ]
     
     try {
+      if (!METRICS_ENABLED) {
+        throw new Error('METRICS_DISABLED')
+      }
       // Archive current published metrics
       const { data: currentMetrics } = await supabase
         .from('metrics')
@@ -694,7 +706,11 @@ export async function GET(request: Request) {
       }
       
     } catch (metricError) {
-      console.error('❌ Error in metric publishing:', metricError)
+      if ((metricError as any)?.message === 'METRICS_DISABLED') {
+        console.log('ℹ️ Metrics flow intentionally disabled for this run')
+      } else {
+        console.error('❌ Error in metric publishing:', metricError)
+      }
     }
 
     console.log(`🎉 Intelligent content refresh completed: ${totalArticles} articles published, ${skippedArticles} skipped`)
