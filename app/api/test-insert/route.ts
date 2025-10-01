@@ -11,12 +11,14 @@ export async function GET() {
     console.log('🧪 Testing manual article insert...')
 
     const testArticle = {
+      id: Math.floor(Math.random() * 1000000000),
       title: 'Test Article ' + Date.now(),
       summary: 'This is a test article to check database functionality',
       sourceUrl: 'https://example.com/test-' + Date.now(),
       sourceName: 'Test Source',
       publishedAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
       vertical: 'Technology & Media',
       status: 'PUBLISHED',
       priority: 'MEDIUM',

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+export const dynamic = 'force-dynamic'
 import { createClient } from '@supabase/supabase-js'
 
 const Parser = require('rss-parser')
@@ -34,12 +35,14 @@ export async function GET(request: Request) {
       console.log(`🔍 Processing item ${i}: ${item.title}`)
       
       const testArticle = {
+        id: Math.floor(Math.random() * 1000000000),
         title: item.title,
         summary: item.contentSnippet || item.content || 'No summary available',
         sourceUrl: item.link,
         sourceName: 'MarTech',
         publishedAt: item.pubDate ? new Date(item.pubDate).toISOString() : new Date().toISOString(),
         createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
         vertical: 'Technology & Media',
         status: 'PUBLISHED',
         priority: 'MEDIUM',
