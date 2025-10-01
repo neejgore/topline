@@ -16,7 +16,8 @@
   "env": {
     "NEXT_PUBLIC_APP_NAME": "BellDesk AI",
     "METRICS_ENABLED": "false",
-    "ARTICLE_LOOKBACK_HOURS": "48"
+    "ARTICLE_LOOKBACK_HOURS": "48",
+    "NEXT_PUBLIC_METRICS_ENABLED": "false"
   },
   "functions": {
     "app/api/**/*.ts": {

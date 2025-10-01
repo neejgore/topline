@@ -35,6 +35,7 @@ export default function DailyContent() {
   const [error, setError] = useState('')
   const [selectedVertical, setSelectedVertical] = useState<Vertical>('All')
   const [selectedRelevance, setSelectedRelevance] = useState<RelevanceLevel>('All')
+  const metricsEnabled = (process.env.NEXT_PUBLIC_METRICS_ENABLED || 'false').toLowerCase() !== 'false'
 
   useEffect(() => {
     fetchContent()
@@ -143,11 +144,13 @@ export default function DailyContent() {
             </section>
           )}
           
-          {/* Metrics Section */}
-          <MetricsSection 
-            selectedVertical={selectedVertical} 
-            selectedRelevance={selectedRelevance}
-          />
+          {/* Metrics Section (conditionally shown) */}
+          {metricsEnabled && (
+            <MetricsSection 
+              selectedVertical={selectedVertical} 
+              selectedRelevance={selectedRelevance}
+            />
+          )}
 
           {/* Empty State */}
           {regularArticles.length === 0 && (
