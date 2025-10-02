@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Apply default lookback window for freshness (only for published view without archive filters)
-    const lookbackHours = parseInt(process.env.NEXT_PUBLIC_CONTENT_LOOKBACK_HOURS || process.env.ARTICLE_LOOKBACK_HOURS || '48')
+    const lookbackHours = parseInt(process.env.NEXT_PUBLIC_CONTENT_LOOKBACK_HOURS || process.env.ARTICLE_LOOKBACK_HOURS || '72')
     const lookbackCutoff = new Date(Date.now() - lookbackHours * 60 * 60 * 1000).toISOString()
     if (!beforeDate && status === 'PUBLISHED') {
       query = query.gte('publishedAt', lookbackCutoff)

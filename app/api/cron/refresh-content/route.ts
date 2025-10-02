@@ -387,7 +387,7 @@ export async function GET(request: Request) {
     let totalArticles = 0
     let skippedArticles = 0
 
-    for (const source of CONTENT_SOURCES) {
+    for (const source of CONTENT_SOURCES.filter((s: any) => (s as any).enabled !== false)) {
       try {
         console.log(`📡 Fetching from ${source.name}...`)
         

@@ -4,109 +4,149 @@ export const CONTENT_SOURCES = [
     name: 'AdExchanger',
     rssUrl: 'https://www.adexchanger.com/feed/',
     vertical: 'Technology & Media',
-    priority: 'HIGH'
+    priority: 'HIGH',
+    enabled: true
   },
   {
     name: 'MarTech Today',
     rssUrl: 'https://martech.org/feed/',
     vertical: 'Technology & Media',
-    priority: 'HIGH'
+    priority: 'HIGH',
+    enabled: true
   },
   {
     name: 'Digiday',
     rssUrl: 'https://digiday.com/feed/',
     vertical: 'Technology & Media',
-    priority: 'HIGH'
+    priority: 'HIGH',
+    enabled: true
   },
   {
     name: 'Ad Age',
     rssUrl: 'https://adage.com/rss.xml',
     vertical: 'Technology & Media',
-    priority: 'HIGH'
+    priority: 'HIGH',
+    enabled: false // temporarily disabled; endpoint 404s
   },
   {
     name: 'Marketing Land',
     rssUrl: 'https://marketingland.com/feed',
     vertical: 'Technology & Media',
-    priority: 'HIGH'
+    priority: 'HIGH',
+    enabled: true
   },
   {
     name: 'Campaign US',
     rssUrl: 'https://www.campaignlive.com/rss',
     vertical: 'Technology & Media',
-    priority: 'HIGH'
+    priority: 'HIGH',
+    enabled: false // temporarily disabled; endpoint 404s
   },
   {
     name: 'MediaPost - Social Media Marketing',
     rssUrl: 'http://feeds.mediapost.com/social-media-marketing-daily',
     vertical: 'Technology & Media',
-    priority: 'HIGH'
+    priority: 'HIGH',
+    enabled: true
   },
   {
     name: 'Marketing Brew',
     rssUrl: 'https://www.marketingbrew.com/feed',
     vertical: 'Technology & Media',
-    priority: 'HIGH'
+    priority: 'HIGH',
+    enabled: false // temporarily disabled; endpoint 404s
   },
   {
     name: 'Search Engine Land',
     rssUrl: 'https://searchengineland.com/feed',
     vertical: 'Technology & Media',
-    priority: 'HIGH'
+    priority: 'HIGH',
+    enabled: true
   },
   {
     name: 'Content Marketing Institute',
     rssUrl: 'https://contentmarketinginstitute.com/feed/',
     vertical: 'Technology & Media',
-    priority: 'HIGH'
+    priority: 'HIGH',
+    enabled: true
   },
   {
     name: 'MarketingProfs',
     rssUrl: 'https://www.marketingprofs.com/feed.xml',
     vertical: 'Technology & Media',
-    priority: 'MEDIUM'
+    priority: 'MEDIUM',
+    enabled: true
   },
   {
     name: 'HubSpot Marketing Blog',
     rssUrl: 'https://blog.hubspot.com/marketing/rss.xml',
     vertical: 'Technology & Media',
-    priority: 'MEDIUM'
+    priority: 'MEDIUM',
+    enabled: true
   },
   {
     name: 'TechCrunch',
     rssUrl: 'https://techcrunch.com/feed/',
     vertical: 'Technology & Media',
-    priority: 'MEDIUM'
+    priority: 'MEDIUM',
+    enabled: true
   },
   {
     name: 'Forbes CMO Network',
     rssUrl: 'https://www.forbes.com/sites/cmo/feed/',
     vertical: 'Services',
-    priority: 'MEDIUM'
+    priority: 'MEDIUM',
+    enabled: true
   },
   {
     name: 'Retail Dive',
     rssUrl: 'https://www.retaildive.com/feeds/news/',
     vertical: 'Consumer & Retail',
-    priority: 'MEDIUM'
+    priority: 'MEDIUM',
+    enabled: true
   },
   {
     name: 'Modern Healthcare',
     rssUrl: 'https://www.modernhealthcare.com/rss.xml',
     vertical: 'Healthcare',
-    priority: 'MEDIUM'
+    priority: 'MEDIUM',
+    enabled: false // temporarily disabled; endpoint 404s
   },
   {
     name: 'American Banker',
     rssUrl: 'https://www.americanbanker.com/feed',
     vertical: 'Financial Services',
-    priority: 'MEDIUM'
+    priority: 'MEDIUM',
+    enabled: false // temporarily disabled; not RSS
   },
   {
     name: 'Banking Dive',
     rssUrl: 'https://www.bankingdive.com/feeds/news/',
     vertical: 'Financial Services',
-    priority: 'MEDIUM'
+    priority: 'MEDIUM',
+    enabled: true
+  },
+  // Added reliable alternatives to ensure daily volume
+  {
+    name: 'Search Engine Journal',
+    rssUrl: 'https://www.searchenginejournal.com/feed/',
+    vertical: 'Technology & Media',
+    priority: 'HIGH',
+    enabled: true
+  },
+  {
+    name: 'Marketing Week',
+    rssUrl: 'https://www.marketingweek.com/feed/',
+    vertical: 'Technology & Media',
+    priority: 'MEDIUM',
+    enabled: true
+  },
+  {
+    name: 'CMSWire Marketing',
+    rssUrl: 'https://www.cmswire.com/marketing/rss/',
+    vertical: 'Technology & Media',
+    priority: 'MEDIUM',
+    enabled: true
   }
 ]
 
