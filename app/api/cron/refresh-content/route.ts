@@ -396,7 +396,7 @@ export async function GET(request: Request) {
         if (feed.items && feed.items.length > 0) {
           console.log(`📰 Found ${feed.items.length} items from ${source.name}`)
           
-          for (const item of feed.items.slice(0, 3)) { // Process up to 3 items per source
+          for (const item of feed.items.slice(0, 15)) { // Process up to 15 items per source
             try {
               console.log(`\n🔍 DEBUGGING ITEM: ${item.title}`)
               console.log(`📅 Item date: ${item.pubDate}`)
