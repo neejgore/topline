@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js'
 const Parser = require('rss-parser')
 const parser = new Parser()
 
-// Top working sources for quick refresh
+// Top working sources for quick refresh - expanded for better daily coverage
 const QUICK_SOURCES = [
   { name: 'MarTech', url: 'https://martech.org/feed/', vertical: 'Technology & Media' },
   { name: 'AdExchanger', url: 'https://www.adexchanger.com/feed/', vertical: 'Technology & Media' },
@@ -13,7 +13,12 @@ const QUICK_SOURCES = [
   { name: 'Search Engine Land', url: 'https://searchengineland.com/feed', vertical: 'Technology & Media' },
   { name: 'TechCrunch', url: 'https://techcrunch.com/feed/', vertical: 'Technology & Media' },
   { name: 'Retail Dive', url: 'https://www.retaildive.com/feeds/news/', vertical: 'Consumer & Retail' },
-  { name: 'Banking Dive', url: 'https://www.bankingdive.com/feeds/news/', vertical: 'Financial Services' }
+  { name: 'Banking Dive', url: 'https://www.bankingdive.com/feeds/news/', vertical: 'Financial Services' },
+  { name: 'Marketing Land', url: 'https://marketingland.com/feed', vertical: 'Technology & Media' },
+  { name: 'HubSpot Marketing Blog', url: 'https://blog.hubspot.com/marketing/rss.xml', vertical: 'Technology & Media' },
+  { name: 'Content Marketing Institute', url: 'https://contentmarketinginstitute.com/feed/', vertical: 'Technology & Media' },
+  { name: 'Search Engine Journal', url: 'https://www.searchenginejournal.com/feed/', vertical: 'Technology & Media' },
+  { name: 'Marketing Week', url: 'https://www.marketingweek.com/feed/', vertical: 'Technology & Media' }
 ]
 
 export async function GET(request: Request) {
@@ -48,8 +53,8 @@ export async function GET(request: Request) {
         const feed = await parser.parseURL(source.url)
         console.log(`  📰 Found ${feed.items.length} items`)
         
-        // Process up to 5 items per source for speed
-        for (let i = 0; i < Math.min(5, feed.items.length); i++) {
+        // Process up to 10 items per source for better coverage
+        for (let i = 0; i < Math.min(10, feed.items.length); i++) {
           const item = feed.items[i]
           
           if (!item.title || !item.link) continue
