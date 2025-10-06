@@ -5,7 +5,7 @@
   "regions": ["iad1"],
   "crons": [
     {
-      "path": "/api/cron/refresh-content",
+      "path": "/api/simple-content-refresh",
       "schedule": "0 10 * * 1-5"
     },
     {

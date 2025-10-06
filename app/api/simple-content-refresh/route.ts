@@ -24,6 +24,19 @@ export async function GET(request: Request) {
     )
 
     console.log('🔄 Starting FAST multi-source refresh...')
+    console.log('📅 Time:', new Date().toLocaleString())
+    
+    // Check if it's a weekday (Monday-Friday only)
+    const now = new Date()
+    const dayOfWeek = now.getDay() // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      console.log('⏸️  Skipping refresh - weekend detected')
+      return NextResponse.json({ 
+        success: true, 
+        message: 'Skipped refresh - weekends only',
+        isWeekend: true
+      })
+    }
     
     const lookbackHours = 48
     const lookbackCutoff = new Date(Date.now() - lookbackHours * 60 * 60 * 1000)
