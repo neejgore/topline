@@ -5,6 +5,9 @@ import { createClient } from '@supabase/supabase-js'
 const Parser = require('rss-parser')
 const parser = new Parser()
 
+// Import AI content generator
+const { generateAIContent } = require('../../../../lib/ai-content-generator')
+
 // Top working sources for quick refresh - expanded for better daily coverage
 const QUICK_SOURCES = [
   { name: 'MarTech', url: 'https://martech.org/feed/', vertical: 'Technology & Media' },
@@ -53,8 +56,8 @@ export async function GET(request: Request) {
         const feed = await parser.parseURL(source.url)
         console.log(`  📰 Found ${feed.items.length} items`)
         
-        // Process up to 10 items per source for better coverage
-        for (let i = 0; i < Math.min(10, feed.items.length); i++) {
+        // Process up to 5 items per source (with AI generation, we need to limit to avoid timeouts)
+        for (let i = 0; i < Math.min(5, feed.items.length); i++) {
           const item = feed.items[i]
           
           if (!item.title || !item.link) continue
@@ -78,6 +81,24 @@ export async function GET(request: Request) {
             continue
           }
           
+          // Generate AI sales intelligence
+          let whyItMatters = `This ${source.vertical} development impacts market trends and business strategy.`
+          let talkTrack = `I noticed this update from ${source.name} - thought it might be relevant to our conversation.`
+          
+          try {
+            const aiContent = await generateAIContent(
+              item.title,
+              item.contentSnippet || item.content || '',
+              source.name,
+              source.vertical
+            )
+            whyItMatters = aiContent.whyItMatters
+            talkTrack = aiContent.talkTrack
+            console.log(`  🤖 Generated AI content`)
+          } catch (aiError) {
+            console.log(`  ⚠️ Using fallback content (AI failed):`, (aiError as Error).message)
+          }
+          
           const article = {
             id: Math.floor(Math.random() * 1000000000),
             title: item.title,
@@ -91,8 +112,8 @@ export async function GET(request: Request) {
             status: 'PUBLISHED',
             priority: 'MEDIUM',
             category: 'NEWS',
-            whyItMatters: `This ${source.vertical} development impacts market trends and business strategy.`,
-            talkTrack: `I noticed this update from ${source.name} - thought it might be relevant to our conversation.`,
+            whyItMatters,
+            talkTrack,
             importanceScore: 50,
             views: 0,
             clicks: 0,
