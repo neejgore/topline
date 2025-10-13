@@ -8,19 +8,13 @@ const parser = new Parser()
 // Import AI content generator
 const { generateAIContent } = require('../../../lib/ai-content-generator')
 
-// Top working sources for quick refresh - expanded for better daily coverage
+// Top working sources for quick refresh - limited to 6 sources for AI generation speed
 const QUICK_SOURCES = [
   { name: 'MarTech', url: 'https://martech.org/feed/', vertical: 'Technology & Media' },
   { name: 'AdExchanger', url: 'https://www.adexchanger.com/feed/', vertical: 'Technology & Media' },
-  { name: 'Digiday', url: 'https://digiday.com/feed/', vertical: 'Technology & Media' },
-  { name: 'Search Engine Land', url: 'https://searchengineland.com/feed', vertical: 'Technology & Media' },
   { name: 'TechCrunch', url: 'https://techcrunch.com/feed/', vertical: 'Technology & Media' },
   { name: 'Retail Dive', url: 'https://www.retaildive.com/feeds/news/', vertical: 'Consumer & Retail' },
   { name: 'Banking Dive', url: 'https://www.bankingdive.com/feeds/news/', vertical: 'Financial Services' },
-  { name: 'Marketing Land', url: 'https://marketingland.com/feed', vertical: 'Technology & Media' },
-  { name: 'HubSpot Marketing Blog', url: 'https://blog.hubspot.com/marketing/rss.xml', vertical: 'Technology & Media' },
-  { name: 'Content Marketing Institute', url: 'https://contentmarketinginstitute.com/feed/', vertical: 'Technology & Media' },
-  { name: 'Search Engine Journal', url: 'https://www.searchenginejournal.com/feed/', vertical: 'Technology & Media' },
   { name: 'Marketing Week', url: 'https://www.marketingweek.com/feed/', vertical: 'Technology & Media' }
 ]
 
@@ -56,8 +50,9 @@ export async function GET(request: Request) {
         const feed = await parser.parseURL(source.url)
         console.log(`  📰 Found ${feed.items.length} items`)
         
-        // Process up to 5 items per source (with AI generation, we need to limit to avoid timeouts)
-        for (let i = 0; i < Math.min(5, feed.items.length); i++) {
+        // Process up to 3 items per source (with AI generation, limit to ensure completion within 5min timeout)
+        // This gives us ~18 articles/day with proper AI content
+        for (let i = 0; i < Math.min(3, feed.items.length); i++) {
           const item = feed.items[i]
           
           if (!item.title || !item.link) continue
