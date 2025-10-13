@@ -6,7 +6,7 @@ const Parser = require('rss-parser')
 const parser = new Parser()
 
 // Import AI content generator
-const { generateAIContent } = require('../../../../lib/ai-content-generator')
+const { generateAIContent } = require('../../../lib/ai-content-generator')
 
 // Top working sources for quick refresh - expanded for better daily coverage
 const QUICK_SOURCES = [
