@@ -80,18 +80,25 @@ export async function GET(request: Request) {
           let whyItMatters = `This ${source.vertical} development impacts market trends and business strategy.`
           let talkTrack = `I noticed this update from ${source.name} - thought it might be relevant to our conversation.`
           
-          try {
-            const aiContent = await generateAIContent(
-              item.title,
-              item.contentSnippet || item.content || '',
-              source.name,
-              source.vertical
-            )
-            whyItMatters = aiContent.whyItMatters
-            talkTrack = aiContent.talkTrack
-            console.log(`  🤖 Generated AI content`)
-          } catch (aiError) {
-            console.log(`  ⚠️ Using fallback content (AI failed):`, (aiError as Error).message)
+          // Check if OpenAI is available
+          if (process.env.OPENAI_API_KEY) {
+            try {
+              console.log(`  🤖 Generating AI content for: ${item.title.substring(0, 50)}...`)
+              const aiContent = await generateAIContent(
+                item.title,
+                item.contentSnippet || item.content || '',
+                source.name,
+                source.vertical
+              )
+              whyItMatters = aiContent.whyItMatters
+              talkTrack = aiContent.talkTrack
+              console.log(`  ✅ AI content generated successfully`)
+            } catch (aiError) {
+              console.error(`  ❌ AI generation failed:`, (aiError as Error).message)
+              console.log(`  ⚠️  Using generic fallback content`)
+            }
+          } else {
+            console.log(`  ⚠️  No OpenAI API key - using generic content`)
           }
           
           const article = {
