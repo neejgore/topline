@@ -114,11 +114,11 @@ export default function ArticleCard({ article }: ArticleCardProps) {
     // score < 50 = 0 stars colored, all gray
     
     return (
-      <div className="flex items-center gap-0.5">
+      <div className="flex items-center -space-x-0.5">
         {[...Array(3)].map((_, i) => (
           <Star
             key={i}
-            className={`w-4 h-4 ${i < starCount ? starColor : 'text-gray-200'}`}
+            className={`w-3.5 h-3.5 ${i < starCount ? starColor : 'text-gray-200'}`}
             fill="currentColor"
           />
         ))}
@@ -149,15 +149,15 @@ export default function ArticleCard({ article }: ArticleCardProps) {
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 overflow-hidden group">
       {/* Header */}
       <div className="p-6 pb-4">
-        <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2 text-sm text-gray-500">
             <Calendar className="h-4 w-4" />
             <span>{formatDate(article.publishedAt || null)}</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             {getRelevanceStars(article.importanceScore)}
             {article.vertical && (
-              <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${getVerticalColor(article.vertical)}`}>
+              <span className={`px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap ${getVerticalColor(article.vertical)}`}>
                 {article.vertical}
               </span>
             )}
