@@ -50,6 +50,27 @@ export const CONTENT_SOURCES = [
     enabled: true
   },
   {
+    name: 'MediaPost - Email Marketing',
+    rssUrl: 'http://feeds.mediapost.com/email-marketing-daily',
+    vertical: 'Technology & Media',
+    priority: 'HIGH',
+    enabled: true
+  },
+  {
+    name: 'MediaPost - Search Marketing',
+    rssUrl: 'http://feeds.mediapost.com/search-marketing-daily',
+    vertical: 'Technology & Media',
+    priority: 'HIGH',
+    enabled: true
+  },
+  {
+    name: 'MediaPost - Online Media',
+    rssUrl: 'http://feeds.mediapost.com/online-media-daily',
+    vertical: 'Technology & Media',
+    priority: 'HIGH',
+    enabled: true
+  },
+  {
     name: 'Marketing Brew',
     rssUrl: 'https://www.marketingbrew.com/feed',
     vertical: 'Technology & Media',
