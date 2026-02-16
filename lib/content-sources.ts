@@ -114,10 +114,10 @@ export const CONTENT_SOURCES = [
   },
   {
     name: 'American Banker',
-    rssUrl: 'https://www.americanbanker.com/feed',
+    rssUrl: 'https://www.americanbanker.com/feed.rss',
     vertical: 'Financial Services',
     priority: 'MEDIUM',
-    enabled: false // temporarily disabled; not RSS
+    enabled: true // Re-enabled with correct RSS URL
   },
   {
     name: 'Banking Dive',
