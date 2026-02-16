@@ -94,24 +94,24 @@ export default function ArticleCard({ article }: ArticleCardProps) {
   }
 
   const getRelevanceStars = (importanceScore?: number) => {
-    if (!importanceScore) return null;
+    // Always show 3 stars, color based on score
+    const score = importanceScore || 0;
     
     // Convert 0-100 AI relevance score to 1-3 star rating
     let starCount = 0;
-    let starColor = 'text-gray-400';
+    let starColor = 'text-gray-300'; // Default uncolored
     
-    if (importanceScore >= 85) {
+    if (score >= 85) {
       starCount = 3;
       starColor = 'text-red-500'; // High relevance
-    } else if (importanceScore >= 70) {
+    } else if (score >= 70) {
       starCount = 2;
       starColor = 'text-orange-500'; // Medium relevance
-    } else if (importanceScore >= 50) {
+    } else if (score >= 50) {
       starCount = 1;
       starColor = 'text-gray-400'; // Low relevance
     }
-    
-    if (starCount === 0) return null;
+    // score < 50 = 0 stars colored, all gray
     
     return (
       <div className="flex items-center gap-0.5">
@@ -155,7 +155,7 @@ export default function ArticleCard({ article }: ArticleCardProps) {
             <span>{formatDate(article.publishedAt || null)}</span>
           </div>
           <div className="flex items-center gap-2">
-            {article.importanceScore && getRelevanceStars(article.importanceScore)}
+            {getRelevanceStars(article.importanceScore)}
             {article.vertical && (
               <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${getVerticalColor(article.vertical)}`}>
                 {article.vertical}
