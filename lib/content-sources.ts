@@ -168,6 +168,56 @@ export const CONTENT_SOURCES = [
     vertical: 'Technology & Media',
     priority: 'MEDIUM',
     enabled: true
+  },
+  // New additions - verified working RSS feeds
+  {
+    name: 'Adweek',
+    rssUrl: 'https://www.adweek.com/feed/',
+    vertical: 'Technology & Media',
+    priority: 'HIGH',
+    enabled: true
+  },
+  {
+    name: 'Marketing Dive',
+    rssUrl: 'https://www.marketingdive.com/feeds/news/',
+    vertical: 'Technology & Media',
+    priority: 'HIGH',
+    enabled: true
+  },
+  {
+    name: 'Social Media Examiner',
+    rssUrl: 'https://www.socialmediaexaminer.com/feed/',
+    vertical: 'Technology & Media',
+    priority: 'MEDIUM',
+    enabled: true
+  },
+  {
+    name: 'Practical Ecommerce',
+    rssUrl: 'https://www.practicalecommerce.com/feed',
+    vertical: 'Consumer & Retail',
+    priority: 'MEDIUM',
+    enabled: true
+  },
+  {
+    name: 'Chief Marketer',
+    rssUrl: 'https://www.chiefmarketer.com/feed/',
+    vertical: 'Technology & Media',
+    priority: 'MEDIUM',
+    enabled: true
+  },
+  {
+    name: 'MarTech Series',
+    rssUrl: 'https://martechseries.com/feed/',
+    vertical: 'Technology & Media',
+    priority: 'HIGH',
+    enabled: true
+  },
+  {
+    name: 'eConsultancy',
+    rssUrl: 'https://econsultancy.com/feed/',
+    vertical: 'Technology & Media',
+    priority: 'MEDIUM',
+    enabled: true
   }
 ]
 
